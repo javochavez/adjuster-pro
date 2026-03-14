@@ -7,7 +7,6 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
   :root {
     --bg: #f7f6f3;
     --surface: #ffffff;
@@ -20,67 +19,56 @@
     --radius-lg: 12px;
     --accent: #1a1a18;
   }
+  body { font-family: 'Georgia', serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 14px; line-height: 1.5; }
 
-  body {
-    font-family: 'Georgia', serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    font-size: 14px;
-    line-height: 1.5;
-  }
+  /* LOGIN */
+  .login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+  .login-card { background: var(--surface); border: 0.5px solid var(--border-md); border-radius: var(--radius-lg); padding: 2.5rem 2rem; width: 360px; }
+  .login-brand { font-size: 22px; font-weight: 700; letter-spacing: -0.03em; margin-bottom: 4px; }
+  .login-sub { font-size: 13px; color: var(--text-sec); font-style: italic; margin-bottom: 2rem; }
+  .login-card .fg { display: flex; flex-direction: column; gap: 4px; margin-bottom: 14px; }
+  .login-card .fg label { font-size: 11px; color: var(--text-sec); text-transform: uppercase; letter-spacing: 0.05em; }
+  .login-card .fg input { padding: 9px 12px; font-size: 14px; border: 0.5px solid var(--border-md); border-radius: var(--radius-md); background: var(--bg); color: var(--text); font-family: 'Georgia', serif; }
+  .login-card .fg input:focus { outline: none; border-color: var(--accent); background: var(--surface); }
+  .login-btn { width: 100%; padding: 10px; background: var(--accent); color: #fff; border: none; border-radius: var(--radius-md); font-size: 14px; font-family: 'Georgia', serif; cursor: pointer; margin-top: 6px; font-weight: 700; letter-spacing: -0.01em; }
+  .login-btn:hover { opacity: 0.85; }
+  .login-error { font-size: 12px; color: #a32d2d; margin-top: 10px; text-align: center; min-height: 18px; }
+  .login-loading { text-align: center; font-size: 13px; color: var(--text-ter); font-style: italic; margin-top: 10px; }
 
-  /* TOPBAR */
-  .topbar {
-    background: var(--surface);
-    border-bottom: 0.5px solid var(--border);
-    padding: 0 1.5rem;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    height: 56px;
-    position: sticky;
-    top: 0;
-    z-index: 50;
-  }
+  /* APP */
+  #app { display: none; }
+  .topbar { background: var(--surface); border-bottom: 0.5px solid var(--border); padding: 0 1.5rem; display: flex; align-items: center; justify-content: space-between; height: 56px; position: sticky; top: 0; z-index: 50; }
   .brand { font-size: 16px; font-weight: 700; letter-spacing: -0.02em; }
   .brand span { font-family: 'Georgia', serif; font-style: italic; font-weight: 400; font-size: 13px; color: var(--text-sec); margin-left: 8px; }
   .topbar-right { display: flex; align-items: center; gap: 16px; }
+  .user-info { font-size: 12px; color: var(--text-sec); }
   .tc-box { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-sec); }
   .tc-box input { width: 76px; padding: 4px 8px; font-size: 12px; border: 0.5px solid var(--border-md); border-radius: var(--radius-md); background: var(--bg); color: var(--text); font-family: 'Georgia', serif; }
   .nav { display: flex; gap: 2px; }
   .nav-btn { background: transparent; border: none; padding: 6px 14px; border-radius: var(--radius-md); cursor: pointer; font-size: 13px; color: var(--text-sec); font-family: 'Georgia', serif; transition: all 0.15s; }
   .nav-btn:hover { background: var(--bg); color: var(--text); }
   .nav-btn.active { background: var(--text); color: #fff; }
+  .logout-btn { background: transparent; border: 0.5px solid var(--border-md); padding: 5px 12px; border-radius: var(--radius-md); cursor: pointer; font-size: 12px; color: var(--text-sec); font-family: 'Georgia', serif; }
+  .logout-btn:hover { background: var(--bg); }
 
-  /* LAYOUT */
   .main { max-width: 1100px; margin: 0 auto; padding: 1.5rem; }
-
-  /* METRICS */
   .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 1.25rem; }
   .mc { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1rem 1.25rem; }
   .mc-label { font-size: 11px; color: var(--text-ter); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
   .mc-val { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
-  .mc-sub { font-size: 11px; color: var(--text-ter); margin-top: 3px; }
 
-  /* PANEL */
   .panel { display: none; }
   .panel.active { display: block; }
 
-  /* TOOLBAR */
   .toolbar { display: flex; gap: 10px; margin-bottom: 12px; align-items: center; }
   .toolbar input[type=text] { flex: 1; padding: 8px 12px; font-size: 13px; border: 0.5px solid var(--border-md); border-radius: var(--radius-md); background: var(--surface); color: var(--text); font-family: 'Georgia', serif; }
   .toolbar select { padding: 8px 10px; font-size: 13px; border: 0.5px solid var(--border-md); border-radius: var(--radius-md); background: var(--surface); color: var(--text); font-family: 'Georgia', serif; }
 
-  /* BUTTONS */
   .btn { padding: 8px 18px; border-radius: var(--radius-md); cursor: pointer; font-size: 13px; font-family: 'Georgia', serif; border: 0.5px solid var(--border-md); background: var(--surface); color: var(--text); transition: all 0.15s; }
   .btn:hover { background: var(--bg); }
   .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
   .btn-primary:hover { opacity: 0.85; background: var(--accent); }
-  .btn-danger { background: #fff0f0; color: #a32d2d; border-color: #f09595; }
-  .btn-danger:hover { background: #fde8e8; }
 
-  /* TABLE */
   .tbl-wrap { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
   table { width: 100%; border-collapse: collapse; font-size: 13px; }
   thead th { text-align: left; padding: 10px 12px; font-size: 11px; color: var(--text-ter); border-bottom: 0.5px solid var(--border); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 400; background: var(--bg); }
@@ -95,8 +83,7 @@
   .td-actions .del { color: #a32d2d; border-color: #f09595; }
   .td-actions .del:hover { background: #fff0f0; }
 
-  /* BADGES */
-  .badge { display: inline-block; padding: 2px 10px; border-radius: 99px; font-size: 11px; font-weight: 400; }
+  .badge { display: inline-block; padding: 2px 10px; border-radius: 99px; font-size: 11px; }
   .s-asignado { background: #E6F1FB; color: #0C447C; }
   .s-inspeccion { background: #FAEEDA; color: #633806; }
   .s-informe { background: #EEEDFE; color: #3C3489; }
@@ -108,7 +95,6 @@
   .cur-usd { background: #EEEDFE; color: #3C3489; }
   .cur-mxn { background: #E1F5EE; color: #085041; }
 
-  /* MODAL */
   .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200; align-items: center; justify-content: center; }
   .overlay.open { display: flex; }
   .modal { background: var(--surface); border-radius: var(--radius-lg); border: 0.5px solid var(--border-md); padding: 1.75rem; width: 620px; max-height: 90vh; overflow-y: auto; }
@@ -123,7 +109,6 @@
   .fg input:focus, .fg select:focus, .fg textarea:focus { outline: none; border-color: var(--accent); background: var(--surface); }
   .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 1.5rem; padding-top: 1rem; border-top: 0.5px solid var(--border); }
 
-  /* HONORARIOS */
   .hon-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1rem 1.25rem; margin-bottom: 10px; }
   .hon-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
   .hon-exp { font-weight: 700; font-size: 14px; }
@@ -132,22 +117,18 @@
   .h-label { color: var(--text-sec); }
   .h-val { font-weight: 700; }
 
-  /* BITACORA */
   .bit-list { display: flex; flex-direction: column; gap: 8px; }
   .bit-item { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-md); padding: 12px 14px; }
   .bit-meta { font-size: 11px; color: var(--text-ter); margin-bottom: 5px; }
   .bit-text { font-size: 13px; line-height: 1.6; }
 
-  /* TOAST */
   .toast { position: fixed; bottom: 24px; right: 24px; background: var(--accent); color: #fff; padding: 10px 18px; border-radius: var(--radius-md); font-size: 13px; z-index: 999; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
   .toast.show { opacity: 1; }
-
-  /* LOADING */
   .loading { text-align: center; padding: 3rem; color: var(--text-ter); font-size: 13px; font-style: italic; }
 
   @media (max-width: 700px) {
     .metrics { grid-template-columns: 1fr 1fr; }
-    .topbar { flex-direction: column; height: auto; padding: 10px; gap: 8px; }
+    .topbar { flex-wrap: wrap; height: auto; padding: 10px; gap: 8px; }
     .modal { width: 95vw; }
     .form-grid { grid-template-columns: 1fr; }
   }
@@ -155,79 +136,94 @@
 </head>
 <body>
 
-<div class="topbar">
-  <div class="brand">AdjusterPro <span>Control de Casos</span></div>
-  <div class="topbar-right">
-    <div class="tc-box">
-      <span>USD/MXN</span>
-      <input type="number" id="tc-input" value="17.50" step="0.01" oninput="renderMetrics()">
+<!-- LOGIN -->
+<div class="login-wrap" id="login-wrap">
+  <div class="login-card">
+    <div class="login-brand">AdjusterPro</div>
+    <div class="login-sub">Control de Casos — Acceso restringido</div>
+    <div class="fg">
+      <label>Correo electrónico</label>
+      <input type="email" id="l-email" placeholder="usuario@aasa.com.mx" autocomplete="email">
     </div>
-    <nav class="nav">
-      <button class="nav-btn active" onclick="switchTab('casos',this)">Casos</button>
-      <button class="nav-btn" onclick="switchTab('informes',this)">Informes</button>
-      <button class="nav-btn" onclick="switchTab('honorarios',this)">Honorarios</button>
-      <button class="nav-btn" onclick="switchTab('bitacora',this)">Bitácora</button>
-    </nav>
+    <div class="fg">
+      <label>Contraseña</label>
+      <input type="password" id="l-pass" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="login-btn" onclick="doLogin()" id="login-btn">Ingresar</button>
+    <div class="login-error" id="login-error"></div>
   </div>
 </div>
 
-<div class="main">
-  <div class="metrics" id="metrics">
-    <div class="mc"><div class="mc-label">Casos activos</div><div class="mc-val" id="m-activos">—</div></div>
-    <div class="mc"><div class="mc-label">Reclamado total (MXN eq.)</div><div class="mc-val" id="m-reclamado">—</div></div>
-    <div class="mc"><div class="mc-label">Honorarios totales (MXN eq.)</div><div class="mc-val" id="m-honorarios">—</div></div>
-    <div class="mc"><div class="mc-label">Por cobrar (MXN eq.)</div><div class="mc-val" id="m-cobrar" style="color:#BA7517;">—</div></div>
-  </div>
-
-  <!-- CASOS -->
-  <div id="panel-casos" class="panel active">
-    <div class="toolbar">
-      <input type="text" id="search" placeholder="Buscar expediente, asegurado o aseguradora..." oninput="renderTabla()">
-      <button class="btn btn-primary" onclick="abrirModal('modal-caso')">+ Nuevo caso</button>
-    </div>
-    <div class="tbl-wrap">
-      <table>
-        <thead><tr>
-          <th>Expediente</th><th>Asegurado</th><th>Aseguradora</th><th>Tipo</th>
-          <th>Moneda</th><th>Reclamado</th><th>Asignación</th><th>Estatus</th><th></th>
-        </tr></thead>
-        <tbody id="tabla-body"><tr><td colspan="9" class="loading">Cargando casos...</td></tr></tbody>
-      </table>
+<!-- APP -->
+<div id="app">
+  <div class="topbar">
+    <div class="brand">AdjusterPro <span>Control de Casos</span></div>
+    <div class="topbar-right">
+      <span class="user-info" id="user-email"></span>
+      <div class="tc-box">
+        <span>USD/MXN</span>
+        <input type="number" id="tc-input" value="17.50" step="0.01" oninput="renderMetrics()">
+      </div>
+      <nav class="nav">
+        <button class="nav-btn active" onclick="switchTab('casos',this)">Casos</button>
+        <button class="nav-btn" onclick="switchTab('informes',this)">Informes</button>
+        <button class="nav-btn" onclick="switchTab('honorarios',this)">Honorarios</button>
+        <button class="nav-btn" onclick="switchTab('bitacora',this)">Bitácora</button>
+      </nav>
+      <button class="logout-btn" onclick="doLogout()">Salir</button>
     </div>
   </div>
 
-  <!-- INFORMES -->
-  <div id="panel-informes" class="panel">
-    <div class="toolbar">
-      <select id="filtro-inf" onchange="renderInformes()">
-        <option value="">Todos los casos</option>
-      </select>
-      <button class="btn btn-primary" onclick="abrirModal('modal-informe')">+ Nuevo informe</button>
+  <div class="main">
+    <div class="metrics">
+      <div class="mc"><div class="mc-label">Casos activos</div><div class="mc-val" id="m-activos">—</div></div>
+      <div class="mc"><div class="mc-label">Reclamado total (MXN eq.)</div><div class="mc-val" id="m-reclamado">—</div></div>
+      <div class="mc"><div class="mc-label">Honorarios totales (MXN eq.)</div><div class="mc-val" id="m-honorarios">—</div></div>
+      <div class="mc"><div class="mc-label">Por cobrar (MXN eq.)</div><div class="mc-val" id="m-cobrar" style="color:#BA7517;">—</div></div>
     </div>
-    <div class="tbl-wrap">
-      <table>
-        <thead><tr>
-          <th>No.</th><th>Expediente</th><th>Tipo</th><th>Destinatario</th><th>Fecha</th><th>Estatus</th><th></th>
-        </tr></thead>
-        <tbody id="inf-body"><tr><td colspan="7" class="loading">Cargando informes...</td></tr></tbody>
-      </table>
-    </div>
-  </div>
 
-  <!-- HONORARIOS -->
-  <div id="panel-honorarios" class="panel">
-    <div id="hon-content"><div class="loading">Cargando honorarios...</div></div>
-  </div>
-
-  <!-- BITACORA -->
-  <div id="panel-bitacora" class="panel">
-    <div class="toolbar">
-      <select id="filtro-bit" onchange="renderBitacora()">
-        <option value="">Todos los casos</option>
-      </select>
-      <button class="btn btn-primary" onclick="abrirModal('modal-bitacora')">+ Nueva nota</button>
+    <div id="panel-casos" class="panel active">
+      <div class="toolbar">
+        <input type="text" id="search" placeholder="Buscar expediente, asegurado o aseguradora..." oninput="renderTabla()">
+        <button class="btn btn-primary" onclick="abrirModal('modal-caso')">+ Nuevo caso</button>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr>
+            <th>Expediente</th><th>Asegurado</th><th>Aseguradora</th><th>Tipo</th>
+            <th>Moneda</th><th>Reclamado</th><th>Asignación</th><th>Estatus</th><th></th>
+          </tr></thead>
+          <tbody id="tabla-body"><tr><td colspan="9" class="loading">Cargando casos...</td></tr></tbody>
+        </table>
+      </div>
     </div>
-    <div class="bit-list" id="bit-list"><div class="loading">Cargando bitácora...</div></div>
+
+    <div id="panel-informes" class="panel">
+      <div class="toolbar">
+        <select id="filtro-inf" onchange="renderInformes()"><option value="">Todos los casos</option></select>
+        <button class="btn btn-primary" onclick="abrirModal('modal-informe')">+ Nuevo informe</button>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr>
+            <th>No.</th><th>Expediente</th><th>Tipo</th><th>Destinatario</th><th>Fecha</th><th>Estatus</th><th></th>
+          </tr></thead>
+          <tbody id="inf-body"><tr><td colspan="7" class="loading">Cargando informes...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="panel-honorarios" class="panel">
+      <div id="hon-content"><div class="loading">Cargando honorarios...</div></div>
+    </div>
+
+    <div id="panel-bitacora" class="panel">
+      <div class="toolbar">
+        <select id="filtro-bit" onchange="renderBitacora()"><option value="">Todos los casos</option></select>
+        <button class="btn btn-primary" onclick="abrirModal('modal-bitacora')">+ Nueva nota</button>
+      </div>
+      <div class="bit-list" id="bit-list"><div class="loading">Cargando bitácora...</div></div>
+    </div>
   </div>
 </div>
 
@@ -239,11 +235,7 @@
   <div class="form-grid">
     <div class="fg"><label>No. de expediente</label><input type="text" id="f-exp" placeholder="EXP-2026-001"></div>
     <div class="fg"><label>Tipo de siniestro</label>
-      <select id="f-tipo">
-        <option>Incendio</option><option>Robo</option><option>Daños por agua</option>
-        <option>Terremoto</option><option>Interrupción de negocios</option>
-        <option>Catastrófico</option><option>Construcción</option><option>Energía</option><option>Otro</option>
-      </select>
+      <select id="f-tipo"><option>Incendio</option><option>Robo</option><option>Daños por agua</option><option>Terremoto</option><option>Interrupción de negocios</option><option>Catastrófico</option><option>Construcción</option><option>Energía</option><option>Otro</option></select>
     </div>
     <div class="fg full"><label>Asegurado</label><input type="text" id="f-asegurado" placeholder="Nombre o razón social"></div>
     <div class="fg"><label>Aseguradora</label><input type="text" id="f-aseguradora"></div>
@@ -252,11 +244,7 @@
       <select id="f-moneda"><option value="MXN">MXN — Peso mexicano</option><option value="USD">USD — Dólar americano</option></select>
     </div>
     <div class="fg"><label>Estatus</label>
-      <select id="f-estatus">
-        <option value="asignado">Asignado</option><option value="inspeccion">En inspección</option>
-        <option value="informe">Elaborando informe</option><option value="cobro">Pendiente de cobro</option>
-        <option value="cerrado">Cerrado</option>
-      </select>
+      <select id="f-estatus"><option value="asignado">Asignado</option><option value="inspeccion">En inspección</option><option value="informe">Elaborando informe</option><option value="cobro">Pendiente de cobro</option><option value="cerrado">Cerrado</option></select>
     </div>
     <div class="fg"><label>Monto reclamado</label><input type="number" id="f-reclamado" placeholder="0.00"></div>
     <div class="fg"><label>Reserva estimada</label><input type="number" id="f-reserva" placeholder="0.00"></div>
@@ -282,10 +270,7 @@
     <div class="fg full"><label>Expediente</label><select id="i-caso"></select></div>
     <div class="fg"><label>No. de informe</label><input type="text" id="i-num" placeholder="INF-001"></div>
     <div class="fg"><label>Tipo de informe</label>
-      <select id="i-tipo">
-        <option>Informe preliminar</option><option>Informe de actualización</option>
-        <option>Informe de inspección</option><option>Informe final</option><option>Informe complementario</option>
-      </select>
+      <select id="i-tipo"><option>Informe preliminar</option><option>Informe de actualización</option><option>Informe de inspección</option><option>Informe final</option><option>Informe complementario</option></select>
     </div>
     <div class="fg full"><label>Destinatario</label><input type="text" id="i-dest" placeholder="Nombre, cargo, aseguradora"></div>
     <div class="fg"><label>Fecha</label><input type="date" id="i-fecha"></div>
@@ -324,6 +309,8 @@ const SUPA_URL = 'https://lxtieqaldwcntxaqklww.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx4dGllcWFsZHdjbnR4YXFrbHd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0NTk3NjcsImV4cCI6MjA4OTAzNTc2N30.-OvmJm4j70xWq-kz8X1OIoYsEh7KvCIQGqAjiLGaz-g';
 const db = supabase.createClient(SUPA_URL, SUPA_KEY);
 
+const ALLOWED = ['jchavez@aasa.com.mx', 'emalagon@aasa.com.mx'];
+
 const EST = {
   asignado:{label:'Asignado',cls:'s-asignado'},
   inspeccion:{label:'En inspección',cls:'s-inspeccion'},
@@ -345,14 +332,56 @@ function fmt(n, mon) {
   if (n === null || n === undefined) return '—';
   return Number(n).toLocaleString('es-MX', {style:'currency', currency: mon||'MXN', maximumFractionDigits:0});
 }
-function fmtDate(d) { if (!d) return '—'; const [y,m,day]=d.split('-'); return `${day}/${m}/${y}`; }
-
+function fmtDate(d) { if (!d) return '—'; const [y,m,day] = d.split('-'); return `${day}/${m}/${y}`; }
 function toast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2500);
+  setTimeout(() => t.classList.remove('show'), 2800);
 }
 
+/* ── AUTH ── */
+async function doLogin() {
+  const email = document.getElementById('l-email').value.trim().toLowerCase();
+  const pass  = document.getElementById('l-pass').value;
+  const errEl = document.getElementById('login-error');
+  const btn   = document.getElementById('login-btn');
+
+  errEl.textContent = '';
+  if (!ALLOWED.includes(email)) {
+    errEl.textContent = 'Acceso no autorizado para este correo.';
+    return;
+  }
+  btn.textContent = 'Verificando...';
+  btn.disabled = true;
+
+  const { data, error } = await db.auth.signInWithPassword({ email, password: pass });
+
+  btn.textContent = 'Ingresar';
+  btn.disabled = false;
+
+  if (error) {
+    errEl.textContent = 'Correo o contraseña incorrectos.';
+    return;
+  }
+  mostrarApp(data.user.email);
+}
+
+async function doLogout() {
+  await db.auth.signOut();
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-wrap').style.display = 'flex';
+  document.getElementById('l-pass').value = '';
+  document.getElementById('login-error').textContent = '';
+}
+
+function mostrarApp(email) {
+  document.getElementById('login-wrap').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('user-email').textContent = email;
+  loadAll();
+}
+
+/* ── DATA ── */
 async function loadAll() {
   const [c, i, p, b] = await Promise.all([
     db.from('casos').select('*').order('id', {ascending: false}),
@@ -360,9 +389,9 @@ async function loadAll() {
     db.from('pagos').select('*'),
     db.from('bitacora').select('*').order('id', {ascending: false}),
   ]);
-  casos = c.data || [];
+  casos    = c.data || [];
   informes = i.data || [];
-  pagos = p.data || [];
+  pagos    = p.data || [];
   bitacora = b.data || [];
   renderAll();
   poblarSelectores();
@@ -376,20 +405,18 @@ function poblarSelectores() {
     sel.innerHTML = '<option value="">Todos los casos</option>' + opts;
     if (cur) sel.value = cur;
   });
-  ['i-caso','b-caso'].forEach(id => {
-    document.getElementById(id).innerHTML = opts;
-  });
+  ['i-caso','b-caso'].forEach(id => { document.getElementById(id).innerHTML = opts; });
 }
 
 function renderMetrics() {
-  const activos = casos.filter(c => c.estatus !== 'cerrado').length;
+  const activos  = casos.filter(c => c.estatus !== 'cerrado').length;
   const totalRec = casos.reduce((a,c) => a + toMXN(Number(c.reclamado)||0, c.moneda), 0);
   const totalHon = casos.reduce((a,c) => a + toMXN(Number(c.honorarios)||0, c.moneda), 0);
-  const pendHon = pagos.filter(p => p.pagado < p.monto).reduce((a,p) => a + toMXN((p.monto - p.pagado), p.moneda), 0);
-  document.getElementById('m-activos').textContent = activos + ' de ' + casos.length;
-  document.getElementById('m-reclamado').textContent = fmt(Math.round(totalRec), 'MXN');
+  const pendHon  = pagos.filter(p => p.pagado < p.monto).reduce((a,p) => a + toMXN((p.monto - p.pagado), p.moneda), 0);
+  document.getElementById('m-activos').textContent   = activos + ' de ' + casos.length;
+  document.getElementById('m-reclamado').textContent  = fmt(Math.round(totalRec), 'MXN');
   document.getElementById('m-honorarios').textContent = fmt(Math.round(totalHon), 'MXN');
-  document.getElementById('m-cobrar').textContent = fmt(Math.round(pendHon), 'MXN');
+  document.getElementById('m-cobrar').textContent     = fmt(Math.round(pendHon), 'MXN');
 }
 
 function renderTabla() {
@@ -556,7 +583,7 @@ async function guardarCaso() {
     toast('Caso actualizado.');
   } else {
     const { data: nuevo } = await db.from('casos').insert(data).select().single();
-    if (nuevo) await db.from('pagos').insert({ caso_id: nuevo.id, moneda: data.moneda, monto: data.honorarios, pagado: 0 });
+    if (nuevo) await db.from('pagos').insert({caso_id: nuevo.id, moneda: data.moneda, monto: data.honorarios, pagado: 0});
     toast('Caso registrado.');
   }
   cerrarModal('modal-caso');
@@ -564,7 +591,7 @@ async function guardarCaso() {
 }
 
 async function eliminarCaso(id) {
-  if (!confirm('¿Eliminar este caso? Se eliminará toda la información asociada.')) return;
+  if (!confirm('¿Eliminar este caso y toda su información asociada?')) return;
   await db.from('casos').delete().eq('id', id);
   toast('Caso eliminado.');
   await loadAll();
@@ -572,7 +599,7 @@ async function eliminarCaso(id) {
 
 async function guardarInforme() {
   const casoId = parseInt(document.getElementById('i-caso').value);
-  const data = {
+  await db.from('informes').insert({
     caso_id: casoId,
     num: document.getElementById('i-num').value,
     tipo: document.getElementById('i-tipo').value,
@@ -580,8 +607,7 @@ async function guardarInforme() {
     fecha: document.getElementById('i-fecha').value || null,
     estatus: document.getElementById('i-estatus').value,
     resumen: document.getElementById('i-resumen').value,
-  };
-  await db.from('informes').insert(data);
+  });
   toast('Informe registrado.');
   cerrarModal('modal-informe');
   await loadAll();
@@ -599,12 +625,11 @@ async function eliminarInforme(id) {
 async function guardarNota() {
   const nota = document.getElementById('b-nota').value;
   if (!nota.trim()) return;
-  const data = {
+  await db.from('bitacora').insert({
     caso_id: parseInt(document.getElementById('b-caso').value),
     fecha: document.getElementById('b-fecha').value || new Date().toISOString().slice(0,10),
     nota,
-  };
-  await db.from('bitacora').insert(data);
+  });
   toast('Nota registrada.');
   cerrarModal('modal-bitacora');
   await loadAll();
@@ -612,19 +637,24 @@ async function guardarNota() {
 }
 
 async function registrarPago(pagoId) {
-  const inp = document.getElementById('pago-' + pagoId);
-  const monto = parseFloat(inp.value);
+  const monto = parseFloat(document.getElementById('pago-' + pagoId).value);
   if (!monto || monto <= 0) return;
   const pago = pagos.find(p => p.id === pagoId);
   if (!pago) return;
   const nuevoPagado = Math.min((pago.pagado || 0) + monto, pago.monto);
-  await db.from('pagos').update({ pagado: nuevoPagado, fecha_pago: new Date().toISOString().slice(0,10) }).eq('id', pagoId);
+  await db.from('pagos').update({pagado: nuevoPagado, fecha_pago: new Date().toISOString().slice(0,10)}).eq('id', pagoId);
   toast('Pago registrado.');
   await loadAll();
   renderHonorarios();
 }
 
-loadAll();
+/* ── INIT: verificar sesión existente ── */
+(async () => {
+  const { data: { session } } = await db.auth.getSession();
+  if (session && ALLOWED.includes(session.user.email)) {
+    mostrarApp(session.user.email);
+  }
+})();
 </script>
 </body>
 </html>
