@@ -1103,7 +1103,35 @@ function abrirModal(id){
     const fids={'modal-res':'res-fecha','modal-pago':'pg-fecha','modal-viat':'vt-fecha','modal-act':'ac-fecha','modal-doc':'dc-fecha'};
     if(fids[id]) g(fids[id]).value=today;
   }
-  if(id==='modal-sin') g('s-fasig').value=today;
+  if(id==='modal-sin'){
+    g('sin-modal-title').textContent='Nuevo expediente';
+    g('s-id').value='';
+    ['s-exp','s-numsin','s-tipo','s-causa','s-desc','s-notas','s-tramite-gnp','s-ot','s-finsp','s-finf','s-fsin'].forEach(f=>g(f).value='');
+    g('s-fasig').value=today;
+    g('s-est').value='asignado';
+    g('campo-gnp').style.display='none';
+    g('campo-atlas').style.display='none';
+  }
+  if(id==='modal-aseg'){
+    g('ae-id').value='';
+    ['ae-clave','ae-nombre','ae-tel','ae-email','ae-notas'].forEach(f=>g(f).value='');
+    g('ae-codigo').value='';
+  }
+  if(id==='modal-asdo'){
+    g('ad-id').value='';
+    ['ad-nombre','ad-rfc','ad-tel','ad-email','ad-dir'].forEach(f=>g(f).value='');
+    g('ad-tipo').value='moral';
+  }
+  if(id==='modal-cont'){
+    ['co-nombre','co-cargo','co-tel','co-email'].forEach(f=>g(f).value='');
+    g('co-aseg').value=''; g('co-asdo').value='';
+  }
+  if(id==='modal-pol'){
+    g('pol-modal-title').textContent='Nueva póliza';
+    g('p-id').value='';
+    ['p-num','p-vini','p-vfin','p-notas'].forEach(f=>g(f).value='');
+    g('p-suma').value=''; g('p-mon').value='MXN'; g('p-tc').value='1';
+  }
   if(id==='modal-tc')  g('tc-fecha').value=today;
   if(id==='modal-hon') g('ho-fpacto').value=today;
   if(id==='modal-bit'){
