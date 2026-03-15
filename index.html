@@ -322,6 +322,8 @@ td { padding:9px 10px; vertical-align:middle; }
           <button class="tab-btn active" onclick="switchCat('aseg',this)">Aseguradoras</button>
           <button class="tab-btn" onclick="switchCat('asdo',this)">Asegurados</button>
           <button class="tab-btn" onclick="switchCat('cont',this)">Contactos</button>
+          <button class="tab-btn" onclick="switchCat('ajust',this)">Ajustadores</button>
+          <button class="tab-btn" onclick="switchCat('ofic',this)">Oficinas</button>
           <button class="tab-btn" onclick="switchCat('tc',this)">Tipos de cambio</button>
         </div>
         <div id="cat-aseg">
@@ -353,6 +355,24 @@ td { padding:9px 10px; vertical-align:middle; }
           </div>
           <div class="tbl-wrap"><table><thead><tr><th>Moneda</th><th>Tasa MXN</th><th>Fecha</th><th>Fuente</th><th></th></tr></thead>
           <tbody id="tc-body"></tbody></table></div>
+        </div>
+        <div id="cat-ajust" style="display:none;">
+          <div class="toolbar">
+            <button class="btn btn-primary" onclick="abrirModal('modal-ajust')">+ Nuevo ajustador</button>
+          </div>
+          <div class="tbl-wrap"><table><thead><tr>
+            <th>Nombre</th><th>Iniciales</th><th>CNSF</th><th>Correo</th><th>Teléfono</th><th>Oficina</th><th></th>
+          </tr></thead>
+          <tbody id="ajust-body"></tbody></table></div>
+        </div>
+        <div id="cat-ofic" style="display:none;">
+          <div class="toolbar">
+            <button class="btn btn-primary" onclick="abrirModal('modal-ofic')">+ Nueva oficina</button>
+          </div>
+          <div class="tbl-wrap"><table><thead><tr>
+            <th>Nombre</th><th>Ciudad</th><th>Estado</th><th>Teléfono</th><th></th>
+          </tr></thead>
+          <tbody id="ofic-body"></tbody></table></div>
         </div>
       </div>
 
@@ -423,22 +443,38 @@ td { padding:9px 10px; vertical-align:middle; }
       <label>Compañía aseguradora</label>
       <select id="s-aseg-direct" onchange="actualizarCamposAseg()"><option value="">— Selecciona la compañía —</option></select>
     </div>
-    <div class="fg full" id="campo-gnp" style="display:none;">
-      <label style="color:#ffcc80;">&#9654; Trámite GNP</label>
-      <input type="text" id="s-tramite-gnp" placeholder="Número de trámite GNP">
-    </div>
-    <div class="fg full" id="campo-atlas" style="display:none;">
-      <label style="color:#90caf9;">&#9654; OT (Orden de Trabajo)</label>
-      <input type="text" id="s-ot" placeholder="Número de OT Seguros Atlas">
-    </div>
     <div class="fg"><label>Póliza</label><select id="s-poliza"></select></div>
-    <div class="fg"><label>Referencia ajustadora</label><input type="text" id="s-ref-ajust" placeholder="ej. GNPJCA010970226"></div>
+    <div class="fg"><label>Referencia ajustadora</label><input type="text" id="s-ref-ajust" placeholder="ej. ATLJCA010740624"></div>
     <div class="fg"><label>Clave ajustador (compañía)</label><input type="text" id="s-clave-ajust"></div>
     <div class="fg"><label>Referencia asegurado</label><input type="text" id="s-ref-aseg"></div>
-    <div class="fg full"><label>Giro del asegurado</label><input type="text" id="s-giro" placeholder="ej. Fabricación de estructuras metálicas"></div>
+    <div class="fg full"><label>Giro del asegurado</label><input type="text" id="s-giro" placeholder="ej. Ingenio azucarero"></div>
   </div>
 
-  <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin:12px 0 8px;">Siniestro</div>
+  <!-- SECCIÓN GNP — visible solo cuando aseguradora.codigo_sistema = 'GNP' -->
+  <div id="seccion-gnp" style="display:none;">
+    <div style="font-size:10px;font-weight:700;color:#ffcc80;text-transform:uppercase;letter-spacing:.07em;margin:12px 0 6px;padding:6px 10px;background:rgba(255,204,128,.08);border-left:3px solid #ffcc80;border-radius:0 4px 4px 0;">GNP — Campos específicos</div>
+    <div class="form-grid">
+      <div class="fg"><label>Número de trámite GNP</label><input type="text" id="s-tramite-gnp" placeholder="ej. SD00115817"></div>
+      <div class="fg"><label>Clave ajustador GNP</label><input type="text" id="s-gnp-clave-ajust" placeholder="Clave asignada por GNP"></div>
+      <div class="fg"><label>Jefe de Depto. GNP</label><input type="text" id="s-gnp-jefe" placeholder="Nombre del jefe de departamento"></div>
+      <div class="fg"><label>Oficina GNP</label><input type="text" id="s-gnp-oficina" placeholder="ej. Veracruz, Insurgentes"></div>
+    </div>
+  </div>
+
+  <!-- SECCIÓN ATLAS — visible solo cuando aseguradora.codigo_sistema = 'ATLAS' -->
+  <div id="seccion-atlas" style="display:none;">
+    <div style="font-size:10px;font-weight:700;color:#90caf9;text-transform:uppercase;letter-spacing:.07em;margin:12px 0 6px;padding:6px 10px;background:rgba(144,202,249,.08);border-left:3px solid #90caf9;border-radius:0 4px 4px 0;">Atlas — Campos específicos</div>
+    <div class="form-grid">
+      <div class="fg"><label>OT Atlas</label><input type="text" id="s-ot" placeholder="ej. 3296-2024"></div>
+      <div class="fg"><label>Póliza Atlas</label><input type="text" id="s-atlas-poliza" placeholder="ej. D00-2-71-8000-0-1"></div>
+      <div class="fg"><label>Siniestro GNP (coaseguro)</label><input type="text" id="s-atlas-sin-gnp" placeholder="No. siniestro en GNP si es coaseguro"></div>
+      <div class="fg"><label>Póliza GNP (coaseguro)</label><input type="text" id="s-atlas-pol-gnp" placeholder="No. póliza GNP si es coaseguro"></div>
+    </div>
+  </div>
+
+  <!-- SECCIÓN INSTITUCIONAL — siempre visible para todas las compañías -->
+  <div id="seccion-institucional">
+    <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin:12px 0 8px;">Siniestro</div>
   <div class="form-grid">
     <div class="fg"><label>Tipo de siniestro</label><input type="text" id="s-tipo" placeholder="Incendio, robo, etc."></div>
     <div class="fg"><label>Subramo</label><input type="text" id="s-subramo" placeholder="ej. Rotura de Maquinaria"></div>
@@ -520,8 +556,10 @@ td { padding:9px 10px; vertical-align:middle; }
     <div class="fg full"><label>Actividades a realizar (XII)</label><textarea id="s-actividades-realizar" style="min-height:60px;" placeholder="Acciones pendientes, documentos en espera, consultores por contratar..."></textarea></div>
     <div class="fg full"><label>Comentarios (XIII)</label><textarea id="s-comentarios" style="min-height:60px;" placeholder="Observaciones finales del informe..."></textarea></div>
   </div>
+  </div><!-- /seccion-institucional -->
 
   <div class="modal-footer">
+    <div id="s-modo-captura-lbl" style="font-size:11px;color:var(--text-ter);align-self:center;"></div>
     <button class="btn" onclick="cerrarModal('modal-sin')">Cancelar</button>
     <button class="btn btn-primary" onclick="guardarSiniestro()">Guardar</button>
   </div>
@@ -926,6 +964,67 @@ td { padding:9px 10px; vertical-align:middle; }
   </div>
 </div></div>
 
+<!-- Ajustador -->
+<div class="overlay" id="modal-ajust">
+<div class="modal modal-sm">
+  <div class="modal-title" id="ajust-modal-title">Nuevo ajustador</div>
+  <input type="hidden" id="aj-id">
+  <div class="form-grid">
+    <div class="fg full"><label>Nombre completo</label><input type="text" id="aj-nombre" placeholder="Ej. Javier Chávez Á."></div>
+    <div class="fg"><label>Iniciales</label><input type="text" id="aj-iniciales" placeholder="JChA" style="text-transform:uppercase;"></div>
+    <div class="fg"><label>Cédula CNSF</label><input type="text" id="aj-cnsf" placeholder="C34388"></div>
+    <div class="fg"><label>Correo</label><input type="email" id="aj-correo"></div>
+    <div class="fg"><label>Teléfono</label><input type="text" id="aj-tel"></div>
+    <div class="fg"><label>Oficina</label>
+      <select id="aj-oficina"><option value="">— Sin asignar —</option></select></div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn" onclick="cerrarModal('modal-ajust')">Cancelar</button>
+    <button class="btn btn-primary" onclick="guardarAjustador()">Guardar</button>
+  </div>
+</div></div>
+
+<!-- Oficina -->
+<div class="overlay" id="modal-ofic">
+<div class="modal modal-sm">
+  <div class="modal-title" id="ofic-modal-title">Nueva oficina</div>
+  <input type="hidden" id="of-id">
+  <div class="form-grid">
+    <div class="fg"><label>Nombre</label><input type="text" id="of-nombre" placeholder="Ej. Monterrey"></div>
+    <div class="fg"><label>Ciudad</label><input type="text" id="of-ciudad"></div>
+    <div class="fg"><label>Estado</label><input type="text" id="of-estado"></div>
+    <div class="fg"><label>Teléfono</label><input type="text" id="of-tel"></div>
+    <div class="fg full"><label>Dirección</label><input type="text" id="of-dir"></div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn" onclick="cerrarModal('modal-ofic')">Cancelar</button>
+    <button class="btn btn-primary" onclick="guardarOficina()">Guardar</button>
+  </div>
+</div></div>
+
+<!-- Asignar ajustador a expediente -->
+<div class="overlay" id="modal-sin-ajust">
+<div class="modal modal-sm">
+  <div class="modal-title">Asignar ajustador al expediente</div>
+  <div class="form-grid">
+    <div class="fg full"><label>Ajustador</label>
+      <select id="sa-ajust"><option value="">— Selecciona —</option></select></div>
+    <div class="fg"><label>Rol</label>
+      <select id="sa-rol">
+        <option value="responsable">Responsable</option>
+        <option value="apoyo">Apoyo</option>
+        <option value="supervisor">Supervisor</option>
+        <option value="perito">Perito</option>
+      </select></div>
+    <div class="fg"><label>Fecha asignación</label><input type="date" id="sa-fecha"></div>
+    <div class="fg full"><label>Notas</label><input type="text" id="sa-notas" placeholder="Observaciones sobre la asignación"></div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn" onclick="cerrarModal('modal-sin-ajust')">Cancelar</button>
+    <button class="btn btn-primary" onclick="guardarSinAjust()">Asignar</button>
+  </div>
+</div></div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -950,7 +1049,7 @@ const RAMOS = {
 const MON_CLS = {MXN:'b-mxn', USD:'b-usd', EUR:'b-eur'};
 const HON_EST = {pactado:'b-pactado', parcial:'b-parcial', pagado:'b-pagado'};
 
-let data = { sin:[], pol:[], aseg:[], asdo:[], cont:[], res:[], pag:[], hon:[], viat:[], act:[], doc:[], tc:[], bit:[], inf:[], sublim:[], coas:[] };
+let data = { sin:[], pol:[], aseg:[], asdo:[], cont:[], res:[], pag:[], hon:[], viat:[], act:[], doc:[], tc:[], bit:[], inf:[], sublim:[], coas:[], ajust:[], ofic:[], sinajust:[] };
 let currentSin = null;
 let logoDataUrl = null;
 
@@ -982,7 +1081,7 @@ function mostrarApp(email){ g('login-wrap').style.display='none'; g('app').style
 
 /* ── DATA LOAD ── */
 async function loadAll(){
-  const [sin,pol,aseg,asdo,cont,res,pag,hon,viat,act,doc,tc,bit,inf,sublim,coas] = await Promise.all([
+  const [sin,pol,aseg,asdo,cont,res,pag,hon,viat,act,doc,tc,bit,inf,sublim,coas,ajust,ofic,sinajust] = await Promise.all([
     db.from('siniestros').select('*').order('id',{ascending:false}),
     db.from('polizas').select('*').order('id',{ascending:false}),
     db.from('aseguradoras').select('*').order('nombre'),
@@ -999,31 +1098,40 @@ async function loadAll(){
     db.from('informes').select('*').order('fecha_envio',{ascending:false}),
     db.from('sublimites').select('*').order('id'),
     db.from('coaseguradoras').select('*').order('porcentaje',{ascending:false}),
+    db.from('ajustadores').select('*,id_oficina(nombre,ciudad)').order('nombre'),
+    db.from('oficinas').select('*').order('nombre'),
+    db.from('siniestro_ajustadores').select('*').order('id'),
   ]);
-  data.sin   = sin.data||[];   data.pol    = pol.data||[];
-  data.aseg  = aseg.data||[];  data.asdo   = asdo.data||[];
-  data.cont  = cont.data||[];  data.res    = res.data||[];
-  data.pag   = pag.data||[];   data.hon    = hon.data||[];
-  data.viat  = viat.data||[];  data.act    = act.data||[];
-  data.doc   = doc.data||[];   data.tc     = tc.data||[];
-  data.bit   = bit.data||[];   data.inf    = inf.data||[];
-  data.sublim= sublim.data||[];data.coas   = coas.data||[];
+  data.sin    = sin.data||[];    data.pol     = pol.data||[];
+  data.aseg   = aseg.data||[];   data.asdo    = asdo.data||[];
+  data.cont   = cont.data||[];   data.res     = res.data||[];
+  data.pag    = pag.data||[];    data.hon     = hon.data||[];
+  data.viat   = viat.data||[];   data.act     = act.data||[];
+  data.doc    = doc.data||[];    data.tc      = tc.data||[];
+  data.bit    = bit.data||[];    data.inf     = inf.data||[];
+  data.sublim = sublim.data||[]; data.coas    = coas.data||[];
+  data.ajust  = ajust.data||[];  data.ofic    = ofic.data||[];
+  data.sinajust= sinajust.data||[];
   renderAll();
 }
 
-function renderAll(){ renderDash(); renderAlertas(); renderSiniestros(); renderPolizas(); renderAseguradoras(); renderAsegurados(); renderContactos(); renderTC(); poblarSelectores(); }
+function renderAll(){ renderDash(); renderAlertas(); renderSiniestros(); renderPolizas(); renderAseguradoras(); renderAsegurados(); renderContactos(); renderTC(); renderAjustadores(); poblarSelectores(); }
 
 /* ── SELECTORES ── */
 function poblarSelectores(){
   const aOpts = data.aseg.map(a=>`<option value="${a.id}" data-cod="${a.codigo_sistema||''}">${a.nombre}</option>`).join('');
   const dOpts = data.asdo.map(a=>`<option value="${a.id}">${a.nombre}</option>`).join('');
   const pOpts = data.pol.map(p=>`<option value="${p.id}">${p.numero}</option>`).join('');
+  const ajOpts = data.ajust.map(a=>`<option value="${a.id}">${a.nombre}${a.iniciales?' ('+a.iniciales+')':''}</option>`).join('');
+  const ofOpts = data.ofic.map(o=>`<option value="${o.id}">${o.nombre} — ${o.ciudad||''}</option>`).join('');
   g('p-aseg').innerHTML=aOpts; g('p-asdo').innerHTML=dOpts;
   g('co-aseg').innerHTML='<option value="">—</option>'+aOpts;
   g('co-asdo').innerHTML='<option value="">—</option>'+dOpts;
   g('s-poliza').innerHTML='<option value="">— Sin póliza aún —</option>'+pOpts;
   g('s-aseg-direct').innerHTML='<option value="">— Selecciona la compañía —</option>'+aOpts;
   g('r-caso').innerHTML='<option value="">— Selecciona —</option>'+data.sin.map(s=>`<option value="${s.id}">${s.numero_exp}</option>`).join('');
+  if(g('aj-oficina')) g('aj-oficina').innerHTML='<option value="">— Sin asignar —</option>'+ofOpts;
+  if(g('sa-ajust'))   g('sa-ajust').innerHTML='<option value="">— Selecciona —</option>'+ajOpts;
 }
 
 /* ── DASHBOARD ── */
@@ -1232,8 +1340,23 @@ function renderDetalle(){
       <div class="exp-title">${s.numero_exp}</div>
       <div class="exp-sub">${asdo.nombre||'—'} &mdash; ${aseg.nombre||'—'} &mdash; ${s.tipo_siniestro||'—'}</div>
       ${s.numero_siniestro?`<div style="font-size:11px;color:var(--text-sec);margin-top:3px;">No. siniestro: <strong style="color:var(--text)">${s.numero_siniestro}</strong></div>`:''}
-      ${s.tramite_gnp?`<div style="font-size:11px;margin-top:2px;">Trámite GNP: <strong style="color:#ffcc80;">${s.tramite_gnp}</strong></div>`:''}
-      ${s.ot?`<div style="font-size:11px;margin-top:2px;">OT Atlas: <strong style="color:#90caf9;">${s.ot}</strong></div>`:''}
+      ${s.tramite_gnp?`<div style="font-size:11px;margin-top:2px;">Trámite GNP: <strong style="color:#ffcc80;">${s.tramite_gnp}</strong>${s.gnp_jefe_depto?' &nbsp;·&nbsp; Jefe Depto: <span style="color:var(--text-sec)">'+s.gnp_jefe_depto+'</span>':''}</div>`:''}
+      ${s.ot?`<div style="font-size:11px;margin-top:2px;">OT Atlas: <strong style="color:#90caf9;">${s.ot}</strong>${s.atlas_poliza_coaseg?' &nbsp;·&nbsp; Póliza Atlas: <span style="color:var(--text-sec)">'+s.atlas_poliza_coaseg+'</span>':''}</div>`:''}
+      ${(()=>{
+        const sinAjusts=data.sinajust.filter(a=>a.id_siniestro===s.id);
+        if(!sinAjusts.length) return '';
+        const tags=sinAjusts.map(a=>{
+          const aj=data.ajust.find(x=>x.id===a.id_ajustador)||{};
+          const ROLES={responsable:'Resp.',apoyo:'Apoyo',supervisor:'Sup.',perito:'Perito'};
+          return `<span style="display:inline-flex;align-items:center;gap:4px;background:var(--surface2);border:1px solid var(--border-md);border-radius:6px;padding:2px 8px;font-size:11px;">
+            <strong style="color:var(--accent-lt);">${aj.iniciales||aj.nombre||'?'}</strong>
+            <span style="color:var(--text-ter);">${ROLES[a.rol]||a.rol}</span>
+          </span>`;
+        }).join('');
+        return `<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px;align-items:center;">
+          <span style="font-size:11px;color:var(--text-ter);margin-right:2px;">Ajustadores:</span>${tags}
+        </div>`;
+      })()}
       <div style="margin-top:6px;"><span class="badge ${EST[s.estatus]?.cls||''}">${EST[s.estatus]?.label||s.estatus}</span></div>
     </div>
     <div style="display:flex;gap:8px;">
@@ -1255,6 +1378,7 @@ function renderDetalle(){
     <button class="tab-btn" onclick="switchTab2('t-bit',this)">Bitácora</button>
     <button class="tab-btn" onclick="switchTab2('t-inf',this)">Informes</button>
     <button class="tab-btn" onclick="switchTab2('t-coas',this)">Coaseguro</button>
+    <button class="tab-btn" onclick="switchTab2('t-ajust-sin',this)">Ajustadores</button>
     <button class="tab-btn" onclick="switchTab2('t-doc',this)">Documentos</button>
   </div>
 
@@ -1302,6 +1426,13 @@ function renderDetalle(){
     <div class="toolbar"><button class="btn btn-primary" onclick="abrirModal('modal-doc')">+ Nuevo documento</button></div>
     <div class="tbl-wrap"><table><thead><tr><th>Tipo</th><th>Versión</th><th>Archivo</th><th>Fecha</th><th></th></tr></thead>
     <tbody>${renderSubTable(data.doc.filter(d=>d.id_siniestro===s.id),'doc',['tipo','numero_version','nombre_archivo','fecha'])}</tbody></table></div>
+  </div>
+  <div id="t-ajust-sin" class="tab-pane">
+    <div class="toolbar"><button class="btn btn-primary" onclick="abrirModal('modal-sin-ajust')">+ Asignar ajustador</button></div>
+    <div class="tbl-wrap"><table><thead><tr>
+      <th>Ajustador</th><th>Iniciales</th><th>Rol</th><th>Oficina</th><th>Correo</th><th>Teléfono</th><th>Fecha asignación</th><th></th>
+    </tr></thead>
+    <tbody>${renderSinAjustRows(data.sinajust.filter(a=>a.id_siniestro===s.id))}</tbody></table></div>
   </div>`;
 }
 
@@ -1358,7 +1489,23 @@ function renderReservaRows(rows){
     </tr>`;}).join('');
 }
 
-function renderCoasRows(rows){
+function renderSinAjustRows(rows){
+  if(!rows.length) return `<tr><td colspan="8" class="empty">Sin ajustadores asignados.</td></tr>`;
+  const ROLES={responsable:'Responsable',apoyo:'Apoyo',supervisor:'Supervisor',perito:'Perito'};
+  return rows.map(r=>{
+    const aj=data.ajust.find(a=>a.id===r.id_ajustador)||{};
+    const ofic=aj.id_oficina?.nombre||data.ofic.find(o=>o.id===aj.id_oficina)?.nombre||'—';
+    return `<tr>
+      <td><strong>${aj.nombre||'—'}</strong></td>
+      <td><span class="badge b-informe">${aj.iniciales||'—'}</span></td>
+      <td>${ROLES[r.rol]||r.rol||'—'}</td>
+      <td>${ofic}</td>
+      <td style="font-size:11px;">${aj.correo||'—'}</td>
+      <td style="font-size:11px;">${aj.telefono||'—'}</td>
+      <td>${fmtD(r.fecha_asignacion)}</td>
+      <td><button class="btn btn-sm btn-danger" onclick="eliminar('siniestro_ajustadores',${r.id})">Quitar</button></td>
+    </tr>`;}).join('');
+}
   if(!rows.length) return `<tr><td colspan="6" class="empty">Sin coaseguradoras registradas.</td></tr>`;
   return rows.map(r=>`<tr>
     <td><strong>${r.nombre||'—'}</strong></td>
@@ -1391,20 +1538,31 @@ function toggleRamoOtro(){
   g('ramo-otro-wrap').style.display = v('p-ramo')==='__otro__' ? 'block' : 'none';
 }
 
-/* ── CAMPO CONDICIONAL GNP / ATLAS ── */
+/* ── SECCIONES DINÁMICAS GNP / ATLAS / INSTITUCIONAL ── */
 function actualizarCamposAseg(){
   const sel = g('s-aseg-direct');
   const asegId = parseInt(sel.value);
   const aseg = data.aseg.find(a=>a.id===asegId)||{};
   const cod = (aseg.codigo_sistema||'').toUpperCase();
-  g('campo-gnp').style.display   = cod==='GNP'  ? 'block' : 'none';
-  g('campo-atlas').style.display = cod==='ATLAS' ? 'block' : 'none';
-  if(cod!=='GNP')   g('s-tramite-gnp').value='';
-  if(cod!=='ATLAS') g('s-ot').value='';
+
+  // Mostrar/ocultar secciones específicas
+  g('seccion-gnp').style.display   = cod==='GNP'   ? 'block' : 'none';
+  g('seccion-atlas').style.display = cod==='ATLAS'  ? 'block' : 'none';
+
+  // Limpiar campos de la sección oculta
+  if(cod!=='GNP'){ ['s-tramite-gnp','s-gnp-clave-ajust','s-gnp-jefe','s-gnp-oficina'].forEach(f=>{ if(g(f)) g(f).value=''; }); }
+  if(cod!=='ATLAS'){ ['s-ot','s-atlas-poliza','s-atlas-sin-gnp','s-atlas-pol-gnp'].forEach(f=>{ if(g(f)) g(f).value=''; }); }
+
+  // Etiqueta de modo en el footer del modal
+  const lbl=g('s-modo-captura-lbl');
+  if(lbl){
+    const modos={GNP:'Modo: GNP',ATLAS:'Modo: Atlas'};
+    lbl.textContent=modos[cod]||'Modo: Institucional';
+    lbl.style.color=cod==='GNP'?'#ffcc80':cod==='ATLAS'?'#90caf9':'var(--text-ter)';
+  }
+
   // Filtrar pólizas de la aseguradora seleccionada
-  const polFil = asegId
-    ? data.pol.filter(p=>p.id_aseguradora===asegId)
-    : data.pol;
+  const polFil = asegId ? data.pol.filter(p=>p.id_aseguradora===asegId) : data.pol;
   g('s-poliza').innerHTML='<option value="">— Sin póliza aún —</option>'+
     polFil.map(p=>`<option value="${p.id}">${p.numero}</option>`).join('');
 }
@@ -1515,14 +1673,36 @@ function abrirModal(id){
      's-hora-asig','s-f1cont','s-h1cont','s-f1vis','s-h1vis',
      's-insp-persona','s-insp-cargo','s-insp-tel','s-insp-dom','s-bienes',
      's-autoridades-det','s-salv-det','s-salv-valor','s-rec-terceros','s-rec-det',
-     's-coas-det','s-reas-corredor'].forEach(f=>{if(g(f))g(f).value='';});
+     's-coas-det','s-reas-corredor','s-lugar-sin','s-actividades-realizar','s-comentarios',
+     's-gnp-jefe','s-gnp-oficina','s-gnp-clave-ajust',
+     's-atlas-poliza','s-atlas-sin-gnp','s-atlas-pol-gnp'].forEach(f=>{if(g(f))g(f).value='';});
     g('s-fasig').value=today;
     g('s-est').value='asignado';
+    g('s-procedencia').value='procedente';
     g('s-autoridades').value='0'; g('s-salvamento').value='por_determinar';
     g('s-recuperacion').value='0'; g('s-coaseguro').value='0'; g('s-reaseguro').value='0';
     g('s-aseg-direct').value='';
-    g('campo-gnp').style.display='none'; g('campo-atlas').style.display='none';
+    g('seccion-gnp').style.display='none'; g('seccion-atlas').style.display='none';
+    if(g('s-modo-captura-lbl')) g('s-modo-captura-lbl').textContent='Modo: Institucional';
     g('s-poliza').innerHTML='<option value="">— Sin póliza aún —</option>'+data.pol.map(p=>`<option value="${p.id}">${p.numero}</option>`).join('');
+  }
+  if(id==='modal-ajust'){
+    g('ajust-modal-title').textContent='Nuevo ajustador';
+    g('aj-id').value='';
+    ['aj-nombre','aj-iniciales','aj-correo','aj-tel','aj-cnsf'].forEach(f=>{if(g(f))g(f).value='';});
+    if(g('aj-oficina')) g('aj-oficina').value='';
+  }
+  if(id==='modal-ofic'){
+    g('ofic-modal-title').textContent='Nueva oficina';
+    g('of-id').value='';
+    ['of-nombre','of-ciudad','of-estado','of-tel','of-dir'].forEach(f=>{if(g(f))g(f).value='';});
+  }
+  if(id==='modal-sin-ajust'){
+    if(g('sa-ajust')) g('sa-ajust').value='';
+    if(g('sa-rol'))   g('sa-rol').value='responsable';
+    if(g('sa-fecha')) g('sa-fecha').value=today;
+    if(g('sa-notas')) g('sa-notas').value='';
+    poblarSelectores();
   }
   if(id==='modal-aseg'){
     g('ae-id').value='';
@@ -1610,10 +1790,16 @@ async function guardarSiniestro(){
     reaseguro_clausula_control:v('s-reaseguro')==='1', reaseguro_corredor:v('s-reas-corredor')||null,
     estrategias_observaciones:v('s-estrategias')||null,
     tramite_gnp:v('s-tramite-gnp')||null, ot:v('s-ot')||null,
+    gnp_jefe_depto:v('s-gnp-jefe')||null,
+    gnp_oficina:v('s-gnp-oficina')||null,
+    gnp_clave_ajustador:v('s-gnp-clave-ajust')||null,
+    atlas_poliza_coaseg:v('s-atlas-poliza')||null,
+    atlas_sinies_coaseg:v('s-atlas-sin-gnp')||null,
     lugar_siniestro:v('s-lugar-sin')||null,
     procedencia:v('s-procedencia')||'procedente',
     actividades_realizar:v('s-actividades-realizar')||null,
-    comentarios:v('s-comentarios')||null
+    comentarios:v('s-comentarios')||null,
+    modo_captura:(()=>{ const pol=data.pol.find(p=>p.id===parseInt(v('s-poliza')))||{}; const aseg=data.aseg.find(a=>a.id===pol.id_aseguradora)||{}; const c=(aseg.codigo_sistema||'').toUpperCase(); return c==='GNP'?'gnp':c==='ATLAS'?'atlas':'institucional'; })()
   };
   if(id){ await db.from('siniestros').update(d2).eq('id',id); toast('Expediente actualizado.'); }
   else { await db.from('siniestros').insert(d2); toast('Expediente creado.'); }
@@ -1651,12 +1837,28 @@ function editarSiniestro(id){
   g('s-reaseguro').value=s.reaseguro_clausula_control?'1':'0';
   g('s-reas-corredor').value=s.reaseguro_corredor||'';
   g('s-tramite-gnp').value=s.tramite_gnp||''; g('s-ot').value=s.ot||'';
+  if(g('s-gnp-jefe'))       g('s-gnp-jefe').value=s.gnp_jefe_depto||'';
+  if(g('s-gnp-oficina'))    g('s-gnp-oficina').value=s.gnp_oficina||'';
+  if(g('s-gnp-clave-ajust'))g('s-gnp-clave-ajust').value=s.gnp_clave_ajustador||'';
+  if(g('s-atlas-poliza'))   g('s-atlas-poliza').value=s.atlas_poliza_coaseg||'';
+  if(g('s-atlas-sin-gnp'))  g('s-atlas-sin-gnp').value=s.atlas_sinies_coaseg||'';
   g('s-lugar-sin').value=s.lugar_siniestro||'';
   g('s-procedencia').value=s.procedencia||'procedente';
   g('s-actividades-realizar').value=s.actividades_realizar||'';
   g('s-comentarios').value=s.comentarios||'';
   const pol=data.pol.find(p=>p.id===s.id_poliza)||{};
-  if(pol.id_aseguradora){ g('s-aseg-direct').value=pol.id_aseguradora; actualizarCamposAseg(); g('s-tramite-gnp').value=s.tramite_gnp||''; g('s-ot').value=s.ot||''; }
+  if(pol.id_aseguradora){
+    g('s-aseg-direct').value=pol.id_aseguradora;
+    actualizarCamposAseg();
+    // Restore company-specific fields after actualizarCamposAseg
+    if(g('s-tramite-gnp'))    g('s-tramite-gnp').value=s.tramite_gnp||'';
+    if(g('s-gnp-jefe'))       g('s-gnp-jefe').value=s.gnp_jefe_depto||'';
+    if(g('s-gnp-oficina'))    g('s-gnp-oficina').value=s.gnp_oficina||'';
+    if(g('s-gnp-clave-ajust'))g('s-gnp-clave-ajust').value=s.gnp_clave_ajustador||'';
+    if(g('s-ot'))             g('s-ot').value=s.ot||'';
+    if(g('s-atlas-poliza'))   g('s-atlas-poliza').value=s.atlas_poliza_coaseg||'';
+    if(g('s-atlas-sin-gnp'))  g('s-atlas-sin-gnp').value=s.atlas_sinies_coaseg||'';
+  }
   g('s-poliza').value=s.id_poliza||'';
   g('modal-sin').classList.add('open');
 }
@@ -2704,6 +2906,103 @@ async function descargarWord(){
   document.body.removeChild(a); URL.revokeObjectURL(url);
   toast('Archivo Word descargado.');
 }
+
+/* ── AJUSTADORES ── */
+function renderAjustadores(){
+  if(!g('ajust-body')) return;
+  g('ajust-body').innerHTML=data.ajust.map(a=>{
+    const ofNombre=typeof a.id_oficina==='object'?a.id_oficina?.nombre:(data.ofic.find(o=>o.id===a.id_oficina)?.nombre||'—');
+    return `<tr>
+      <td><strong>${a.nombre}</strong></td>
+      <td><span class="badge b-informe">${a.iniciales||'—'}</span></td>
+      <td style="font-size:11px;">${a.cnsf||'—'}</td>
+      <td style="font-size:11px;">${a.correo||'—'}</td>
+      <td style="font-size:11px;">${a.telefono||'—'}</td>
+      <td>${ofNombre}</td>
+      <td><div class="td-acts">
+        <button class="btn btn-sm" onclick="editarAjustador(${a.id})">Editar</button>
+        <button class="btn btn-sm btn-danger" onclick="eliminar('ajustadores',${a.id})">Eliminar</button>
+      </div></td>
+    </tr>`;}).join('')||'<tr><td colspan="7" class="empty">Sin ajustadores.</td></tr>';
+}
+
+function renderOficinas(){
+  if(!g('ofic-body')) return;
+  g('ofic-body').innerHTML=data.ofic.map(o=>`<tr>
+    <td><strong>${o.nombre}</strong></td>
+    <td>${o.ciudad||'—'}</td>
+    <td>${o.estado||'—'}</td>
+    <td>${o.telefono||'—'}</td>
+    <td><div class="td-acts">
+      <button class="btn btn-sm" onclick="editarOficina(${o.id})">Editar</button>
+      <button class="btn btn-sm btn-danger" onclick="eliminar('oficinas',${o.id})">Eliminar</button>
+    </div></td>
+  </tr>`).join('')||'<tr><td colspan="5" class="empty">Sin oficinas.</td></tr>';
+}
+
+async function guardarAjustador(){
+  const id=v('aj-id');
+  const d2={nombre:v('aj-nombre'),iniciales:(v('aj-iniciales')||'').toUpperCase()||null,
+    correo:v('aj-correo')||null,telefono:v('aj-tel')||null,cnsf:v('aj-cnsf')||null,
+    id_oficina:parseInt(v('aj-oficina'))||null};
+  if(id){ await db.from('ajustadores').update(d2).eq('id',id); toast('Ajustador actualizado.'); }
+  else   { await db.from('ajustadores').insert(d2); toast('Ajustador creado.'); }
+  cerrarModal('modal-ajust'); await loadAll();
+}
+
+function editarAjustador(id){
+  const a=data.ajust.find(x=>x.id===id); if(!a) return;
+  g('ajust-modal-title').textContent='Editar ajustador'; g('aj-id').value=a.id;
+  g('aj-nombre').value=a.nombre||''; g('aj-iniciales').value=a.iniciales||'';
+  g('aj-correo').value=a.correo||''; g('aj-tel').value=a.telefono||'';
+  g('aj-cnsf').value=a.cnsf||'';
+  const ofId=typeof a.id_oficina==='object'?a.id_oficina?.id:a.id_oficina;
+  g('aj-oficina').value=ofId||'';
+  g('modal-ajust').classList.add('open');
+}
+
+async function guardarOficina(){
+  const id=v('of-id');
+  const d2={nombre:v('of-nombre'),ciudad:v('of-ciudad')||null,estado:v('of-estado')||null,
+    telefono:v('of-tel')||null,direccion:v('of-dir')||null};
+  if(id){ await db.from('oficinas').update(d2).eq('id',id); toast('Oficina actualizada.'); }
+  else   { await db.from('oficinas').insert(d2); toast('Oficina creada.'); }
+  cerrarModal('modal-ofic'); await loadAll();
+}
+
+function editarOficina(id){
+  const o=data.ofic.find(x=>x.id===id); if(!o) return;
+  g('ofic-modal-title').textContent='Editar oficina'; g('of-id').value=o.id;
+  g('of-nombre').value=o.nombre||''; g('of-ciudad').value=o.ciudad||'';
+  g('of-estado').value=o.estado||''; g('of-tel').value=o.telefono||'';
+  g('of-dir').value=o.direccion||'';
+  g('modal-ofic').classList.add('open');
+}
+
+async function guardarSinAjust(){
+  if(!currentSin){ toast('Selecciona un expediente primero.'); return; }
+  const ajId=parseInt(v('sa-ajust'));
+  if(!ajId){ toast('Selecciona un ajustador.'); return; }
+  const {error}=await db.from('siniestro_ajustadores').insert({
+    id_siniestro:currentSin.id, id_ajustador:ajId,
+    rol:v('sa-rol')||'responsable',
+    fecha_asignacion:v('sa-fecha')||new Date().toISOString().slice(0,10),
+    notas:v('sa-notas')||null
+  });
+  if(error&&error.code==='23505'){ toast('Este ajustador ya está asignado al expediente.'); return; }
+  toast('Ajustador asignado.'); cerrarModal('modal-sin-ajust'); await loadAll(); renderDetalle();
+}
+
+function switchCat(id,btn){
+  ['aseg','asdo','cont','tc','ajust','ofic'].forEach(c=>{
+    const el=g('cat-'+c); if(el) el.style.display=c===id?'block':'none';
+  });
+  document.querySelectorAll('#panel-catalogos .tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  if(id==='ajust') renderAjustadores();
+  if(id==='ofic')  renderOficinas();
+}
+
 function switchMain(tab,btn){
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.topbar-mid .nav-btn').forEach(b=>b.classList.remove('active'));
