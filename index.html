@@ -367,13 +367,10 @@ td { padding:9px 10px; vertical-align:middle; }
   <input type="hidden" id="s-id">
   <div class="form-grid">
     <div class="fg"><label>No. de expediente</label><input type="text" id="s-exp" placeholder="SIN-2026-001"></div>
-    <div class="fg"><label>Póliza</label><select id="s-poliza"></select></div>
+    <div class="fg"><label>No. de siniestro</label><input type="text" id="s-numsin" placeholder="Opcional — llenar cuando se tenga"></div>
+    <div class="fg"><label>Póliza</label><select id="s-poliza" onchange="actualizarCamposAseg()"></select></div>
     <div class="fg"><label>Tipo de siniestro</label><input type="text" id="s-tipo" placeholder="Incendio, robo, etc."></div>
     <div class="fg"><label>Causa</label><input type="text" id="s-causa"></div>
-    <div class="fg"><label>Fecha del siniestro</label><input type="date" id="s-fsin"></div>
-    <div class="fg"><label>Fecha de asignación</label><input type="date" id="s-fasig"></div>
-    <div class="fg"><label>Fecha de inspección</label><input type="date" id="s-finsp"></div>
-    <div class="fg"><label>Fecha límite de informe</label><input type="date" id="s-finf"></div>
     <div class="fg"><label>Estatus</label>
       <select id="s-est">
         <option value="asignado">Asignado</option>
@@ -382,6 +379,20 @@ td { padding:9px 10px; vertical-align:middle; }
         <option value="cobro">Pendiente de cobro</option>
         <option value="cerrado">Cerrado</option>
       </select></div>
+    <div class="fg"><label>Fecha del siniestro</label><input type="date" id="s-fsin"></div>
+    <div class="fg"><label>Fecha de asignación</label><input type="date" id="s-fasig"></div>
+    <div class="fg"><label>Fecha de inspección</label><input type="date" id="s-finsp"></div>
+    <div class="fg"><label>Fecha límite de informe</label><input type="date" id="s-finf"></div>
+    <!-- Campo GNP — solo visible cuando la póliza es de GNP -->
+    <div class="fg full" id="campo-gnp" style="display:none;">
+      <label style="color:#ffcc80;">Trámite GNP</label>
+      <input type="text" id="s-tramite-gnp" placeholder="Número de trámite GNP">
+    </div>
+    <!-- Campo Atlas — solo visible cuando la póliza es de Seguros Atlas -->
+    <div class="fg full" id="campo-atlas" style="display:none;">
+      <label style="color:#90caf9;">OT (Orden de Trabajo)</label>
+      <input type="text" id="s-ot" placeholder="Número de OT Seguros Atlas">
+    </div>
     <div class="fg full"><label>Descripción</label><textarea id="s-desc"></textarea></div>
     <div class="fg full"><label>Notas</label><textarea id="s-notas"></textarea></div>
   </div>
@@ -435,6 +446,12 @@ td { padding:9px 10px; vertical-align:middle; }
     <div class="fg"><label>Nombre</label><input type="text" id="ae-nombre"></div>
     <div class="fg"><label>Teléfono</label><input type="text" id="ae-tel"></div>
     <div class="fg"><label>Correo</label><input type="email" id="ae-email"></div>
+    <div class="fg full"><label>Código sistema</label>
+      <select id="ae-codigo">
+        <option value="">— Ninguno —</option>
+        <option value="GNP">GNP — Grupo Nacional Provincial</option>
+        <option value="ATLAS">ATLAS — Seguros Atlas</option>
+      </select></div>
     <div class="fg full"><label>Notas</label><textarea id="ae-notas" style="min-height:50px;"></textarea></div>
   </div>
   <div class="modal-footer">
@@ -648,6 +665,48 @@ td { padding:9px 10px; vertical-align:middle; }
   </div>
 </div></div>
 
+<!-- Bitácora del Ajustador -->
+<div class="overlay" id="modal-bit">
+<div class="modal modal-sm">
+  <div class="modal-title">Bitácora del Ajustador</div>
+  <div class="form-grid">
+    <div class="fg"><label>Fecha</label><input type="date" id="bit-fecha"></div>
+    <div class="fg"><label>Hora</label><input type="time" id="bit-hora"></div>
+    <div class="fg"><label>Horas de atención</label><input type="number" id="bit-horas" value="0" min="0" max="23" placeholder="0"></div>
+    <div class="fg"><label>Minutos de atención</label><input type="number" id="bit-minutos" value="0" min="0" max="59" placeholder="0"></div>
+    <div class="fg full"><label>Nota de actividad</label><textarea id="bit-nota" style="min-height:100px;" placeholder="Descripción detallada de la actividad desarrollada..."></textarea></div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn" onclick="cerrarModal('modal-bit')">Cancelar</button>
+    <button class="btn btn-primary" onclick="guardarBitacora()">Guardar</button>
+  </div>
+</div></div>
+
+<!-- Informe enviado -->
+<div class="overlay" id="modal-inf">
+<div class="modal modal-sm">
+  <div class="modal-title">Informe enviado</div>
+  <div class="form-grid">
+    <div class="fg full"><label>Tipo de informe</label>
+      <select id="inf-tipo">
+        <option value="preliminar">Informe Preliminar</option>
+        <option value="actualizacion">Informe de Actualización</option>
+        <option value="final">Informe Final</option>
+        <option value="nota_tecnica">Nota Técnica</option>
+      </select></div>
+    <div class="fg"><label>Fecha de envío</label><input type="date" id="inf-fecha"></div>
+    <div class="fg"><label>Hora de envío</label><input type="time" id="inf-hora"></div>
+    <div class="fg full"><label>Destinatario</label><input type="text" id="inf-dest" placeholder="Nombre, cargo, aseguradora"></div>
+    <div class="fg full"><label>Asunto</label><input type="text" id="inf-asunto" placeholder="Asunto del correo o documento"></div>
+    <div class="fg full"><label>Notas</label><textarea id="inf-notas" style="min-height:50px;"></textarea></div>
+  </div>
+  <div style="padding:8px 0 0; font-size:11px; color:var(--text-ter);">El número de versión se asigna automáticamente por tipo.</div>
+  <div class="modal-footer">
+    <button class="btn" onclick="cerrarModal('modal-inf')">Cancelar</button>
+    <button class="btn btn-primary" onclick="guardarInforme()">Guardar</button>
+  </div>
+</div></div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -671,7 +730,7 @@ const RAMOS = {
 const MON_CLS = {MXN:'b-mxn', USD:'b-usd', EUR:'b-eur'};
 const HON_EST = {pactado:'b-pactado', parcial:'b-parcial', pagado:'b-pagado'};
 
-let data = { sin:[], pol:[], aseg:[], asdo:[], cont:[], res:[], pag:[], hon:[], viat:[], act:[], doc:[], tc:[] };
+let data = { sin:[], pol:[], aseg:[], asdo:[], cont:[], res:[], pag:[], hon:[], viat:[], act:[], doc:[], tc:[], bit:[], inf:[] };
 let currentSin = null;
 let logoDataUrl = null;
 
@@ -703,7 +762,7 @@ function mostrarApp(email){ g('login-wrap').style.display='none'; g('app').style
 
 /* ── DATA LOAD ── */
 async function loadAll(){
-  const [sin,pol,aseg,asdo,cont,res,pag,hon,viat,act,doc,tc] = await Promise.all([
+  const [sin,pol,aseg,asdo,cont,res,pag,hon,viat,act,doc,tc,bit,inf] = await Promise.all([
     db.from('siniestros').select('*').order('id',{ascending:false}),
     db.from('polizas').select('*').order('id',{ascending:false}),
     db.from('aseguradoras').select('*').order('nombre'),
@@ -716,6 +775,8 @@ async function loadAll(){
     db.from('actividades').select('*').order('fecha',{ascending:false}),
     db.from('documentos').select('*').order('fecha',{ascending:false}),
     db.from('tipos_cambio').select('*').order('fecha',{ascending:false}),
+    db.from('bitacora_ajustador').select('*').order('fecha',{ascending:false}),
+    db.from('informes').select('*').order('fecha_envio',{ascending:false}),
   ]);
   data.sin  = sin.data||[];  data.pol  = pol.data||[];
   data.aseg = aseg.data||[]; data.asdo = asdo.data||[];
@@ -723,6 +784,7 @@ async function loadAll(){
   data.pag  = pag.data||[];  data.hon  = hon.data||[];
   data.viat = viat.data||[]; data.act  = act.data||[];
   data.doc  = doc.data||[];  data.tc   = tc.data||[];
+  data.bit  = bit.data||[];  data.inf  = inf.data||[];
   renderAll();
 }
 
@@ -833,6 +895,9 @@ function renderDetalle(){
     <div>
       <div class="exp-title">${s.numero_exp}</div>
       <div class="exp-sub">${asdo.nombre||'—'} &mdash; ${aseg.nombre||'—'} &mdash; ${s.tipo_siniestro||'—'}</div>
+      ${s.numero_siniestro?`<div style="font-size:11px;color:var(--text-sec);margin-top:3px;">No. siniestro: <strong style="color:var(--text)">${s.numero_siniestro}</strong></div>`:''}
+      ${s.tramite_gnp?`<div style="font-size:11px;margin-top:2px;">Trámite GNP: <strong style="color:#ffcc80;">${s.tramite_gnp}</strong></div>`:''}
+      ${s.ot?`<div style="font-size:11px;margin-top:2px;">OT Atlas: <strong style="color:#90caf9;">${s.ot}</strong></div>`:''}
       <div style="margin-top:6px;"><span class="badge ${EST[s.estatus]?.cls||''}">${EST[s.estatus]?.label||s.estatus}</span></div>
     </div>
     <div style="display:flex;gap:8px;">
@@ -851,6 +916,8 @@ function renderDetalle(){
     <button class="tab-btn" onclick="switchTab2('t-hon',this)">Honorarios</button>
     <button class="tab-btn" onclick="switchTab2('t-viat',this)">Viáticos</button>
     <button class="tab-btn" onclick="switchTab2('t-act',this)">Actividades</button>
+    <button class="tab-btn" onclick="switchTab2('t-bit',this)">Bitácora</button>
+    <button class="tab-btn" onclick="switchTab2('t-inf',this)">Informes</button>
     <button class="tab-btn" onclick="switchTab2('t-doc',this)">Documentos</button>
   </div>
 
@@ -879,6 +946,16 @@ function renderDetalle(){
     <div class="tbl-wrap"><table><thead><tr><th>Tipo</th><th>Fecha</th><th>Descripción</th><th></th></tr></thead>
     <tbody>${renderSubTable(data.act.filter(a=>a.id_siniestro===s.id),'act',['tipo','fecha','descripcion'])}</tbody></table></div>
   </div>
+  <div id="t-bit" class="tab-pane">
+    <div class="toolbar"><button class="btn btn-primary" onclick="abrirModal('modal-bit')">+ Nueva nota</button></div>
+    <div class="tbl-wrap"><table><thead><tr><th>Fecha</th><th>Hora</th><th>Tiempo</th><th>Nota de actividad</th><th></th></tr></thead>
+    <tbody>${renderBitacoraRows(data.bit.filter(b=>b.id_siniestro===s.id))}</tbody></table></div>
+  </div>
+  <div id="t-inf" class="tab-pane">
+    <div class="toolbar"><button class="btn btn-primary" onclick="abrirModal('modal-inf')">+ Nuevo informe</button></div>
+    <div class="tbl-wrap"><table><thead><tr><th>Tipo</th><th>Versión</th><th>Fecha envío</th><th>Hora</th><th>Destinatario</th><th>Asunto</th><th></th></tr></thead>
+    <tbody>${renderInformesRows(data.inf.filter(i=>i.id_siniestro===s.id))}</tbody></table></div>
+  </div>
   <div id="t-doc" class="tab-pane">
     <div class="toolbar"><button class="btn btn-primary" onclick="abrirModal('modal-doc')">+ Nuevo documento</button></div>
     <div class="tbl-wrap"><table><thead><tr><th>Tipo</th><th>Versión</th><th>Archivo</th><th>Fecha</th><th></th></tr></thead>
@@ -903,6 +980,44 @@ function renderSubTable(rows,type,cols){
 }
 
 function tableFor(t){ return {res:'reservas',pago:'pagos',hon:'honorarios',viat:'viaticos',act:'actividades',doc:'documentos'}[t]; }
+
+function renderBitacoraRows(rows){
+  if(!rows.length) return `<tr><td colspan="5" class="empty">Sin notas registradas.</td></tr>`;
+  return rows.map(r=>{
+    const tiempo=`${r.horas||0}h ${r.minutos||0}min`;
+    return `<tr>
+      <td>${fmtD(r.fecha)}</td>
+      <td>${r.hora?r.hora.slice(0,5):'—'}</td>
+      <td><span style="background:var(--surface2);padding:2px 8px;border-radius:6px;font-size:11px;">${tiempo}</span></td>
+      <td style="max-width:400px;white-space:pre-wrap;line-height:1.5;">${r.nota||'—'}</td>
+      <td><button class="btn btn-sm btn-danger" onclick="eliminar('bitacora_ajustador',${r.id})">Eliminar</button></td>
+    </tr>`;}).join('');
+}
+
+const INF_TIPOS = {preliminar:'Preliminar',actualizacion:'Actualización',final:'Final',nota_tecnica:'Nota Técnica'};
+
+function renderInformesRows(rows){
+  if(!rows.length) return `<tr><td colspan="7" class="empty">Sin informes registrados.</td></tr>`;
+  return rows.map(r=>`<tr>
+    <td><strong>${INF_TIPOS[r.tipo]||r.tipo}</strong></td>
+    <td><span style="background:var(--surface2);padding:2px 8px;border-radius:6px;font-size:11px;">v${r.numero_version}</span></td>
+    <td>${fmtD(r.fecha_envio)}</td>
+    <td>${r.hora_envio?r.hora_envio.slice(0,5):'—'}</td>
+    <td>${r.destinatario||'—'}</td>
+    <td>${r.asunto||'—'}</td>
+    <td><button class="btn btn-sm btn-danger" onclick="eliminar('informes',${r.id})">Eliminar</button></td>
+  </tr>`).join('');
+}
+
+/* ── CAMPO CONDICIONAL GNP / ATLAS ── */
+function actualizarCamposAseg(){
+  const polId=parseInt(v('s-poliza'));
+  const pol=data.pol.find(p=>p.id===polId)||{};
+  const aseg=data.aseg.find(a=>a.id===pol.id_aseguradora)||{};
+  const cod=(aseg.codigo_sistema||'').toUpperCase();
+  g('campo-gnp').style.display  = cod==='GNP'   ? 'block':'none';
+  g('campo-atlas').style.display= cod==='ATLAS'  ? 'block':'none';
+}
 
 function volverLista(){ g('sin-detail-view').style.display='none'; g('sin-list-view').style.display='block'; currentSin=null; }
 
@@ -983,6 +1098,7 @@ function switchCat(id,btn){
 /* ── MODALS ── */
 function abrirModal(id){
   const today=new Date().toISOString().slice(0,10);
+  const nowTime=new Date().toTimeString().slice(0,5);
   if(id==='modal-res'||id==='modal-pago'||id==='modal-viat'||id==='modal-act'||id==='modal-doc'){
     const fids={'modal-res':'res-fecha','modal-pago':'pg-fecha','modal-viat':'vt-fecha','modal-act':'ac-fecha','modal-doc':'dc-fecha'};
     if(fids[id]) g(fids[id]).value=today;
@@ -990,6 +1106,20 @@ function abrirModal(id){
   if(id==='modal-sin') g('s-fasig').value=today;
   if(id==='modal-tc')  g('tc-fecha').value=today;
   if(id==='modal-hon') g('ho-fpacto').value=today;
+  if(id==='modal-bit'){
+    g('bit-fecha').value=today;
+    g('bit-hora').value=nowTime;
+    g('bit-horas').value='0';
+    g('bit-minutos').value='0';
+    g('bit-nota').value='';
+  }
+  if(id==='modal-inf'){
+    g('inf-fecha').value=today;
+    g('inf-hora').value=nowTime;
+    g('inf-dest').value='';
+    g('inf-asunto').value='';
+    g('inf-notas').value='';
+  }
   g(id).classList.add('open');
 }
 function cerrarModal(id){ g(id).classList.remove('open'); }
@@ -1005,7 +1135,7 @@ async function eliminar(tabla, id){
 
 async function guardarSiniestro(){
   const id=v('s-id');
-  const d2={numero_exp:v('s-exp'),id_poliza:parseInt(v('s-poliza'))||null,tipo_siniestro:v('s-tipo'),causa:v('s-causa'),descripcion:v('s-desc'),notas:v('s-notas'),estatus:v('s-est'),fecha_siniestro:v('s-fsin')||null,fecha_asignacion:v('s-fasig')||null,fecha_inspeccion:v('s-finsp')||null,fecha_informe:v('s-finf')||null};
+  const d2={numero_exp:v('s-exp'),numero_siniestro:v('s-numsin')||null,id_poliza:parseInt(v('s-poliza'))||null,tipo_siniestro:v('s-tipo'),causa:v('s-causa'),descripcion:v('s-desc'),notas:v('s-notas'),estatus:v('s-est'),fecha_siniestro:v('s-fsin')||null,fecha_asignacion:v('s-fasig')||null,fecha_inspeccion:v('s-finsp')||null,fecha_informe:v('s-finf')||null,tramite_gnp:v('s-tramite-gnp')||null,ot:v('s-ot')||null};
   if(id){ await db.from('siniestros').update(d2).eq('id',id); toast('Expediente actualizado.'); }
   else { await db.from('siniestros').insert(d2); toast('Expediente creado.'); }
   cerrarModal('modal-sin'); await loadAll(); if(currentSin) renderDetalle();
@@ -1014,12 +1144,15 @@ async function guardarSiniestro(){
 function editarSiniestro(id){
   const s=data.sin.find(x=>x.id===id); if(!s) return;
   g('sin-modal-title').textContent='Editar expediente'; g('s-id').value=s.id;
-  g('s-exp').value=s.numero_exp||''; g('s-poliza').value=s.id_poliza||'';
+  g('s-exp').value=s.numero_exp||''; g('s-numsin').value=s.numero_siniestro||'';
+  g('s-poliza').value=s.id_poliza||'';
   g('s-tipo').value=s.tipo_siniestro||''; g('s-causa').value=s.causa||'';
   g('s-desc').value=s.descripcion||''; g('s-notas').value=s.notas||'';
   g('s-est').value=s.estatus||'asignado'; g('s-fsin').value=s.fecha_siniestro||'';
   g('s-fasig').value=s.fecha_asignacion||''; g('s-finsp').value=s.fecha_inspeccion||'';
   g('s-finf').value=s.fecha_informe||'';
+  g('s-tramite-gnp').value=s.tramite_gnp||''; g('s-ot').value=s.ot||'';
+  actualizarCamposAseg();
   g('modal-sin').classList.add('open');
 }
 
@@ -1044,7 +1177,7 @@ function editarPoliza(id){
 
 async function guardarAseguradora(){
   const id=v('ae-id');
-  const d2={clave:v('ae-clave'),nombre:v('ae-nombre'),telefono:v('ae-tel'),correo:v('ae-email'),notas:v('ae-notas')};
+  const d2={clave:v('ae-clave'),nombre:v('ae-nombre'),telefono:v('ae-tel'),correo:v('ae-email'),notas:v('ae-notas'),codigo_sistema:v('ae-codigo')||null};
   if(id){ await db.from('aseguradoras').update(d2).eq('id',id); toast('Aseguradora actualizada.'); }
   else { await db.from('aseguradoras').insert(d2); toast('Aseguradora creada.'); }
   cerrarModal('modal-aseg'); await loadAll();
@@ -1053,8 +1186,50 @@ async function guardarAseguradora(){
 function editarAseguradora(id){
   const a=data.aseg.find(x=>x.id===id); if(!a) return;
   g('ae-id').value=a.id; g('ae-clave').value=a.clave||''; g('ae-nombre').value=a.nombre||'';
-  g('ae-tel').value=a.telefono||''; g('ae-email').value=a.correo||''; g('ae-notas').value=a.notas||'';
+  g('ae-tel').value=a.telefono||''; g('ae-email').value=a.correo||'';
+  g('ae-notas').value=a.notas||''; g('ae-codigo').value=a.codigo_sistema||'';
   g('modal-aseg').classList.add('open');
+}
+
+async function guardarBitacora(){
+  if(!currentSin) return;
+  const nota=v('bit-nota');
+  if(!nota.trim()){ toast('La nota no puede estar vacía.'); return; }
+  await db.from('bitacora_ajustador').insert({
+    id_siniestro:currentSin.id,
+    fecha:v('bit-fecha')||new Date().toISOString().slice(0,10),
+    hora:v('bit-hora')||new Date().toTimeString().slice(0,8),
+    horas:parseInt(v('bit-horas'))||0,
+    minutos:parseInt(v('bit-minutos'))||0,
+    nota,
+    usuario:g('user-lbl').textContent
+  });
+  toast('Nota de bitácora registrada.');
+  cerrarModal('modal-bit');
+  g('bit-nota').value=''; g('bit-horas').value='0'; g('bit-minutos').value='0';
+  await loadAll(); renderDetalle();
+}
+
+async function guardarInforme(){
+  if(!currentSin) return;
+  const tipo=v('inf-tipo');
+  // Calcular versión automática
+  const existentes=data.inf.filter(i=>i.id_siniestro===currentSin.id&&i.tipo===tipo);
+  const version=(existentes.length>0?Math.max(...existentes.map(i=>i.numero_version)):0)+1;
+  await db.from('informes').insert({
+    id_siniestro:currentSin.id,
+    tipo,
+    numero_version:version,
+    fecha_envio:v('inf-fecha')||new Date().toISOString().slice(0,10),
+    hora_envio:v('inf-hora')||new Date().toTimeString().slice(0,8),
+    destinatario:v('inf-dest'),
+    asunto:v('inf-asunto'),
+    notas:v('inf-notas'),
+    usuario:g('user-lbl').textContent
+  });
+  toast(`Informe ${INF_TIPOS[tipo]} v${version} registrado.`);
+  cerrarModal('modal-inf');
+  await loadAll(); renderDetalle();
 }
 
 async function guardarAsegurado(){
