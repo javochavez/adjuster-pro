@@ -1220,7 +1220,7 @@ function renderDash(){
       <td>${RAMOS[pol.ramo]||pol.ramo||'—'}</td>
       <td>${fmtMXN(rv)}</td>
       <td style="color:${saldo>0?'#ffcc80':'#a5d6a7'}">${fmtMXN(saldo)}</td>
-      <td>${um?`<span class="dias-badge ${diasCls}">${fmtD(um.fecha)}</span><div class="td-sub" style="margin-top:2px;">${diasCls?dias+' días sin movimiento':''}</div>`:'<span style="color:var(--text-ter);">Sin registros</span>'}</td>
+      <td>${um?'<span class="dias-badge '+diasCls+'">'+(fmtD(um.fecha))+'</span>'+(diasCls?'<div class="td-sub" style="margin-top:2px;">'+dias+' días sin movimiento</div>':''):'<span style="color:var(--text-ter);">Sin registros</span>'}</td>
       <td><span class="badge ${EST[s.estatus]?.cls||''}">${EST[s.estatus]?.label||s.estatus}</span></td>
     </tr>`;}).join('')||'<tr><td colspan="8" class="empty">Sin expedientes activos.</td></tr>';
 }
@@ -1339,24 +1339,10 @@ function renderDetalle(){
     <div>
       <div class="exp-title">${s.numero_exp}</div>
       <div class="exp-sub">${asdo.nombre||'—'} &mdash; ${aseg.nombre||'—'} &mdash; ${s.tipo_siniestro||'—'}</div>
-      ${s.numero_siniestro?`<div style="font-size:11px;color:var(--text-sec);margin-top:3px;">No. siniestro: <strong style="color:var(--text)">${s.numero_siniestro}</strong></div>`:''}
-      ${s.tramite_gnp?`<div style="font-size:11px;margin-top:2px;">Trámite GNP: <strong style="color:#ffcc80;">${s.tramite_gnp}</strong>${s.gnp_jefe_depto?' &nbsp;·&nbsp; Jefe Depto: <span style="color:var(--text-sec)">'+s.gnp_jefe_depto+'</span>':''}</div>`:''}
-      ${s.ot?`<div style="font-size:11px;margin-top:2px;">OT Atlas: <strong style="color:#90caf9;">${s.ot}</strong>${s.atlas_poliza_coaseg?' &nbsp;·&nbsp; Póliza Atlas: <span style="color:var(--text-sec)">'+s.atlas_poliza_coaseg+'</span>':''}</div>`:''}
-      ${(()=>{
-        const sinAjusts=data.sinajust.filter(a=>a.id_siniestro===s.id);
-        if(!sinAjusts.length) return '';
-        const tags=sinAjusts.map(a=>{
-          const aj=data.ajust.find(x=>x.id===a.id_ajustador)||{};
-          const ROLES={responsable:'Resp.',apoyo:'Apoyo',supervisor:'Sup.',perito:'Perito'};
-          return `<span style="display:inline-flex;align-items:center;gap:4px;background:var(--surface2);border:1px solid var(--border-md);border-radius:6px;padding:2px 8px;font-size:11px;">
-            <strong style="color:var(--accent-lt);">${aj.iniciales||aj.nombre||'?'}</strong>
-            <span style="color:var(--text-ter);">${ROLES[a.rol]||a.rol}</span>
-          </span>`;
-        }).join('');
-        return `<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px;align-items:center;">
-          <span style="font-size:11px;color:var(--text-ter);margin-right:2px;">Ajustadores:</span>${tags}
-        </div>`;
-      })()}
+      ${s.numero_siniestro?'<div style="font-size:11px;color:var(--text-sec);margin-top:3px;">No. siniestro: <strong style="color:var(--text)">'+s.numero_siniestro+'</strong></div>':''}
+      ${s.tramite_gnp?'<div style="font-size:11px;margin-top:2px;">Trámite GNP: <strong style="color:#ffcc80;">'+s.tramite_gnp+'</strong>'+(s.gnp_jefe_depto?' &nbsp;·&nbsp; Jefe Depto: <span style="color:var(--text-sec)">'+s.gnp_jefe_depto+'</span>':'')+'</div>':''}
+      ${s.ot?'<div style="font-size:11px;margin-top:2px;">OT Atlas: <strong style="color:#90caf9;">'+s.ot+'</strong>'+(s.atlas_poliza_coaseg?' &nbsp;·&nbsp; Póliza Atlas: <span style="color:var(--text-sec)">'+s.atlas_poliza_coaseg+'</span>':'')+'</div>':''}
+      ${renderAjustBadges(s.id)}
       <div style="margin-top:6px;"><span class="badge ${EST[s.estatus]?.cls||''}">${EST[s.estatus]?.label||s.estatus}</span></div>
     </div>
     <div style="display:flex;gap:8px;">
@@ -1489,6 +1475,21 @@ function renderReservaRows(rows){
     </tr>`;}).join('');
 }
 
+function renderAjustBadges(sinId){
+  const ROLES={responsable:'Resp.',apoyo:'Apoyo',supervisor:'Sup.',perito:'Perito'};
+  const rows=data.sinajust.filter(a=>a.id_siniestro===sinId);
+  if(!rows.length) return '';
+  const tags=rows.map(a=>{
+    const aj=data.ajust.find(x=>x.id===a.id_ajustador)||{};
+    return '<span style="display:inline-flex;align-items:center;gap:4px;background:var(--surface2);border:1px solid var(--border-md);border-radius:6px;padding:2px 8px;font-size:11px;">'
+      +'<strong style="color:var(--accent-lt);">'+(aj.iniciales||aj.nombre||'?')+'</strong>'
+      +'<span style="color:var(--text-ter);">'+(ROLES[a.rol]||a.rol)+'</span>'
+      +'</span>';
+  }).join('');
+  return '<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px;align-items:center;">'
+    +'<span style="font-size:11px;color:var(--text-ter);margin-right:2px;">Ajustadores:</span>'+tags+'</div>';
+}
+
 function renderSinAjustRows(rows){
   if(!rows.length) return `<tr><td colspan="8" class="empty">Sin ajustadores asignados.</td></tr>`;
   const ROLES={responsable:'Responsable',apoyo:'Apoyo',supervisor:'Supervisor',perito:'Perito'};
@@ -1506,6 +1507,8 @@ function renderSinAjustRows(rows){
       <td><button class="btn btn-sm btn-danger" onclick="eliminar('siniestro_ajustadores',${r.id})">Quitar</button></td>
     </tr>`;}).join('');
 }
+
+function renderCoasRows(rows){
   if(!rows.length) return `<tr><td colspan="6" class="empty">Sin coaseguradoras registradas.</td></tr>`;
   return rows.map(r=>`<tr>
     <td><strong>${r.nombre||'—'}</strong></td>
@@ -1584,7 +1587,7 @@ function renderPolizas(){
     const aseg=data.aseg.find(a=>a.id===p.id_aseguradora)||{};
     const nSublim=data.sublim.filter(sl=>sl.id_poliza===p.id).length;
     return `<tr>
-      <td><strong>${p.numero}</strong>${p.tipo_seguro?`<div class="td-sub">${p.tipo_seguro}</div>`:''}</td>
+      <td><strong>${p.numero}</strong>${p.tipo_seguro?'<div class="td-sub">'+p.tipo_seguro+'</div>':''}</td>
       <td>${asdo.nombre||'—'}</td><td>${aseg.nombre||'—'}</td>
       <td>${RAMOS[p.ramo]||p.ramo||'—'}</td>
       <td>${fmtD(p.vigencia_ini)} – ${fmtD(p.vigencia_fin)}</td>
@@ -1592,7 +1595,7 @@ function renderPolizas(){
       <td><span class="badge ${MON_CLS[p.moneda]||''}">${p.moneda}</span></td>
       <td><div class="td-acts">
         <button class="btn btn-sm" onclick="editarPoliza(${p.id})">Editar</button>
-        <button class="btn btn-sm" onclick="abrirSublimites(${p.id})">Sublímites${nSublim?` (${nSublim})`:''}</button>
+        <button class="btn btn-sm" onclick="abrirSublimites(${p.id})">Sublímites${nSublim?' ('+nSublim+')':''}</button>
         <button class="btn btn-sm btn-danger" onclick="eliminar('polizas',${p.id})">Eliminar</button>
       </div></td>
     </tr>`;}).join('')||'<tr><td colspan="8" class="empty">Sin pólizas.</td></tr>';
@@ -1648,12 +1651,6 @@ function renderTC(){
     <td><strong>${t.tasa_mxn}</strong></td><td>${fmtD(t.fecha)}</td><td>${t.fuente||'—'}</td>
     <td><button class="btn btn-sm btn-danger" onclick="eliminar('tipos_cambio',${t.id})">Eliminar</button></td>
   </tr>`).join('')||'<tr><td colspan="5" class="empty">Sin tipos de cambio.</td></tr>';
-}
-
-function switchCat(id,btn){
-  ['aseg','asdo','cont','tc'].forEach(k=>{ const el=g('cat-'+k); if(el) el.style.display=k===id?'block':'none'; });
-  document.querySelectorAll('#panel-catalogos .tab-btn').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
 }
 
 /* ── MODALS ── */
