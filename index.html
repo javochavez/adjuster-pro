@@ -446,6 +446,7 @@ td { padding:9px 10px; vertical-align:middle; }
     <div class="fg"><label>Persona entrevistada</label><input type="text" id="s-insp-persona"></div>
     <div class="fg"><label>Cargo</label><input type="text" id="s-insp-cargo"></div>
     <div class="fg"><label>Teléfono</label><input type="text" id="s-insp-tel"></div>
+    <div class="fg full"><label>Lugar del siniestro</label><input type="text" id="s-lugar-sin" placeholder="Zona específica dentro del inmueble asegurado"></div>
     <div class="fg full"><label>Domicilio inspeccionado</label><input type="text" id="s-insp-dom"></div>
   </div>
 
@@ -476,6 +477,15 @@ td { padding:9px 10px; vertical-align:middle; }
     <div class="fg full"><label>Descripción general</label><textarea id="s-desc" style="min-height:70px;"></textarea></div>
     <div class="fg full"><label>Estrategias y observaciones</label><textarea id="s-estrategias" style="min-height:80px;" placeholder="Documentos solicitados, observaciones técnicas, estrategia de ajuste..."></textarea></div>
     <div class="fg full"><label>Notas internas</label><textarea id="s-notas" style="min-height:50px;"></textarea></div>
+    <div class="fg"><label>Procedencia del reclamo</label>
+      <select id="s-procedencia">
+        <option value="procedente">Procedente</option>
+        <option value="por_determinar">Por determinar</option>
+        <option value="improcedente">Improcedente</option>
+      </select></div>
+    <div class="fg"></div>
+    <div class="fg full"><label>Actividades a realizar (XII)</label><textarea id="s-actividades-realizar" style="min-height:60px;" placeholder="Acciones pendientes, documentos en espera, consultores por contratar..."></textarea></div>
+    <div class="fg full"><label>Comentarios (XIII)</label><textarea id="s-comentarios" style="min-height:60px;" placeholder="Observaciones finales del informe..."></textarea></div>
   </div>
 
   <div class="modal-footer">
@@ -509,6 +519,7 @@ td { padding:9px 10px; vertical-align:middle; }
       <label>Especificar ramo</label>
       <input type="text" id="p-ramo-otro" placeholder="Nombre del ramo">
     </div>
+    <div class="fg full"><label>Tipo de seguro</label><input type="text" id="p-tipo-seguro" placeholder="ej. Seguro de Daños Múltiple Empresarial / Todo Riesgo Incendio"></div>
     <div class="fg"><label>Subramo</label><input type="text" id="p-subramo" placeholder="ej. Rotura de Maquinaria"></div>
     <div class="fg"><label>Aseguradora</label><select id="p-aseg"></select></div>
     <div class="fg"><label>Asegurado</label><select id="p-asdo"></select></div>
@@ -520,11 +531,69 @@ td { padding:9px 10px; vertical-align:middle; }
     <div class="fg"><label>Moneda</label>
       <select id="p-mon"><option value="MXN">MXN</option><option value="USD">USD</option><option value="EUR">EUR</option></select></div>
     <div class="fg"><label>Tipo de cambio</label><input type="number" id="p-tc" value="1" step="0.01"></div>
+    <div class="fg"><label>Límite máx. responsabilidad</label><input type="number" id="p-lim-max" placeholder="0.00"></div>
+    <div class="fg"><label>Moneda límite</label>
+      <select id="p-lim-mon"><option value="MXN">MXN</option><option value="USD">USD</option><option value="EUR">EUR</option></select></div>
+
+    <div style="grid-column:1/-1;font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.06em;margin-top:6px;">Valores declarados totales (póliza)</div>
+    <div class="fg"><label>Edificio total</label><input type="number" id="p-val-tot-edif" placeholder="0.00"></div>
+    <div class="fg"><label>Contenidos total</label><input type="number" id="p-val-tot-cont" placeholder="0.00"></div>
+
+    <div style="grid-column:1/-1;font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.06em;margin-top:6px;">Valores declarados ubicación afectada</div>
+    <div class="fg"><label>Edificio ubicación</label><input type="number" id="p-val-ubic-edif" placeholder="0.00"></div>
+    <div class="fg"><label>Contenidos ubicación</label><input type="number" id="p-val-ubic-cont" placeholder="0.00"></div>
+    <div class="fg"><label>Existencias ubicación</label><input type="number" id="p-val-ubic-exist" placeholder="0.00"></div>
+    <div class="fg"></div>
+
+    <div style="grid-column:1/-1;font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.06em;margin-top:6px;">Domicilios</div>
+    <div class="fg full"><label>Domicilio legal del asegurado</label><input type="text" id="p-dom-legal" placeholder="Domicilio fiscal según póliza"></div>
+    <div class="fg full"><label>Ubicación del riesgo asegurado</label><input type="text" id="p-ubic-riesgo" placeholder="Ubicación física donde está el riesgo"></div>
+
+    <div class="fg full"><label>Interés asegurado</label><textarea id="p-interes" style="min-height:70px;" placeholder="Descripción del interés asegurado según póliza..."></textarea></div>
+    <div class="fg full"><label>Condiciones especiales aplicables</label><textarea id="p-condiciones" style="min-height:80px;" placeholder="Cláusulas y condiciones especiales de la póliza..."></textarea></div>
     <div class="fg full"><label>Notas</label><textarea id="p-notas"></textarea></div>
   </div>
   <div class="modal-footer">
     <button class="btn" onclick="cerrarModal('modal-pol')">Cancelar</button>
     <button class="btn btn-primary" onclick="guardarPoliza()">Guardar</button>
+  </div>
+</div></div>
+
+<!-- Sublímites -->
+<div class="overlay" id="modal-sublim">
+<div class="modal modal-sm">
+  <div class="modal-title">Sublímite de póliza</div>
+  <input type="hidden" id="sl-pol-id">
+  <div class="form-grid">
+    <div class="fg full"><label>Concepto</label><input type="text" id="sl-concepto" placeholder="ej. Combustión Espontánea, Remoción de Escombros"></div>
+    <div class="fg"><label>Monto</label><input type="number" id="sl-monto" placeholder="0.00"></div>
+    <div class="fg"><label>Moneda</label>
+      <select id="sl-mon"><option value="MXN">MXN</option><option value="USD">USD</option><option value="EUR">EUR</option></select></div>
+    <div class="fg full"><label>Descripción</label><input type="text" id="sl-desc" placeholder="ej. para un solo evento o el total de ellos"></div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn" onclick="cerrarModal('modal-sublim')">Cancelar</button>
+    <button class="btn btn-primary" onclick="guardarSublimite()">Guardar</button>
+  </div>
+</div></div>
+
+<!-- Coaseguradora -->
+<div class="overlay" id="modal-coas">
+<div class="modal modal-sm">
+  <div class="modal-title">Coaseguradora</div>
+  <div class="form-grid">
+    <div class="fg full"><label>Nombre de la compañía</label><input type="text" id="co2-nombre" placeholder="ej. Seguros Grupo Nacional Provincial, S.A.B."></div>
+    <div class="fg"><label>Participación %</label><input type="number" id="co2-pct" placeholder="0.00" step="0.01"></div>
+    <div class="fg"><label>Reserva neta</label><input type="number" id="co2-reserva" placeholder="0.00"></div>
+    <div class="fg"><label>Moneda</label>
+      <select id="co2-mon"><option value="MXN">MXN</option><option value="USD">USD</option><option value="EUR">EUR</option></select></div>
+    <div class="fg"><label>Es líder</label>
+      <select id="co2-lider"><option value="0">No</option><option value="1">Sí (líder)</option></select></div>
+    <div class="fg"></div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn" onclick="cerrarModal('modal-coas')">Cancelar</button>
+    <button class="btn btn-primary" onclick="guardarCoaseguradora()">Guardar</button>
   </div>
 </div></div>
 
@@ -631,6 +700,7 @@ td { padding:9px 10px; vertical-align:middle; }
     <div class="fg"><label>Monto pérdida estimada</label><input type="number" id="res-perdida" placeholder="0.00"></div>
     <div class="fg"><label>Deducible (monto)</label><input type="number" id="res-deducible" placeholder="0.00"></div>
     <div class="fg"><label>Deducible %</label><input type="number" id="res-ded-pct" value="0" step="0.01" placeholder="0.00"></div>
+    <div class="fg"><label>Coaseguro %</label><input type="number" id="res-coas-pct" value="0" step="0.01" placeholder="ej. 20"></div>
     <div class="fg"><label>Moneda</label>
       <select id="res-mon"><option value="MXN">MXN</option><option value="USD">USD</option><option value="EUR">EUR</option></select></div>
     <div class="fg"><label>Tipo de cambio</label><input type="number" id="res-tc" value="1" step="0.0001"></div>
@@ -847,7 +917,7 @@ const RAMOS = {
 const MON_CLS = {MXN:'b-mxn', USD:'b-usd', EUR:'b-eur'};
 const HON_EST = {pactado:'b-pactado', parcial:'b-parcial', pagado:'b-pagado'};
 
-let data = { sin:[], pol:[], aseg:[], asdo:[], cont:[], res:[], pag:[], hon:[], viat:[], act:[], doc:[], tc:[], bit:[], inf:[] };
+let data = { sin:[], pol:[], aseg:[], asdo:[], cont:[], res:[], pag:[], hon:[], viat:[], act:[], doc:[], tc:[], bit:[], inf:[], sublim:[], coas:[] };
 let currentSin = null;
 let logoDataUrl = null;
 
@@ -879,7 +949,7 @@ function mostrarApp(email){ g('login-wrap').style.display='none'; g('app').style
 
 /* ── DATA LOAD ── */
 async function loadAll(){
-  const [sin,pol,aseg,asdo,cont,res,pag,hon,viat,act,doc,tc,bit,inf] = await Promise.all([
+  const [sin,pol,aseg,asdo,cont,res,pag,hon,viat,act,doc,tc,bit,inf,sublim,coas] = await Promise.all([
     db.from('siniestros').select('*').order('id',{ascending:false}),
     db.from('polizas').select('*').order('id',{ascending:false}),
     db.from('aseguradoras').select('*').order('nombre'),
@@ -894,14 +964,17 @@ async function loadAll(){
     db.from('tipos_cambio').select('*').order('fecha',{ascending:false}),
     db.from('bitacora_ajustador').select('*').order('fecha',{ascending:false}),
     db.from('informes').select('*').order('fecha_envio',{ascending:false}),
+    db.from('sublimites').select('*').order('id'),
+    db.from('coaseguradoras').select('*').order('porcentaje',{ascending:false}),
   ]);
-  data.sin  = sin.data||[];  data.pol  = pol.data||[];
-  data.aseg = aseg.data||[]; data.asdo = asdo.data||[];
-  data.cont = cont.data||[]; data.res  = res.data||[];
-  data.pag  = pag.data||[];  data.hon  = hon.data||[];
-  data.viat = viat.data||[]; data.act  = act.data||[];
-  data.doc  = doc.data||[];  data.tc   = tc.data||[];
-  data.bit  = bit.data||[];  data.inf  = inf.data||[];
+  data.sin   = sin.data||[];   data.pol    = pol.data||[];
+  data.aseg  = aseg.data||[];  data.asdo   = asdo.data||[];
+  data.cont  = cont.data||[];  data.res    = res.data||[];
+  data.pag   = pag.data||[];   data.hon    = hon.data||[];
+  data.viat  = viat.data||[];  data.act    = act.data||[];
+  data.doc   = doc.data||[];   data.tc     = tc.data||[];
+  data.bit   = bit.data||[];   data.inf    = inf.data||[];
+  data.sublim= sublim.data||[];data.coas   = coas.data||[];
   renderAll();
 }
 
@@ -1036,13 +1109,14 @@ function renderDetalle(){
     <button class="tab-btn" onclick="switchTab2('t-act',this)">Actividades</button>
     <button class="tab-btn" onclick="switchTab2('t-bit',this)">Bitácora</button>
     <button class="tab-btn" onclick="switchTab2('t-inf',this)">Informes</button>
+    <button class="tab-btn" onclick="switchTab2('t-coas',this)">Coaseguro</button>
     <button class="tab-btn" onclick="switchTab2('t-doc',this)">Documentos</button>
   </div>
 
   <div id="t-res" class="tab-pane active">
     <div class="toolbar"><button class="btn btn-primary" onclick="abrirModal('modal-res')">+ Nueva reserva</button></div>
-    <div class="tbl-wrap"><table><thead><tr><th>Concepto</th><th>Monto</th><th>Moneda</th><th>TC</th><th>Base MXN</th><th>Fecha</th><th></th></tr></thead>
-    <tbody>${renderSubTable(data.res.filter(r=>r.id_siniestro===s.id),'res',['concepto','monto','moneda','tipo_cambio_mxn','monto_base_mxn','fecha'])}</tbody></table></div>
+    <div class="tbl-wrap"><table><thead><tr><th>Concepto</th><th>Reserva bruta</th><th>Pérdida estimada</th><th>Deducible</th><th>Coaseguro %</th><th>Reserva neta</th><th>Moneda</th><th>Fecha</th><th></th></tr></thead>
+    <tbody>${renderReservaRows(data.res.filter(r=>r.id_siniestro===s.id))}</tbody></table></div>
   </div>
   <div id="t-pag" class="tab-pane">
     <div class="toolbar"><button class="btn btn-primary" onclick="abrirModal('modal-pago')">+ Nuevo pago</button></div>
@@ -1073,6 +1147,11 @@ function renderDetalle(){
     <div class="toolbar"><button class="btn btn-primary" onclick="abrirModal('modal-inf')">+ Nuevo informe</button></div>
     <div class="tbl-wrap"><table><thead><tr><th>Tipo</th><th>Versión</th><th>Fecha envío</th><th>Hora</th><th>Destinatario</th><th>Asunto</th><th></th></tr></thead>
     <tbody>${renderInformesRows(data.inf.filter(i=>i.id_siniestro===s.id))}</tbody></table></div>
+  </div>
+  <div id="t-coas" class="tab-pane">
+    <div class="toolbar"><button class="btn btn-primary" onclick="abrirModal('modal-coas')">+ Nueva coaseguradora</button></div>
+    <div class="tbl-wrap"><table><thead><tr><th>Compañía</th><th>Participación %</th><th>Reserva neta</th><th>Moneda</th><th>Rol</th><th></th></tr></thead>
+    <tbody>${renderCoasRows(data.coas.filter(c=>c.id_siniestro===s.id))}</tbody></table></div>
   </div>
   <div id="t-doc" class="tab-pane">
     <div class="toolbar"><button class="btn btn-primary" onclick="abrirModal('modal-doc')">+ Nuevo documento</button></div>
@@ -1113,6 +1192,38 @@ function renderBitacoraRows(rows){
 }
 
 const INF_TIPOS = {preliminar:'Preliminar',actualizacion:'Actualización',final:'Final',nota_tecnica:'Nota Técnica'};
+
+function renderReservaRows(rows){
+  if(!rows.length) return `<tr><td colspan="9" class="empty">Sin reservas registradas.</td></tr>`;
+  return rows.map(r=>{
+    const perdida=r.monto_perdida_estimada||r.monto||0;
+    const ded=r.deducible||0;
+    const coasMonto=r.monto_coaseguro||(((perdida-ded)*(r.coaseguro_pct||0))/100);
+    const neta=perdida-ded-coasMonto;
+    return `<tr>
+      <td>${r.concepto||'—'}</td>
+      <td style="text-align:right;">${fmtMXN(r.monto)}</td>
+      <td style="text-align:right;">${fmtMXN(perdida)}</td>
+      <td style="text-align:right;">${fmtMXN(ded)}</td>
+      <td style="text-align:center;">${r.coaseguro_pct||0}%</td>
+      <td style="text-align:right;font-weight:600;">${fmtMXN(neta)}</td>
+      <td><span class="badge ${MON_CLS[r.moneda]||''}">${r.moneda}</span></td>
+      <td>${fmtD(r.fecha)}</td>
+      <td><button class="btn btn-sm btn-danger" onclick="eliminar('reservas',${r.id})">Eliminar</button></td>
+    </tr>`;}).join('');
+}
+
+function renderCoasRows(rows){
+  if(!rows.length) return `<tr><td colspan="6" class="empty">Sin coaseguradoras registradas.</td></tr>`;
+  return rows.map(r=>`<tr>
+    <td><strong>${r.nombre||'—'}</strong></td>
+    <td style="text-align:center;">${r.porcentaje||0}%</td>
+    <td style="text-align:right;">${fmtMXN(r.reserva_neta)}</td>
+    <td><span class="badge ${MON_CLS[r.moneda]||''}">${r.moneda}</span></td>
+    <td>${r.es_lider?'<span class="badge b-asignado">Líder</span>':'Participante'}</td>
+    <td><button class="btn btn-sm btn-danger" onclick="eliminar('coaseguradoras',${r.id})">Eliminar</button></td>
+  </tr>`).join('');
+}
 
 function renderInformesRows(rows){
   if(!rows.length) return `<tr><td colspan="7" class="empty">Sin informes registrados.</td></tr>`;
@@ -1168,8 +1279,9 @@ function renderPolizas(){
   g('pol-body').innerHTML=fil.map(p=>{
     const asdo=data.asdo.find(a=>a.id===p.id_asegurado)||{};
     const aseg=data.aseg.find(a=>a.id===p.id_aseguradora)||{};
+    const nSublim=data.sublim.filter(sl=>sl.id_poliza===p.id).length;
     return `<tr>
-      <td><strong>${p.numero}</strong></td>
+      <td><strong>${p.numero}</strong>${p.tipo_seguro?`<div class="td-sub">${p.tipo_seguro}</div>`:''}</td>
       <td>${asdo.nombre||'—'}</td><td>${aseg.nombre||'—'}</td>
       <td>${RAMOS[p.ramo]||p.ramo||'—'}</td>
       <td>${fmtD(p.vigencia_ini)} – ${fmtD(p.vigencia_fin)}</td>
@@ -1177,12 +1289,24 @@ function renderPolizas(){
       <td><span class="badge ${MON_CLS[p.moneda]||''}">${p.moneda}</span></td>
       <td><div class="td-acts">
         <button class="btn btn-sm" onclick="editarPoliza(${p.id})">Editar</button>
+        <button class="btn btn-sm" onclick="abrirSublimites(${p.id})">Sublímites${nSublim?` (${nSublim})`:''}</button>
         <button class="btn btn-sm btn-danger" onclick="eliminar('polizas',${p.id})">Eliminar</button>
       </div></td>
     </tr>`;}).join('')||'<tr><td colspan="8" class="empty">Sin pólizas.</td></tr>';
 }
 
-/* ── CATÁLOGOS ── */
+function abrirSublimites(polId){
+  g('sl-pol-id').value=polId;
+  ['sl-concepto','sl-desc'].forEach(f=>g(f).value='');
+  g('sl-monto').value=''; g('sl-mon').value='MXN';
+  g('modal-sublim').classList.add('open');
+}
+
+function abrirCoaseguradora(){
+  ['co2-nombre','co2-pct','co2-reserva'].forEach(f=>g(f).value='');
+  g('co2-mon').value='MXN'; g('co2-lider').value='0';
+  g('modal-coas').classList.add('open');
+}
 function renderAseguradoras(){
   const q=(v('aseg-search')||'').toLowerCase();
   g('aseg-body').innerHTML=data.aseg.filter(a=>(a.nombre||'').toLowerCase().includes(q)).map(a=>`<tr>
@@ -1340,7 +1464,11 @@ async function guardarSiniestro(){
     coaseguro:v('s-coaseguro')==='1', coaseguro_detalle:v('s-coas-det')||null,
     reaseguro_clausula_control:v('s-reaseguro')==='1', reaseguro_corredor:v('s-reas-corredor')||null,
     estrategias_observaciones:v('s-estrategias')||null,
-    tramite_gnp:v('s-tramite-gnp')||null, ot:v('s-ot')||null
+    tramite_gnp:v('s-tramite-gnp')||null, ot:v('s-ot')||null,
+    lugar_siniestro:v('s-lugar-sin')||null,
+    procedencia:v('s-procedencia')||'procedente',
+    actividades_realizar:v('s-actividades-realizar')||null,
+    comentarios:v('s-comentarios')||null
   };
   if(id){ await db.from('siniestros').update(d2).eq('id',id); toast('Expediente actualizado.'); }
   else { await db.from('siniestros').insert(d2); toast('Expediente creado.'); }
@@ -1378,6 +1506,10 @@ function editarSiniestro(id){
   g('s-reaseguro').value=s.reaseguro_clausula_control?'1':'0';
   g('s-reas-corredor').value=s.reaseguro_corredor||'';
   g('s-tramite-gnp').value=s.tramite_gnp||''; g('s-ot').value=s.ot||'';
+  g('s-lugar-sin').value=s.lugar_siniestro||'';
+  g('s-procedencia').value=s.procedencia||'procedente';
+  g('s-actividades-realizar').value=s.actividades_realizar||'';
+  g('s-comentarios').value=s.comentarios||'';
   const pol=data.pol.find(p=>p.id===s.id_poliza)||{};
   if(pol.id_aseguradora){ g('s-aseg-direct').value=pol.id_aseguradora; actualizarCamposAseg(); g('s-tramite-gnp').value=s.tramite_gnp||''; g('s-ot').value=s.ot||''; }
   g('s-poliza').value=s.id_poliza||'';
@@ -1387,8 +1519,27 @@ function editarSiniestro(id){
 async function guardarPoliza(){
   const id=v('p-id');
   const ramoSel=v('p-ramo');
-  const ramo = ramoSel==='__otro__' ? (v('p-ramo-otro').trim()||'otro') : ramoSel;
-  const d2={numero:v('p-num'),id_aseguradora:parseInt(v('p-aseg'))||null,id_asegurado:parseInt(v('p-asdo'))||null,ramo,subramo:v('p-subramo')||null,agente:v('p-agente')||null,oficina:v('p-oficina')||null,vigencia_ini:v('p-vini')||null,vigencia_fin:v('p-vfin')||null,suma_asegurada:parseFloat(v('p-suma'))||0,moneda:v('p-mon'),tipo_cambio:parseFloat(v('p-tc'))||1,notas:v('p-notas')};
+  const ramo=ramoSel==='__otro__'?(v('p-ramo-otro').trim()||'otro'):ramoSel;
+  const d2={
+    numero:v('p-num'), id_aseguradora:parseInt(v('p-aseg'))||null,
+    id_asegurado:parseInt(v('p-asdo'))||null, ramo,
+    tipo_seguro:v('p-tipo-seguro')||null, subramo:v('p-subramo')||null,
+    agente:v('p-agente')||null, oficina:v('p-oficina')||null,
+    vigencia_ini:v('p-vini')||null, vigencia_fin:v('p-vfin')||null,
+    suma_asegurada:parseFloat(v('p-suma'))||0, moneda:v('p-mon'),
+    tipo_cambio:parseFloat(v('p-tc'))||1,
+    limite_max_resp:parseFloat(v('p-lim-max'))||0, limite_max_mon:v('p-lim-mon')||'MXN',
+    val_total_edificio:parseFloat(v('p-val-tot-edif'))||0,
+    val_total_contenidos:parseFloat(v('p-val-tot-cont'))||0,
+    val_ubic_edificio:parseFloat(v('p-val-ubic-edif'))||0,
+    val_ubic_contenidos:parseFloat(v('p-val-ubic-cont'))||0,
+    val_ubic_existencias:parseFloat(v('p-val-ubic-exist'))||0,
+    domicilio_legal:v('p-dom-legal')||null,
+    ubicacion_riesgo:v('p-ubic-riesgo')||null,
+    interes_asegurado:v('p-interes')||null,
+    condiciones_especiales:v('p-condiciones')||null,
+    notas:v('p-notas')
+  };
   if(id){ await db.from('polizas').update(d2).eq('id',id); toast('Póliza actualizada.'); }
   else { await db.from('polizas').insert(d2); toast('Póliza creada.'); }
   cerrarModal('modal-pol'); await loadAll();
@@ -1399,11 +1550,23 @@ function editarPoliza(id){
   g('pol-modal-title').textContent='Editar póliza'; g('p-id').value=p.id;
   g('p-num').value=p.numero||''; g('p-aseg').value=p.id_aseguradora||'';
   g('p-asdo').value=p.id_asegurado||'';
+  g('p-tipo-seguro').value=p.tipo_seguro||'';
   g('p-subramo').value=p.subramo||''; g('p-agente').value=p.agente||'';
   g('p-oficina').value=p.oficina||'';
   g('p-vini').value=p.vigencia_ini||''; g('p-vfin').value=p.vigencia_fin||'';
   g('p-suma').value=p.suma_asegurada||''; g('p-mon').value=p.moneda||'MXN';
-  g('p-tc').value=p.tipo_cambio||1; g('p-notas').value=p.notas||'';
+  g('p-tc').value=p.tipo_cambio||1;
+  g('p-lim-max').value=p.limite_max_resp||''; g('p-lim-mon').value=p.limite_max_mon||'MXN';
+  g('p-val-tot-edif').value=p.val_total_edificio||'';
+  g('p-val-tot-cont').value=p.val_total_contenidos||'';
+  g('p-val-ubic-edif').value=p.val_ubic_edificio||'';
+  g('p-val-ubic-cont').value=p.val_ubic_contenidos||'';
+  g('p-val-ubic-exist').value=p.val_ubic_existencias||'';
+  g('p-dom-legal').value=p.domicilio_legal||'';
+  g('p-ubic-riesgo').value=p.ubicacion_riesgo||'';
+  g('p-interes').value=p.interes_asegurado||'';
+  g('p-condiciones').value=p.condiciones_especiales||'';
+  g('p-notas').value=p.notas||'';
   const ramoOpt=g('p-ramo').querySelector(`option[value="${p.ramo}"]`);
   if(ramoOpt){ g('p-ramo').value=p.ramo; g('ramo-otro-wrap').style.display='none'; }
   else{ g('p-ramo').value='__otro__'; g('p-ramo-otro').value=p.ramo||''; g('ramo-otro-wrap').style.display='block'; }
@@ -1496,18 +1659,47 @@ async function guardarTC(){
 
 async function guardarReserva(){
   if(!currentSin) return;
+  const coasPct=parseFloat(v('res-coas-pct'))||0;
+  const perdida=parseFloat(v('res-perdida'))||0;
+  const ded=parseFloat(v('res-deducible'))||0;
+  const subtotal=perdida-ded;
+  const coasMonto=subtotal*(coasPct/100);
   await db.from('reservas').insert({
     id_siniestro:currentSin.id, concepto:v('res-concepto'),
     monto:parseFloat(v('res-monto'))||0,
     depreciacion_pct:parseFloat(v('res-dep-pct'))||0,
-    monto_perdida_estimada:parseFloat(v('res-perdida'))||0,
-    deducible:parseFloat(v('res-deducible'))||0,
-    deducible_pct:parseFloat(v('res-ded-pct'))||0,
+    monto_perdida_estimada:perdida,
+    deducible:ded, deducible_pct:parseFloat(v('res-ded-pct'))||0,
+    coaseguro_pct:coasPct, monto_coaseguro:coasMonto,
     moneda:v('res-mon'), tipo_cambio_mxn:parseFloat(v('res-tc'))||1,
     fecha:v('res-fecha')||new Date().toISOString().slice(0,10),
     bases_determinacion:v('res-bases')||null, notas:v('res-notas')
   });
   toast('Reserva registrada.'); cerrarModal('modal-res'); await loadAll(); renderDetalle();
+}
+
+async function guardarSublimite(){
+  const polId=parseInt(v('sl-pol-id'));
+  if(!polId){ toast('Error: no se encontró la póliza.'); return; }
+  await db.from('sublimites').insert({
+    id_poliza:polId, concepto:v('sl-concepto'),
+    monto:parseFloat(v('sl-monto'))||0,
+    moneda:v('sl-mon'), descripcion:v('sl-desc')||null
+  });
+  toast('Sublímite registrado.'); cerrarModal('modal-sublim'); await loadAll();
+}
+
+async function guardarCoaseguradora(){
+  if(!currentSin){ toast('Selecciona un expediente primero.'); return; }
+  await db.from('coaseguradoras').insert({
+    id_siniestro:currentSin.id,
+    nombre:v('co2-nombre'),
+    porcentaje:parseFloat(v('co2-pct'))||0,
+    reserva_neta:parseFloat(v('co2-reserva'))||0,
+    moneda:v('co2-mon'),
+    es_lider:v('co2-lider')==='1'
+  });
+  toast('Coaseguradora registrada.'); cerrarModal('modal-coas'); await loadAll(); renderDetalle();
 }
 
 async function guardarPago(){
@@ -1805,91 +1997,283 @@ function buildFormalGenerico(s, secs, aseg){
   const asdo=data.asdo.find(a=>a.id===pol.id_asegurado)||{};
   const now=new Date().toLocaleDateString('es-MX',{day:'2-digit',month:'long',year:'numeric'});
   const logo=logoDataUrl?`<img src="${logoDataUrl}" class="rpt-logo">`:`<div style="font-size:22px;font-weight:900;color:#1558b0;letter-spacing:-1px;">AASA</div>`;
-  const rv=reservaVigente(s.id);
-  const pagsTotal=data.pag.filter(p=>p.id_siniestro===s.id).reduce((a,p)=>a+toMXN(p.monto,p.moneda,p.tipo_cambio_mxn),0);
-  const honsTotal=data.hon.filter(h=>h.id_siniestro===s.id).reduce((a,h)=>a+toMXN(h.monto,h.moneda,h.tipo_cambio_mxn),0);
-  const viatsTotal=data.viat.filter(v2=>v2.id_siniestro===s.id).reduce((a,v2)=>a+toMXN(v2.monto,v2.moneda,v2.tipo_cambio_mxn),0);
-  const resRows=data.res.filter(r=>r.id_siniestro===s.id);
-  const resVig={};
-  resRows.forEach(r=>{if(!resVig[r.concepto]||r.id>resVig[r.concepto].id)resVig[r.concepto]=r;});
-  const perdidaEst=Object.values(resVig).reduce((a,r)=>a+(r.monto_perdida_estimada||r.monto||0),0);
-  const deducible=Object.values(resVig).reduce((a,r)=>a+(r.deducible||0),0);
   const INF_T={preliminar:'INFORME PRELIMINAR',actualizacion:'INFORME DE ACTUALIZACIÓN',final:'INFORME FINAL',nota_tecnica:'NOTA TÉCNICA'};
   const lastInf=data.inf.filter(i=>i.id_siniestro===s.id).sort((a,b)=>b.id-a.id)[0]||{};
   const tipoTitulo=INF_T[lastInf.tipo||'preliminar']||'INFORME PRELIMINAR';
-  const bases=Object.values(resVig).map(r=>r.bases_determinacion).filter(Boolean).join(' ');
 
-  let h=`<div style="padding:15mm;font-family:'Segoe UI',Arial,sans-serif;font-size:11px;color:#111;">`;
-  h+=`<div class="rpt-header"><div>${logo}<div class="rpt-header-addr">Calle Miguel Hidalgo 61, Oficina 3 | Col. San Jerónimo Lídice, Alcaldía La Magdalena Contreras<br>C.P. 10200 Ciudad de México, México | PBX +52 55 5593-8823 | aasa.mexico@aasa.com.mx</div></div><div><div class="rpt-tipo">${tipoTitulo}</div><div class="rpt-date">${now}</div></div></div>`;
-  h+=`<div class="rpt-atn"><div class="rpt-atn-name">AT´N: &nbsp;${lastInf.destinatario||'_______________________'}</div><div class="rpt-atn-dept">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; PRESENTE</div></div>`;
+  // Cálculos financieros con tabla de 5 columnas
+  const resRows=data.res.filter(r=>r.id_siniestro===s.id);
+  const resVig={};
+  resRows.forEach(r=>{if(!resVig[r.concepto]||r.id>resVig[r.concepto].id)resVig[r.concepto]=r;});
+  const rvList=Object.values(resVig);
+  const totalPerdida=rvList.reduce((a,r)=>a+(r.monto_perdida_estimada||r.monto||0),0);
+  const totalDed=rvList.reduce((a,r)=>a+(r.deducible||0),0);
+  const totalCoas=rvList.reduce((a,r)=>a+(r.monto_coaseguro||((r.monto_perdida_estimada||r.monto||0)-r.deducible||0)*(r.coaseguro_pct||0)/100),0);
+  const totalReserva=totalPerdida-totalDed-totalCoas;
+  const coasRows=data.coas.filter(c=>c.id_siniestro===s.id);
+  const sublimRows=data.sublim.filter(sl=>sl.id_poliza===pol.id);
+  const pagsTotal=data.pag.filter(p=>p.id_siniestro===s.id).reduce((a,p)=>a+toMXN(p.monto,p.moneda,p.tipo_cambio_mxn),0);
+  const honsTotal=data.hon.filter(h=>h.id_siniestro===s.id).reduce((a,h)=>a+toMXN(h.monto,h.moneda,h.tipo_cambio_mxn),0);
+  const viatsTotal=data.viat.filter(v2=>v2.id_siniestro===s.id).reduce((a,v2)=>a+toMXN(v2.monto,v2.moneda,v2.tipo_cambio_mxn),0);
+  const bases=rvList.map(r=>r.bases_determinacion).filter(Boolean).join(' ');
 
-  if(secs.includes('identificacion')){
-    h+=`<table class="id-table">
-      <tr><td class="lbl">No. Expediente</td><td class="val">${s.numero_exp}</td><td class="lbl">No. Siniestro</td><td class="val">${s.numero_siniestro||''}</td></tr>
-      <tr><td class="lbl">Aseguradora</td><td class="val">${aseg.nombre||''}</td><td class="lbl">Póliza</td><td class="val">${pol.numero||''}</td></tr>
-      <tr><td class="lbl">Ramo</td><td class="val">${RAMOS[pol.ramo]||pol.ramo||''}</td><td class="lbl">Subramo</td><td class="val">${pol.subramo||s.subramo||''}</td></tr>
-      <tr><td class="lbl">Vigencia</td><td class="val">Del ${fmtD(pol.vigencia_ini)} Al ${fmtD(pol.vigencia_fin)}</td><td class="lbl">Agente</td><td class="val">${pol.agente||''}</td></tr>
-      <tr><td class="lbl">Asegurado</td><td colspan="3" class="val">${asdo.nombre||''}</td></tr>
-      <tr><td class="lbl">Fecha de siniestro</td><td class="val">${fmtD(s.fecha_siniestro)}</td><td class="lbl">Giro del asegurado</td><td class="val">${s.giro_asegurado||''}</td></tr>
-      <tr><td class="lbl">Causa del siniestro</td><td colspan="3" class="val">${s.causa||''}${s.causa_comentario?' — '+s.causa_comentario:''}</td></tr>
-    </table>`;
-  }
+  const moneda=pol.moneda||'MXN';
+  const procedTxt={procedente:'PROCEDENTE',improcedente:'IMPROCEDENTE',por_determinar:'POR DETERMINAR'}[s.procedencia||'procedente'];
 
-  if(secs.includes('estimacion')){
-    h+=`<div class="sec"><div class="sec-title">Estimación financiera</div>`;
-    h+=`<div class="hon-grid">
-      <div class="hon-row"><span>Reserva vigente</span><span>${fmtMXN(rv)}</span></div>
-      <div class="hon-row"><span>Pérdida estimada</span><span>${fmtMXN(perdidaEst)}</span></div>
-      <div class="hon-row"><span>Deducible</span><span>${fmtMXN(deducible)}</span></div>
-      <div class="hon-row"><span>Reserva neta</span><span>${fmtMXN(perdidaEst-deducible)}</span></div>
-      <div class="hon-row"><span>Pagos acumulados</span><span>${fmtMXN(pagsTotal)}</span></div>
-      <div class="hon-row"><span>Saldo técnico</span><span>${fmtMXN(rv-pagsTotal)}</span></div>
-    </div>
-    ${bases?`<div class="bases-box" style="margin-top:6px;"><strong>Bases para determinar la reserva:</strong><br>${bases}</div>`:''}
+  // Helper de fila de identificación
+  const idRow=(lbl,val,lbl2='',val2='')=>`<tr><td class="lbl">${lbl}</td><td class="val">${val}</td>${lbl2?`<td class="lbl">${lbl2}</td><td class="val">${val2}</td>`:''}</tr>`;
+
+  let h=`<div style="padding:15mm;font-family:'Segoe UI',Arial,sans-serif;font-size:11px;color:#111;line-height:1.6;">`;
+
+  // ── ENCABEZADO ──
+  h+=`<div class="rpt-header">
+    <div>${logo}<div class="rpt-header-addr">Calle Miguel Hidalgo 61, Oficina 3 | Col. San Jerónimo Lídice, Alcaldía La Magdalena Contreras<br>C.P. 10200 Ciudad de México, México | PBX +52 55 5593-8823 | aasa.mexico@aasa.com.mx</div></div>
+    <div><div class="rpt-tipo">${tipoTitulo}</div><div class="rpt-date">${now}</div></div>
+  </div>`;
+
+  // ── DESTINATARIO ──
+  h+=`<div style="margin-bottom:16px;">
+    <div style="font-weight:700;">${aseg.nombre||'_______________________'}</div>
+    <div>Presente</div>
+  </div>`;
+  if(lastInf.destinatario){
+    h+=`<div style="margin-bottom:16px;">
+      <div style="font-weight:700;">${lastInf.destinatario}</div>
+      ${lastInf.jefe_depto?`<div>${lastInf.jefe_depto}</div>`:''}
     </div>`;
   }
 
+  // ── TABLA DE IDENTIFICACIÓN (OT, Póliza, N/Ref, etc.) ──
+  if(secs.includes('identificacion')){
+    const coasLider=coasRows.find(c=>c.es_lider);
+    const coasPartic=coasRows.filter(c=>!c.es_lider);
+    h+=`<table class="id-table" style="margin-bottom:14px;">`;
+    if(s.ot) h+=idRow('OT Atlas:',`<strong>${s.ot}</strong>`,'Póliza Atlas:',pol.numero||'');
+    if(s.tramite_gnp||coasLider) h+=idRow('Siniestro GNP:',s.numero_siniestro||'','Póliza GNP:',coasLider?coasLider.nombre:'');
+    if(s.referencia_ajustadora) h+=idRow('N/Ref.:',s.referencia_ajustadora,'','');
+    h+=`</table>`;
+    h+=`<table class="id-table" style="margin-bottom:14px;">
+      ${idRow('Aseguradora:',`<strong>${aseg.nombre||''}</strong>`)}
+      ${coasLider||coasPartic.length?idRow('Coaseguradora:',coasRows.map(c=>`${c.nombre} (${c.porcentaje}%)`).join(', ')):''}
+      ${idRow('Tipo de Seguro:',pol.tipo_seguro||RAMOS[pol.ramo]||pol.ramo||'')}
+      ${idRow('Asegurado:',`<strong>${asdo.nombre||''}</strong>`)}
+      ${pol.domicilio_legal?idRow('Domicilio Legal:',pol.domicilio_legal):''}
+      ${pol.ubicacion_riesgo?idRow('Ubicación del Riesgo:',pol.ubicacion_riesgo):''}
+      ${s.giro_asegurado?idRow('Giro del Negocio:',s.giro_asegurado):''}
+      ${(pol.vigencia_ini||pol.vigencia_fin)?idRow('Vigencia:',`Del ${fmtD(pol.vigencia_ini)} al ${fmtD(pol.vigencia_fin)}`):''}
+      ${s.lugar_siniestro?idRow('Lugar del Siniestro:',s.lugar_siniestro):''}
+      ${s.fecha_siniestro?idRow('Fecha de Siniestro:',`${fmtD(s.fecha_siniestro)}${s.hora_ocurrencia?' a las '+s.hora_ocurrencia.slice(0,5)+' horas':''}`,'',''):''}
+    </table>`;
+
+    // Descripción de daños y riesgos cubiertos
+    if(s.bienes_danados){
+      h+=`<div class="sec"><div class="sec-title" style="margin-bottom:4px;">Descripción de los Daños:</div>
+      <div class="narrative" style="white-space:pre-wrap;">${s.bienes_danados}</div></div>`;
+    }
+
+    // Valores declarados
+    if(pol.val_total_edificio||pol.val_total_contenidos||pol.val_ubic_edificio||pol.val_ubic_contenidos||pol.val_ubic_existencias){
+      if(pol.val_total_edificio||pol.val_total_contenidos){
+        h+=`<div style="margin-bottom:8px;font-weight:600;">Valores Declarados al 100%:</div>
+        <table class="id-table" style="width:60%;margin-bottom:8px;">
+          ${pol.val_total_edificio?`<tr><td class="lbl">Edificio</td><td class="val" style="text-align:right;">${moneda}$ ${fmtMXN(pol.val_total_edificio)}</td></tr>`:''}
+          ${pol.val_total_contenidos?`<tr><td class="lbl">Contenidos</td><td class="val" style="text-align:right;">${moneda}$ ${fmtMXN(pol.val_total_contenidos)}</td></tr>`:''}
+          <tr><td class="lbl" style="font-weight:700;">TOTAL:</td><td class="val" style="text-align:right;font-weight:700;">${moneda}$ ${fmtMXN((pol.val_total_edificio||0)+(pol.val_total_contenidos||0))}</td></tr>
+        </table>`;
+      }
+      if(pol.val_ubic_edificio||pol.val_ubic_contenidos||pol.val_ubic_existencias){
+        h+=`<div style="margin-bottom:8px;font-weight:600;">Valores Declarados Ubicación Afectada:</div>
+        <table class="id-table" style="width:60%;margin-bottom:8px;">
+          ${pol.val_ubic_edificio?`<tr><td class="lbl">Edificio</td><td class="val" style="text-align:right;">${moneda}$ ${fmtMXN(pol.val_ubic_edificio)}</td></tr>`:''}
+          ${pol.val_ubic_contenidos?`<tr><td class="lbl">Contenidos</td><td class="val" style="text-align:right;">${moneda}$ ${fmtMXN(pol.val_ubic_contenidos)}</td></tr>`:''}
+          ${pol.val_ubic_existencias?`<tr><td class="lbl">Existencias</td><td class="val" style="text-align:right;">${moneda}$ ${fmtMXN(pol.val_ubic_existencias)}</td></tr>`:''}
+          <tr><td class="lbl" style="font-weight:700;">TOTAL:</td><td class="val" style="text-align:right;font-weight:700;">${moneda}$ ${fmtMXN((pol.val_ubic_edificio||0)+(pol.val_ubic_contenidos||0)+(pol.val_ubic_existencias||0))}</td></tr>
+        </table>`;
+      }
+    }
+
+    // Límite máximo y sublímites
+    if(pol.limite_max_resp){
+      h+=`<div class="bases-box" style="margin-bottom:8px;"><strong>Límite Máximo de Responsabilidad:</strong> ${pol.limite_max_mon||'MXN'}$ ${fmtMXN(pol.limite_max_resp)} para un solo evento y el total de ellos que ocurran durante la vigencia.</div>`;
+    }
+    if(sublimRows.length){
+      h+=`<table class="id-table" style="width:70%;margin-bottom:8px;">`;
+      sublimRows.forEach(sl=>{h+=`<tr><td class="lbl">Sublímite – ${sl.concepto}</td><td class="val" style="text-align:right;">${sl.moneda}$ ${fmtMXN(sl.monto)}${sl.descripcion?' '+sl.descripcion:''}</td></tr>`;});
+      h+=`</table>`;
+    }
+
+    // Estimación resumen en portada
+    if(rvList.length){
+      h+=`<div style="margin-bottom:8px;font-weight:600;">Estimación de Daños:</div>
+      <table class="cov-table" style="width:80%;margin-bottom:8px;">
+        <thead><tr><th style="text-align:left;">Concepto</th><th>Reserva actual – ${moneda}</th></tr></thead><tbody>`;
+      rvList.forEach(r=>{
+        const neta=(r.monto_perdida_estimada||r.monto||0)-(r.deducible||0)-(r.monto_coaseguro||0);
+        h+=`<tr><td class="lbl">${r.concepto}</td><td style="text-align:right;">${fmtMXN(neta)}</td></tr>`;
+      });
+      h+=`<tr class="total"><td class="lbl" style="font-weight:700;">TOTAL</td><td style="text-align:right;font-weight:700;">${fmtMXN(totalReserva)}</td></tr>`;
+      h+=`</tbody></table>`;
+      if(coasRows.length){
+        h+=`<div style="font-size:10px;color:#555;margin-bottom:4px;">Al 100% neto de Deducible y Coaseguro. Participación:</div>
+        <table class="cov-table" style="width:80%;margin-bottom:12px;">
+          <thead><tr><th style="text-align:left;">Compañía</th><th>%</th><th>Reserva neta ${moneda}</th></tr></thead><tbody>`;
+        let sumPct=0,sumRes=0;
+        coasRows.forEach(c=>{
+          sumPct+=c.porcentaje||0; sumRes+=c.reserva_neta||0;
+          h+=`<tr><td>${c.nombre||''}</td><td style="text-align:center;">${c.porcentaje||0}%</td><td style="text-align:right;">${fmtMXN(c.reserva_neta)}</td></tr>`;
+        });
+        h+=`<tr class="total"><td style="font-weight:700;">TOTAL</td><td style="text-align:center;font-weight:700;">${sumPct}%</td><td style="text-align:right;font-weight:700;">${fmtMXN(sumRes)}</td></tr>`;
+        h+=`</tbody></table>`;
+      }
+    }
+  }
+
+  // ── I. INTRODUCCIÓN ──
+  if(secs.includes('desarrollo')){
+    const intro=lastInf.desarrollo_siniestro||s.descripcion||'';
+    if(intro){
+      h+=`<div class="sec"><div class="sec-title">I.&nbsp;&nbsp;INTRODUCCIÓN.</div><div class="narrative">${intro}</div></div>`;
+    }
+  }
+
+  // ── II. DESCRIPCIÓN DEL RIESGO ──
+  if(secs.includes('identificacion')&&(asdo.nombre||pol.ubicacion_riesgo||s.giro_asegurado)){
+    h+=`<div class="sec"><div class="sec-title">II.&nbsp;&nbsp;DESCRIPCIÓN DEL RIESGO.</div>`;
+    if(asdo.nombre){
+      h+=`<div style="font-weight:700;margin-bottom:4px;">II.1. ASEGURADO</div>
+      <div class="narrative">${asdo.nombre}${pol.ubicacion_riesgo?' se encuentra ubicado en '+pol.ubicacion_riesgo+'.':(pol.domicilio_legal?' ubicado en '+pol.domicilio_legal+'.'+'':'')}${s.giro_asegurado?'<br><br>'+s.giro_asegurado:''}</div>`;
+    }
+    if(pol.ubicacion_riesgo){
+      h+=`<div style="font-weight:700;margin:8px 0 4px;">II.2. UBICACIÓN DEL ASEGURADO</div>
+      <div class="narrative">${pol.ubicacion_riesgo}</div>`;
+    }
+    h+=`</div>`;
+  }
+
+  // ── III. INSPECCIÓN ──
   if(secs.includes('inspeccion')){
-    h+=`<div class="sec"><div class="sec-title">Resultado de la inspección</div>
-    <table class="cov-table"><tbody>
-      <tr><td class="lbl">Fecha y hora</td><td colspan="3">${fmtD(s.fecha_inspeccion)}${s.hora_primera_visita?' a las '+s.hora_primera_visita.slice(0,5):''}</td></tr>
+    h+=`<div class="sec"><div class="sec-title">III.&nbsp;&nbsp;INSPECCIÓN.</div>`;
+    h+=`<table class="cov-table"><tbody>
+      <tr><td class="lbl">Fecha y hora de inspección</td><td colspan="3">${fmtD(s.fecha_inspeccion||s.fecha_primera_visita)}${s.hora_primera_visita?' a las '+s.hora_primera_visita.slice(0,5)+' horas':''}</td></tr>
       <tr><td class="lbl">Persona entrevistada</td><td>${s.inspeccion_persona||''}</td><td class="lbl">Cargo</td><td>${s.inspeccion_cargo||''}</td></tr>
-      <tr><td class="lbl">Domicilio</td><td colspan="3">${s.inspeccion_domicilio||''}</td></tr>
-      <tr><td class="lbl">Bienes dañados</td><td colspan="3">${s.bienes_danados||''}</td></tr>
+      <tr><td class="lbl">Teléfono</td><td colspan="3">${s.inspeccion_telefono||''}</td></tr>
+      <tr><td class="lbl">Domicilio inspeccionado</td><td colspan="3">${s.inspeccion_domicilio||pol.ubicacion_riesgo||''}</td></tr>
+      <tr><td class="lbl">Lugar del siniestro</td><td colspan="3">${s.lugar_siniestro||''}</td></tr>
     </tbody></table></div>`;
   }
 
+  // ── IV. DESCRIPCIÓN DE LOS BIENES DAÑADOS ──
+  if(secs.includes('inspeccion')&&s.bienes_danados){
+    h+=`<div class="sec"><div class="sec-title">IV.&nbsp;&nbsp;DESCRIPCIÓN DE LOS BIENES DAÑADOS.</div>
+    <div class="narrative" style="white-space:pre-wrap;">${s.bienes_danados}</div></div>`;
+  }
+
+  // ── V. DESCRIPCIÓN DE LOS HECHOS ──
+  if(secs.includes('desarrollo')&&lastInf.desarrollo_siniestro){
+    h+=`<div class="sec"><div class="sec-title">V.&nbsp;&nbsp;DESCRIPCIÓN DE LOS HECHOS.</div>
+    <div class="narrative">${lastInf.desarrollo_siniestro}</div></div>`;
+  }
+
+  // ── VI. CIRCUNSTANCIA DEL SINIESTRO ──
+  if(secs.includes('desarrollo')&&s.descripcion){
+    h+=`<div class="sec"><div class="sec-title">VI.&nbsp;&nbsp;CIRCUNSTANCIA DEL SINIESTRO.</div>
+    <div class="narrative">${s.descripcion}</div></div>`;
+  }
+
+  // ── VII. PÓLIZA ──
+  if(secs.includes('identificacion')){
+    h+=`<div class="sec"><div class="sec-title">VII.&nbsp;&nbsp;PÓLIZA.</div>
+    <table class="id-table">
+      ${idRow('Póliza:',pol.numero||'')}
+      ${idRow('Tipo:',pol.tipo_seguro||RAMOS[pol.ramo]||pol.ramo||'')}
+      ${idRow('Asegurado:',asdo.nombre||'')}
+      ${pol.domicilio_legal?idRow('Domicilio Fiscal:',pol.domicilio_legal):''}
+      ${pol.ubicacion_riesgo?idRow('Ubicación Afectada:',pol.ubicacion_riesgo):''}
+      ${(pol.vigencia_ini||pol.vigencia_fin)?idRow('Vigencia:',`Desde: ${fmtD(pol.vigencia_ini)} Hasta: ${fmtD(pol.vigencia_fin)}`):''}
+      ${idRow('Moneda:',moneda==='MXN'?'Pesos Mexicanos (MXN)':moneda==='USD'?'Dólares Americanos (USD)':'Euros (EUR)')}
+      ${pol.interes_asegurado?idRow('Interés Asegurado:',pol.interes_asegurado):''}
+    </table>
+    ${pol.condiciones_especiales?`<div style="margin-top:8px;font-weight:600;">Condiciones Especiales Aplicables:</div><div class="narrative" style="white-space:pre-wrap;font-size:10px;">${pol.condiciones_especiales}</div>`:''}
+    ${coasRows.length?`<div style="margin-top:8px;font-weight:600;">Coaseguro:</div>
+    <table class="cov-table" style="width:70%;">
+      <thead><tr><th style="text-align:left;">Compañía</th><th>Participación</th></tr></thead><tbody>
+      ${coasRows.map(c=>`<tr><td>${c.es_lider?'<strong>'+c.nombre+' (líder)</strong>':c.nombre}</td><td style="text-align:center;">${c.porcentaje}%</td></tr>`).join('')}
+      </tbody></table>`:''}
+    </div>`;
+  }
+
+  // ── VIII. PROCEDENCIA ──
   if(secs.includes('desarrollo')){
-    const desarrollo=lastInf.desarrollo_siniestro||s.descripcion||'';
-    h+=`<div class="sec"><div class="sec-title">Desarrollo del siniestro</div><div class="narrative">${desarrollo||'Pendiente de redactar.'}</div></div>`;
-  }
-
-  if(secs.includes('salvamento')){
-    const salvTxt={si:'Sí',no:'No',por_determinar:'Por determinar'}[s.salvamento||'por_determinar'];
-    h+=`<div class="sec"><div class="sec-title">Salvamento y recuperación</div>
-    <div class="narrative">Salvamento: ${salvTxt}${s.salvamento_detalle?' — '+s.salvamento_detalle:''}<br>Recuperación: ${s.recuperacion?'Sí':'No'}${s.recuperacion_terceros?' — Terceros: '+s.recuperacion_terceros:''}</div></div>`;
-  }
-
-  if(secs.includes('estrategias')){
     const estrat=lastInf.estrategias||s.estrategias_observaciones||'';
-    if(estrat) h+=`<div class="sec"><div class="sec-title">Estrategias y observaciones</div><div class="narrative">${estrat}</div></div>`;
+    h+=`<div class="sec"><div class="sec-title">VIII.&nbsp;&nbsp;PROCEDENCIA.</div>
+    <div class="narrative">Con base en los hechos conocidos y la información recabada durante la inspección, así como las condiciones generales y especiales de la póliza, el presente reclamo se considera de carácter <strong>${procedTxt}</strong>.</div></div>`;
   }
 
+  // ── IX. ESTIMACIÓN ──
+  if(secs.includes('estimacion')&&rvList.length){
+    h+=`<div class="sec"><div class="sec-title">IX.&nbsp;&nbsp;ESTIMACIÓN.</div>`;
+    // Tabla 5 columnas
+    h+=`<table class="cov-table">
+      <thead><tr><th style="text-align:left;">Concepto</th><th>Estimación pérdida</th><th>Deducible</th><th>Subtotal</th><th>Coaseguro</th><th>Reserva actual</th></tr></thead><tbody>`;
+    let sumPerd=0,sumDed2=0,sumSub=0,sumCoas2=0,sumRes2=0;
+    rvList.forEach(r=>{
+      const perd=r.monto_perdida_estimada||r.monto||0;
+      const ded2=r.deducible||0;
+      const sub=perd-ded2;
+      const coas2=r.monto_coaseguro||(sub*(r.coaseguro_pct||0)/100);
+      const res2=sub-coas2;
+      sumPerd+=perd;sumDed2+=ded2;sumSub+=sub;sumCoas2+=coas2;sumRes2+=res2;
+      h+=`<tr><td class="lbl">${r.concepto}</td><td style="text-align:right;">${fmtMXN(perd)}</td><td style="text-align:right;">${fmtMXN(ded2)}</td><td style="text-align:right;">${fmtMXN(sub)}</td><td style="text-align:right;">${fmtMXN(coas2)}</td><td style="text-align:right;font-weight:700;">${fmtMXN(res2)}</td></tr>`;
+    });
+    h+=`<tr class="total"><td style="font-weight:700;">TOTAL</td><td style="text-align:right;font-weight:700;">${fmtMXN(sumPerd)}</td><td style="text-align:right;font-weight:700;">${fmtMXN(sumDed2)}</td><td style="text-align:right;font-weight:700;">${fmtMXN(sumSub)}</td><td style="text-align:right;font-weight:700;">${fmtMXN(sumCoas2)}</td><td style="text-align:right;font-weight:700;">${fmtMXN(sumRes2)}</td></tr>`;
+    h+=`</tbody></table>`;
+    if(bases) h+=`<div class="bases-box" style="margin-top:6px;">${bases}</div>`;
+    h+=`</div>`;
+  }
+
+  // ── X. ESTIMACIÓN EN COASEGURO ──
+  if(secs.includes('estimacion')&&coasRows.length){
+    h+=`<div class="sec"><div class="sec-title">X.&nbsp;&nbsp;ESTIMACIÓN EN COASEGURO.</div>
+    <table class="cov-table" style="width:70%;">
+      <thead><tr><th style="text-align:left;">Compañía</th><th>%</th><th>Reserva neta ${moneda}</th></tr></thead><tbody>`;
+    let sp=0,sr=0;
+    coasRows.forEach(c=>{sp+=c.porcentaje||0;sr+=c.reserva_neta||0;h+=`<tr><td>${c.nombre||''}</td><td style="text-align:center;">${c.porcentaje}%</td><td style="text-align:right;">${fmtMXN(c.reserva_neta)}</td></tr>`;});
+    h+=`<tr class="total"><td style="font-weight:700;">TOTAL</td><td style="text-align:center;font-weight:700;">${sp}%</td><td style="text-align:right;font-weight:700;">${fmtMXN(sr)}</td></tr>`;
+    h+=`</tbody></table></div>`;
+  }
+
+  // ── XI. SALVAMENTO ──
+  if(secs.includes('salvamento')){
+    const salvTxt={si:'SI ( X )  NO ( )  POR DETERMINAR ( )',no:'SI ( )  NO ( X )  POR DETERMINAR ( )',por_determinar:'SI ( )  NO ( )  POR DETERMINAR ( X )'}[s.salvamento||'por_determinar'];
+    h+=`<div class="sec"><div class="sec-title">XI.&nbsp;&nbsp;SALVAMENTO.</div>
+    <div class="narrative">${salvTxt}${s.salvamento_detalle?'<br>'+s.salvamento_detalle:''}</div></div>`;
+  }
+
+  // ── XII. ACTIVIDADES A REALIZAR ──
+  if(secs.includes('estrategias')){
+    const activ=s.actividades_realizar||lastInf.estrategias||s.estrategias_observaciones||'';
+    if(activ){
+      h+=`<div class="sec"><div class="sec-title">XII.&nbsp;&nbsp;ACTIVIDADES A REALIZAR.</div>
+      <div class="narrative" style="white-space:pre-wrap;">${activ}</div></div>`;
+    }
+  }
+
+  // ── XIII. COMENTARIOS ──
+  if(secs.includes('desarrollo')&&s.comentarios){
+    h+=`<div class="sec"><div class="sec-title">XIII.&nbsp;&nbsp;COMENTARIOS.</div>
+    <div class="narrative">${s.comentarios}</div></div>`;
+  }
+
+  // ── FIRMAS ──
   if(secs.includes('cronologia')){
-    h+=`<div class="sec"><div class="sec-title">Cronología</div>
-    <table class="crono-table"><thead><tr><th>Evento</th><th>Fecha</th><th>Hora</th></tr></thead><tbody>
-    <tr><td>Ocurrencia</td><td>${fmtD(s.fecha_siniestro)}</td><td>${s.hora_ocurrencia?s.hora_ocurrencia.slice(0,5):'—'}</td></tr>
-    <tr><td>Asignación</td><td>${fmtD(s.fecha_asignacion)}</td><td>${s.hora_asignacion?s.hora_asignacion.slice(0,5):'—'}</td></tr>
-    <tr><td>Primer contacto</td><td>${fmtD(s.fecha_primer_contacto)}</td><td>${s.hora_primer_contacto?s.hora_primer_contacto.slice(0,5):'—'}</td></tr>
-    <tr><td>Primera visita</td><td>${fmtD(s.fecha_primera_visita)}</td><td>${s.hora_primera_visita?s.hora_primera_visita.slice(0,5):'—'}</td></tr>
-    </tbody></table>
-    <table class="sign-table"><tbody><tr>
-      <td><div class="sign-line"></div><div class="sign-name">Ing. Ernesto Almaraz Llanos</div><div class="sign-role">Director General — CNSF: C15979</div></td>
-      <td><div class="sign-line"></div><div class="sign-name">Javier Chávez Á.</div><div class="sign-role">Ajustador — CNSF: 34388</div></td>
-    </tr></tbody></table></div>`;
+    h+=`<div style="margin-top:24px;text-align:center;font-weight:700;">ATENTAMENTE<br>ALMARAZ AJUSTADORES, S.A.</div>`;
+    h+=`<table class="sign-table" style="margin-top:30px;"><tbody><tr>
+      <td><div class="sign-line"></div><div class="sign-name">ING. JAVIER CHÁVEZ Á.</div><div class="sign-role">C.N.S.F. C15188</div><div class="sign-role">AJUSTADOR</div></td>
+      <td><div class="sign-line"></div><div class="sign-name">ING. ERNESTO ALMARAZ LL.</div><div class="sign-role">C.N.S.F. C15979</div><div class="sign-role">DIRECTOR GENERAL</div></td>
+    </tr></tbody></table>`;
   }
 
-  h+=`<div class="rpt-footer"><span>Almaraz Ajustadores, S.A. — Javier Chávez Á., Ajustador — CNSF: 34388</span><span>${s.numero_exp} — ${now}</span></div></div>`;
+  h+=`<div class="rpt-footer"><span>Almaraz Ajustadores, S.A. — ${s.numero_exp}${s.ot?' | OT: '+s.ot:''}</span><span>${now}</span></div></div>`;
   return h;
 }
 
