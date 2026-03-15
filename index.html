@@ -3277,6 +3277,9 @@ async function descargarWordGNP(){
   const vigStr = pol.vigencia_ini
     ? fD(pol.vigencia_ini)+' al '+fD(pol.vigencia_fin) : '';
 
+  // Anchos auxiliares usados en el resto de secciones
+  const W2=Math.floor(CONTENT_W/2);
+
   // 6 columnas calibradas al contenido real (suma = CONTENT_W = 9639)
   // C1=lbl  C2=val  C3=lbl  C4=val  C5=lbl  C6=val
   const C1=1480, C2=2200, C3=1380, C4=1600, C5=1100;
