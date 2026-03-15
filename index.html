@@ -414,7 +414,8 @@ td { padding:9px 10px; vertical-align:middle; }
             </div>
             <div style="display:flex;flex-direction:column;gap:6px;">
               <button class="btn btn-primary" onclick="imprimirReporte()" style="width:100%;">Imprimir / Guardar PDF</button>
-              <button class="btn" onclick="descargarWord()" style="width:100%;font-size:12px;">Descargar Informe Preliminar (.docx)</button>
+              <button class="btn" id="btn-word-generico" onclick="descargarWord()" style="width:100%;font-size:12px;">Descargar Informe Preliminar (.docx)</button>
+              <button class="btn" id="btn-word-gnp" onclick="descargarWordGNP()" style="width:100%;font-size:12px;display:none;background:rgba(255,204,128,.12);border-color:rgba(255,204,128,.4);color:#ffcc80;">Descargar Informe GNP (.docx)</button>
               <div style="font-size:10px;color:var(--text-ter);text-align:center;">PDF: selecciona "Guardar como PDF"<br>en el diálogo de impresión</div>
             </div>
           </div>
@@ -460,6 +461,36 @@ td { padding:9px 10px; vertical-align:middle; }
       <div class="fg"><label>Clave ajustador GNP</label><input type="text" id="s-gnp-clave-ajust" placeholder="Clave asignada por GNP"></div>
       <div class="fg"><label>Jefe de Depto. GNP</label><input type="text" id="s-gnp-jefe" placeholder="Nombre del jefe de departamento"></div>
       <div class="fg"><label>Oficina GNP</label><input type="text" id="s-gnp-oficina" placeholder="ej. Veracruz, Insurgentes"></div>
+    </div>
+    <!-- Salvamento extendido GNP (Sección 6) -->
+    <div style="font-size:10px;color:#ffcc80;text-transform:uppercase;letter-spacing:.06em;margin:10px 0 6px;">Salvamento extendido (GNP §6)</div>
+    <div class="form-grid">
+      <div class="fg"><label>Persona a entrevistar</label><input type="text" id="s-gnp-salv-persona" placeholder="Nombre del contacto para salvamento"></div>
+      <div class="fg"><label>Teléfono contacto</label><input type="text" id="s-gnp-salv-tel"></div>
+      <div class="fg"><label>Email contacto</label><input type="text" id="s-gnp-salv-email"></div>
+      <div class="fg"><label>Móvil contacto</label><input type="text" id="s-gnp-salv-movil"></div>
+      <div class="fg full"><label>Nombre posible comprador</label><input type="text" id="s-gnp-salv-comprador"></div>
+    </div>
+    <!-- Recuperación extendida GNP (Sección 7) -->
+    <div style="font-size:10px;color:#ffcc80;text-transform:uppercase;letter-spacing:.06em;margin:10px 0 6px;">Recuperación extendida (GNP §7)</div>
+    <div class="form-grid">
+      <div class="fg"><label>Nombre del recuperador</label><input type="text" id="s-gnp-rec-recuperador"></div>
+      <div class="fg"><label>Carta Porte / Bill of Lading</label><input type="text" id="s-gnp-rec-carta-porte"></div>
+      <div class="fg"><label>Fecha prescripción de la acción</label><input type="date" id="s-gnp-rec-prescripcion"></div>
+    </div>
+    <!-- Transportes GNP (Sección 8) -->
+    <div style="font-size:10px;color:#ffcc80;text-transform:uppercase;letter-spacing:.06em;margin:10px 0 6px;">Transportes (GNP §8)</div>
+    <div class="form-grid">
+      <div class="fg"><label>Tipo de transporte</label><input type="text" id="s-gnp-trans-tipo" placeholder="Terrestre, marítimo, aéreo"></div>
+      <div class="fg"><label>Puerto o frontera</label><input type="text" id="s-gnp-trans-frontera"></div>
+      <div class="fg"><label>Placa o matrícula</label><input type="text" id="s-gnp-trans-placa"></div>
+      <div class="fg"><label>Destino del embarque</label><input type="text" id="s-gnp-trans-destino"></div>
+      <div class="fg"><label>Compañía transportista</label><input type="text" id="s-gnp-trans-compania"></div>
+    </div>
+    <!-- Documentos faltantes GNP (Sección 9) -->
+    <div style="font-size:10px;color:#ffcc80;text-transform:uppercase;letter-spacing:.06em;margin:10px 0 6px;">Documentos faltantes (GNP §9)</div>
+    <div class="form-grid">
+      <div class="fg full"><label>Documentos solicitados faltantes</label><textarea id="s-gnp-docs-faltantes" style="min-height:60px;" placeholder="Uno por línea: Carta reclamación, Dictamen técnico..."></textarea></div>
     </div>
   </div>
 
@@ -1680,7 +1711,11 @@ function abrirModal(id){
      's-coas-det','s-reas-corredor','s-lugar-sin','s-actividades-realizar','s-comentarios',
      's-gnp-jefe','s-gnp-oficina','s-gnp-clave-ajust',
      's-atlas-poliza','s-atlas-sin-gnp','s-atlas-pol-gnp',
-     's-situacion-actual','s-fundamento','s-subrogacion','s-asesores'].forEach(f=>{if(g(f))g(f).value='';});
+     's-situacion-actual','s-fundamento','s-subrogacion','s-asesores',
+     's-gnp-salv-persona','s-gnp-salv-tel','s-gnp-salv-email','s-gnp-salv-movil','s-gnp-salv-comprador',
+     's-gnp-rec-recuperador','s-gnp-rec-carta-porte','s-gnp-rec-prescripcion',
+     's-gnp-trans-tipo','s-gnp-trans-frontera','s-gnp-trans-placa','s-gnp-trans-destino','s-gnp-trans-compania',
+     's-gnp-docs-faltantes'].forEach(f=>{if(g(f))g(f).value='';});
     g('s-fasig').value=today;
     g('s-est').value='asignado';
     g('s-procedencia').value='procedente';
@@ -1798,6 +1833,20 @@ async function guardarSiniestro(){
     gnp_jefe_depto:v('s-gnp-jefe')||null,
     gnp_oficina:v('s-gnp-oficina')||null,
     gnp_clave_ajustador:v('s-gnp-clave-ajust')||null,
+    salvamento_persona_contacto:v('s-gnp-salv-persona')||null,
+    salvamento_telefono:v('s-gnp-salv-tel')||null,
+    salvamento_email:v('s-gnp-salv-email')||null,
+    salvamento_movil:v('s-gnp-salv-movil')||null,
+    salvamento_comprador:v('s-gnp-salv-comprador')||null,
+    recuperacion_nombre_recuperador:v('s-gnp-rec-recuperador')||null,
+    recuperacion_carta_porte:v('s-gnp-rec-carta-porte')||null,
+    recuperacion_fecha_prescripcion:v('s-gnp-rec-prescripcion')||null,
+    transporte_tipo:v('s-gnp-trans-tipo')||null,
+    transporte_frontera:v('s-gnp-trans-frontera')||null,
+    transporte_placa:v('s-gnp-trans-placa')||null,
+    transporte_destino:v('s-gnp-trans-destino')||null,
+    transporte_compania:v('s-gnp-trans-compania')||null,
+    documentos_faltantes:v('s-gnp-docs-faltantes')||null,
     atlas_poliza_coaseg:v('s-atlas-poliza')||null,
     atlas_sinies_coaseg:v('s-atlas-sin-gnp')||null,
     lugar_siniestro:v('s-lugar-sin')||null,
@@ -1849,6 +1898,20 @@ function editarSiniestro(id){
   if(g('s-gnp-jefe'))       g('s-gnp-jefe').value=s.gnp_jefe_depto||'';
   if(g('s-gnp-oficina'))    g('s-gnp-oficina').value=s.gnp_oficina||'';
   if(g('s-gnp-clave-ajust'))g('s-gnp-clave-ajust').value=s.gnp_clave_ajustador||'';
+  if(g('s-gnp-salv-persona'))   g('s-gnp-salv-persona').value=s.salvamento_persona_contacto||'';
+  if(g('s-gnp-salv-tel'))       g('s-gnp-salv-tel').value=s.salvamento_telefono||'';
+  if(g('s-gnp-salv-email'))     g('s-gnp-salv-email').value=s.salvamento_email||'';
+  if(g('s-gnp-salv-movil'))     g('s-gnp-salv-movil').value=s.salvamento_movil||'';
+  if(g('s-gnp-salv-comprador')) g('s-gnp-salv-comprador').value=s.salvamento_comprador||'';
+  if(g('s-gnp-rec-recuperador'))g('s-gnp-rec-recuperador').value=s.recuperacion_nombre_recuperador||'';
+  if(g('s-gnp-rec-carta-porte'))g('s-gnp-rec-carta-porte').value=s.recuperacion_carta_porte||'';
+  if(g('s-gnp-rec-prescripcion'))g('s-gnp-rec-prescripcion').value=s.recuperacion_fecha_prescripcion||'';
+  if(g('s-gnp-trans-tipo'))     g('s-gnp-trans-tipo').value=s.transporte_tipo||'';
+  if(g('s-gnp-trans-frontera')) g('s-gnp-trans-frontera').value=s.transporte_frontera||'';
+  if(g('s-gnp-trans-placa'))    g('s-gnp-trans-placa').value=s.transporte_placa||'';
+  if(g('s-gnp-trans-destino'))  g('s-gnp-trans-destino').value=s.transporte_destino||'';
+  if(g('s-gnp-trans-compania')) g('s-gnp-trans-compania').value=s.transporte_compania||'';
+  if(g('s-gnp-docs-faltantes')) g('s-gnp-docs-faltantes').value=s.documentos_faltantes||'';
   if(g('s-atlas-poliza'))   g('s-atlas-poliza').value=s.atlas_poliza_coaseg||'';
   if(g('s-atlas-sin-gnp'))  g('s-atlas-sin-gnp').value=s.atlas_sinies_coaseg||'';
   g('s-lugar-sin').value=s.lugar_siniestro||'';
@@ -2328,10 +2391,16 @@ function previsualizarReporte(){
   if(!id){prev.innerHTML='<div class="loading">Selecciona un expediente para previsualizar.</div>';return;}
   const s=data.sin.find(x=>x.id===id);if(!s)return;
   const secs=secsActivas();
+  const esGnp=esGNP(s);
+  // Mostrar/ocultar botones Word según aseguradora
+  if(g('btn-word-gnp'))     g('btn-word-gnp').style.display     = esGnp ? 'block':'none';
+  if(g('btn-word-generico'))g('btn-word-generico').style.display = esGnp ? 'none' :'block';
+  const aviso=g('r-aviso-gnp');
+  if(aviso) aviso.style.display='none';
   let html;
   if(tipoReporte==='formal'){
-    if(esGNP(s)){
-      html=buildFormal(s,secs);
+    if(esGnp){
+      html=buildGNP(s,secs);
     } else {
       const pol=data.pol.find(p=>p.id===s.id_poliza)||{};
       const aseg=data.aseg.find(a=>a.id===pol.id_aseguradora)||{};
@@ -2341,9 +2410,6 @@ function previsualizarReporte(){
     html=buildInterno(s,secs);
   }
   prev.innerHTML=`<div style="background:#fff;border-radius:6px;border:1px solid rgba(100,160,255,.15);">${html}</div>`;
-  // Mostrar aviso si el modo formal GNP no aplica
-  const aviso=g('r-aviso-gnp');
-  if(aviso) aviso.style.display = (tipoReporte==='formal'&&!esGNP(s)) ? 'block' : 'none';
 }
 
 function imprimirReporte(){
@@ -2354,7 +2420,7 @@ function imprimirReporte(){
   let html;
   if(tipoReporte==='formal'){
     if(esGNP(s)){
-      html=buildFormal(s,secs);
+      html=buildGNP(s,secs);
     } else {
       const pol=data.pol.find(p=>p.id===s.id_poliza)||{};
       const aseg=data.aseg.find(a=>a.id===pol.id_aseguradora)||{};
@@ -2364,8 +2430,674 @@ function imprimirReporte(){
     html=buildInterno(s,secs);
   }
   const win=window.open('','_blank');
-  win.document.write(`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>${s.numero_exp}</title><style>${RPT_CSS}</style></head><body>${html}<script>window.onload=()=>window.print();<\/script></body></html>`);
+  win.document.write(html);
   win.document.close();
+  setTimeout(()=>win.print(), 600);
+}
+
+
+// ══════════════════════════════════════════════════════════════════════
+// GNP BANNER (embebido)
+// ══════════════════════════════════════════════════════════════════════
+const GNP_BANNER_B64 = 'data:image/jpeg;base64,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';
+
+// ══════════════════════════════════════════════════════════════════════
+// buildGNP — HTML/PDF idéntico al formato GNP oficial
+// ══════════════════════════════════════════════════════════════════════
+function buildGNP(s, secs){
+  const pol      = data.pol.find(p=>p.id===s.id_poliza)||{};
+  const asdo     = data.asdo.find(a=>a.id===pol.id_asegurado)||{};
+  const lastInf  = data.inf.filter(i=>i.id_siniestro===s.id).sort((a,b)=>b.id-a.id)[0]||{};
+  const resRows  = data.res.filter(r=>r.id_siniestro===s.id);
+  const resVig   = {};
+  resRows.forEach(r=>{if(!resVig[r.concepto]||r.id>resVig[r.concepto].id)resVig[r.concepto]=r;});
+  const rvList   = Object.values(resVig);
+  const coasRows = data.coas.filter(c=>c.id_siniestro===s.id);
+  const sinAjusts= data.sinajust.filter(a=>a.id_siniestro===s.id);
+  const ajusts   = sinAjusts.map(sa=>data.ajust.find(a=>a.id===sa.id_ajustador)).filter(Boolean);
+  const now      = new Date().toLocaleDateString('es-MX',{day:'2-digit',month:'long',year:'numeric'});
+
+  const fD = d=>{ if(!d) return ''; const[y,m,dy]=d.split('-'); return dy+'/'+m+'/'+y; };
+  const fDL= d=>{ if(!d) return ''; const ms=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre']; const[y,m,dy]=d.split('-'); return parseInt(dy)+' de '+ms[parseInt(m)-1]+' de '+y; };
+  const fT = t=>t?t.slice(0,5):'';
+  const fM = n=>{ if(!n&&n!==0) return ''; return new Intl.NumberFormat('es-MX',{minimumFractionDigits:2}).format(n); };
+
+  // Totales por cobertura (primera reserva vigente como "Cobertura 1")
+  const cob1 = rvList[0]||{};
+  const res_bruta   = rvList.reduce((a,r)=>a+(r.monto||0),0);
+  const dep_pct     = rvList.length?(rvList.reduce((a,r)=>a+(r.depreciacion_pct||0),0)/rvList.length):0;
+  const p_ajustada  = rvList.reduce((a,r)=>a+(r.monto_perdida_estimada||r.monto||0),0);
+  const deducible   = rvList.reduce((a,r)=>a+(r.deducible||0),0);
+  const p_indemniz  = p_ajustada - deducible;
+  const coas_aseg   = rvList.reduce((a,r)=>a+(r.monto_coaseguro||0),0);
+  const res_neta    = p_indemniz - coas_aseg;
+  const bases_det   = rvList.map(r=>r.bases_determinacion).filter(Boolean).join(' ');
+  const monedaStr   = (pol.moneda||'MXN');
+
+  const CSS = `
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:Arial,sans-serif;font-size:9.5px;color:#000;background:#fff;line-height:1.4;}
+    .banner{width:100%;margin-bottom:10px;}
+    .banner img{width:100%;display:block;}
+    .fecha{margin-bottom:6px;font-size:10px;}
+    .titulo{font-size:13px;font-weight:700;margin-bottom:4px;}
+    .atn{font-size:10px;font-weight:700;margin-bottom:2px;}
+    .presente{font-size:10px;margin-bottom:10px;}
+    /* Tabla identificación superior */
+    .id-tbl{width:100%;border-collapse:collapse;margin-bottom:8px;font-size:9px;}
+    .id-tbl td{border:1px solid #999;padding:3px 6px;vertical-align:top;}
+    .id-tbl .lbl{background:#f0f0f0;font-weight:700;white-space:nowrap;width:1%;}
+    .id-tbl .val{background:#fff;}
+    /* Secciones numeradas */
+    .sec-num{font-weight:700;font-size:10px;margin:10px 0 5px;text-decoration:underline;text-transform:uppercase;}
+    /* Tabla genérica de secciones */
+    .sec-tbl{width:100%;border-collapse:collapse;margin-bottom:6px;font-size:9px;}
+    .sec-tbl td{border:1px solid #999;padding:4px 6px;vertical-align:top;}
+    .sec-tbl .lbl{background:#f0f0f0;font-weight:700;white-space:nowrap;width:35%;}
+    .sec-tbl .val{background:#fff;}
+    /* Tabla estimación coberturas */
+    .cob-tbl{width:100%;border-collapse:collapse;margin-bottom:6px;font-size:9px;}
+    .cob-tbl th{background:#1F3864;color:#fff;font-weight:700;padding:4px 6px;text-align:center;border:1px solid #999;}
+    .cob-tbl td{border:1px solid #999;padding:3px 6px;vertical-align:top;}
+    .cob-tbl .lbl{background:#E8EDF5;font-weight:600;}
+    .cob-tbl .num{text-align:right;}
+    .cob-tbl .bases{background:#FAFBFC;font-style:italic;color:#333;}
+    /* Coaseguro */
+    .coas-tbl{width:100%;border-collapse:collapse;font-size:9px;margin-bottom:6px;}
+    .coas-tbl th{background:#1F3864;color:#fff;font-weight:700;padding:3px 6px;text-align:center;border:1px solid #999;}
+    .coas-tbl td{border:1px solid #999;padding:3px 6px;}
+    /* Cronología */
+    .crono-tbl{width:100%;border-collapse:collapse;font-size:9px;margin-bottom:6px;}
+    .crono-tbl th{background:#f0f0f0;font-weight:700;border:1px solid #999;padding:3px 6px;text-align:center;}
+    .crono-tbl td{border:1px solid #999;padding:3px 6px;text-align:center;}
+    /* Narrativa */
+    .narrative{font-size:9.5px;line-height:1.6;margin:4px 0 8px;white-space:pre-wrap;}
+    /* Firmas */
+    .firma-wrap{margin-top:20px;display:flex;gap:30px;}
+    .firma-item{flex:1;text-align:center;}
+    .firma-img{max-height:60px;max-width:130px;margin-bottom:6px;}
+    .firma-line{border-top:1px solid #333;margin:30px 0 4px;}
+    .firma-nom{font-weight:700;font-size:10px;}
+    @media print{@page{margin:12mm 10mm 12mm 15mm;}body{padding:0;}}
+  `;
+
+  let h = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
+  <title>${s.tramite_gnp||s.numero_exp} — Informe Preliminar GNP</title>
+  <style>${CSS}</style></head><body>`;
+
+  // Banner encabezado
+  h += `<div class="banner"><img src="${GNP_BANNER_B64}" alt="GNP / AASA"></div>`;
+
+  // Fecha, título, AT'N, Presente
+  h += `<div class="fecha">Ciudad de México, ${now}.</div>
+  <div class="titulo">INFORME PRELIMINAR</div>
+  <div class="atn">AT´N.: ${lastInf.destinatario||''}</div>
+  <div class="presente">PRESENTE</div>`;
+
+  // Tabla de identificación (espejo exacto del documento GNP)
+  const vigStr = pol.vigencia_ini
+    ? `Del ${fDL(pol.vigencia_ini)}<br>Al ${fDL(pol.vigencia_fin)}` : '';
+  h += `<table class="id-tbl">
+    <tr>
+      <td class="lbl">No. Siniestro</td><td class="val">${s.numero_siniestro||''}</td>
+      <td class="lbl">Jefe Depto</td><td class="val">${s.gnp_jefe_depto||''}</td>
+    </tr>
+    <tr>
+      <td class="lbl">No. Trámite</td><td class="val">${s.tramite_gnp||''}</td>
+      <td class="lbl">Oficina</td><td class="val">${s.gnp_oficina||''}</td>
+      <td class="lbl">Póliza</td><td class="val">${pol.numero||''}</td>
+    </tr>
+    <tr>
+      <td class="lbl">Ramo</td><td class="val">${pol.ramo||''}</td>
+      <td class="lbl">Subramo</td><td class="val">${pol.subramo||s.subramo||''}</td>
+      <td class="lbl">Vigencia</td><td class="val">${vigStr}</td>
+    </tr>
+    <tr>
+      <td class="lbl">Fecha de siniestro</td><td class="val">${fD(s.fecha_siniestro)}</td>
+      <td class="lbl">Agente</td><td class="val" colspan="2">${pol.agente||''}</td>
+    </tr>
+    <tr>
+      <td class="lbl">Asegurado</td><td class="val">${asdo.nombre||''}</td>
+      <td class="lbl">Referencia Asegurado</td><td class="val" colspan="2">${s.referencia_asegurado||''}</td>
+    </tr>
+    <tr>
+      <td class="lbl">Importe reclamado</td><td class="val">${fM(p_ajustada)}</td>
+      <td class="lbl">Moneda</td>
+      <td class="val">MXN ${monedaStr==='MXN'?'( X )':'( )'}&nbsp;&nbsp;&nbsp;USD ${monedaStr==='USD'?'( X )':'( )'}</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td class="lbl">Clave ajustador GNP</td><td class="val">${s.gnp_clave_ajustador||''}</td>
+      <td class="lbl">Referencia ajustador</td><td class="val" colspan="2">${s.referencia_ajustadora||''}</td>
+    </tr>
+    <tr>
+      <td class="lbl">Giro del asegurado</td><td class="val" colspan="4">${s.giro_asegurado||''}</td>
+    </tr>
+    <tr>
+      <td class="lbl">Causa del siniestro</td><td class="val">${s.causa||''}</td>
+      <td class="lbl">Comentario de la causa</td><td class="val" colspan="2">${s.causa_comentario||''}</td>
+    </tr>
+    <tr>
+      <td class="lbl">Clave evento (catastrófico)</td><td class="val">${s.clave_evento_catastrofico||''}</td>
+      <td class="lbl">Riesgo afectado</td><td class="val" colspan="2">${s.riesgo_afectado||''}</td>
+    </tr>
+  </table>`;
+
+  // §1 ESTIMACIÓN POR COBERTURAS
+  if(secs.includes('estimacion')){
+    h += `<div class="sec-num">1. Estimación por coberturas y secciones</div>`;
+    h += `<table class="cob-tbl">
+      <tr>
+        <th style="text-align:left;">Coberturas o secciones</th>
+        <th>Cobertura 1<br><small>${cob1.concepto||'COBERTURA PRINCIPAL'}</small></th>
+        <th>Estimación Total</th>
+      </tr>
+      <tr><td class="lbl">Reserva bruta</td>
+          <td class="num">${monedaStr} ${fM(cob1.monto||0)}</td>
+          <td class="num">${monedaStr} ${fM(res_bruta)}</td></tr>
+      <tr><td class="lbl">Depreciación ${dep_pct.toFixed(2)}% promedio</td>
+          <td></td><td></td></tr>
+      <tr><td class="lbl">Monto Pérdida Ajustada</td>
+          <td class="num">${monedaStr} ${fM(cob1.monto_perdida_estimada||cob1.monto||0)}</td>
+          <td class="num">${monedaStr} ${fM(p_ajustada)}</td></tr>
+      <tr><td class="lbl">Deducible</td>
+          <td class="num">${monedaStr} ${fM(cob1.deducible||0)}</td>
+          <td class="num">${monedaStr} ${fM(deducible)}</td></tr>
+      <tr><td class="lbl">Monto Pérdida Indemnizable</td>
+          <td class="num">${monedaStr} ${fM((cob1.monto_perdida_estimada||cob1.monto||0)-(cob1.deducible||0))}</td>
+          <td class="num">${monedaStr} ${fM(p_indemniz)}</td></tr>
+      <tr><td class="lbl">Coaseguro Asegurado</td>
+          <td class="num">${cob1.coaseguro_pct?monedaStr+' '+fM(cob1.monto_coaseguro||0):'N/A'}</td>
+          <td class="num">${coas_aseg?monedaStr+' '+fM(coas_aseg):'N/A'}</td></tr>
+      <tr><td class="lbl"><strong>Reserva Neta</strong></td>
+          <td class="num"><strong>${monedaStr} ${fM((cob1.monto_perdida_estimada||cob1.monto||0)-(cob1.deducible||0)-(cob1.monto_coaseguro||0))}</strong></td>
+          <td class="num"><strong>${monedaStr} ${fM(res_neta)}</strong></td></tr>
+      <tr><td class="bases" colspan="3"><strong>Especificar las bases que se tomaron para determinar la reserva:</strong><br>${bases_det}</td></tr>
+      <tr><td class="lbl">Honorarios ajustador</td><td colspan="2"></td></tr>
+      <tr><td class="lbl">Honorarios perito y/o asesor</td><td colspan="2"></td></tr>
+      <tr><td class="lbl">Gastos ajuste</td><td colspan="2"></td></tr>
+      <tr><td class="lbl">Gastos perito y/o asesor</td><td colspan="2"></td></tr>
+    </table>`;
+  }
+
+  // §2 COASEGURO
+  if(secs.includes('coaseguro')){
+    h += `<div class="sec-num">2. Coaseguro</div>
+    <table class="coas-tbl">
+      <tr>
+        <th>Nombre de Compañía Coaseguradora</th>
+        <th>Referencia (Acuse de recibo)</th>
+        <th>Distribución de pérdida</th>
+        <th>Distribución de honorarios</th>
+      </tr>`;
+    if(coasRows.length){
+      coasRows.forEach(c=>{
+        h+=`<tr><td>${c.nombre||''}</td><td>${c.referencia||''}</td><td>${c.porcentaje?c.porcentaje+'%':''}</td><td></td></tr>`;
+      });
+    } else {
+      h+=`<tr><td></td><td></td><td></td><td></td></tr>
+          <tr><td></td><td></td><td></td><td></td></tr>`;
+    }
+    h += `</table>`;
+  }
+
+  // §3 REASEGURO
+  if(secs.includes('reaseguro')){
+    h += `<div class="sec-num">3. Reaseguro</div>
+    <table class="sec-tbl">
+      <tr><td class="lbl">Existe cláusula de control o cooperación de reclamos</td>
+          <td class="val">SI ${s.reaseguro?'( X )':'( )'}&nbsp;&nbsp;NO ${!s.reaseguro?'( X )':'( )'}</td></tr>
+      <tr><td class="lbl">Corredor de Reaseguro</td>
+          <td class="val">${s.reas_corredor||''}</td></tr>
+    </table>`;
+  }
+
+  // §4 RESULTADO DE LA INSPECCIÓN
+  if(secs.includes('inspeccion')){
+    const fechaInsp = s.fecha_primera_visita
+      ? fDL(s.fecha_primera_visita)+(s.hora_primera_visita?' a las '+fT(s.hora_primera_visita)+' horas':'')
+      : '';
+    h += `<div class="sec-num">4. Resultado de la inspección</div>
+    <table class="sec-tbl">
+      <tr><td class="lbl">Fecha y hora de inspección</td>
+          <td class="val">${fechaInsp}</td></tr>
+      <tr><td class="lbl">Persona entrevistada / Puesto y/o cargo</td>
+          <td class="val">${s.inspeccion_persona||''}${s.inspeccion_cargo?' / '+s.inspeccion_cargo:''}</td></tr>
+      <tr><td class="lbl">Domicilio asegurado / Teléfono</td>
+          <td class="val">${pol.domicilio_legal||''}${s.inspeccion_tel?' / Tel: '+s.inspeccion_tel:''}</td></tr>
+      <tr><td class="lbl">Lugar de inspección</td>
+          <td class="val">${s.inspeccion_domicilio||s.lugar_siniestro||''}</td></tr>
+      <tr><td class="lbl">Lugar del siniestro</td>
+          <td class="val">${s.lugar_siniestro||''}</td></tr>
+      <tr><td class="lbl">Bienes dañados</td>
+          <td class="val">${s.bienes_danados||''}</td></tr>
+      <tr><td class="lbl">Intervención de Autoridades</td>
+          <td class="val">${s.intervencion_autoridades?(s.intervencion_autoridades_detalle||'Sí'):'No'}</td></tr>
+    </table>`;
+  }
+
+  // §5 DESARROLLO DETALLADO DEL SINIESTRO
+  if(secs.includes('desarrollo')){
+    h += `<div class="sec-num">5. Desarrollo detallado del siniestro</div>
+    <div class="narrative">${lastInf.desarrollo_siniestro||s.descripcion||''}</div>`;
+  }
+
+  // §6 SALVAMENTO
+  if(secs.includes('salvamento')){
+    const salvSI = s.salvamento==='si';
+    h += `<div class="sec-num">6. Salvamento (en caso de existir, anexar informe preliminar salvamento)</div>
+    <table class="sec-tbl">
+      <tr><td colspan="2" class="val">SI ${salvSI?'( X )':'( )'}&nbsp;&nbsp;&nbsp;NO ${s.salvamento==='no'?'( X )':'( )'}</td></tr>
+      <tr><td class="lbl">Detalle de los bienes que se obtendrán como salvamento</td>
+          <td class="val">${s.salvamento_detalle||''}</td></tr>
+      <tr><td class="lbl">Valor estimado de los bienes</td>
+          <td class="val">${s.salvamento_valor_estimado?fM(s.salvamento_valor_estimado):''}</td></tr>
+      <tr><td class="lbl">Ubicación física</td>
+          <td class="val">${s.salvamento_ubicacion||''}</td></tr>
+      <tr><td class="lbl">Persona a entrevistar / Teléfono</td>
+          <td class="val">${s.salvamento_persona_contacto||''}${s.salvamento_telefono?' / '+s.salvamento_telefono:''}</td></tr>
+      <tr><td class="lbl">Email para contacto / Móvil</td>
+          <td class="val">${s.salvamento_email||''}${s.salvamento_movil?' / '+s.salvamento_movil:''}</td></tr>
+      <tr><td class="lbl">Nombre de posible comprador</td>
+          <td class="val">${s.salvamento_comprador||''}</td></tr>
+    </table>`;
+  }
+
+  // §7 RECUPERACIÓN
+  if(secs.includes('salvamento')){
+    h += `<div class="sec-num">7. Recuperación (en caso de existir, anexar informe de recuperación)</div>
+    <table class="sec-tbl">
+      <tr><td colspan="2" class="val">SI ${s.recuperacion?'( X )':'( )'}&nbsp;&nbsp;&nbsp;NO ${!s.recuperacion?'( X )':'( )'}</td></tr>
+      <tr><td class="lbl">Terceros responsables</td>
+          <td class="val">${s.recuperacion_terceros||s.recuperacion_terceros_responsables||''}</td></tr>
+      <tr><td class="lbl">Nombre del recuperador</td>
+          <td class="val">${s.recuperacion_nombre_recuperador||''}</td></tr>
+      <tr><td class="lbl">Carta Porte o Bill of Lading</td>
+          <td class="val">${s.recuperacion_carta_porte||''}</td></tr>
+      <tr><td class="lbl">Fecha prescripción de la acción</td>
+          <td class="val">${fD(s.recuperacion_fecha_prescripcion)}</td></tr>
+    </table>`;
+  }
+
+  // §8 TRANSPORTES
+  if(secs.includes('salvamento')){
+    h += `<div class="sec-num">8. Transportes</div>
+    <table class="sec-tbl">
+      <tr><td class="lbl">Tipo de transporte</td><td class="val">${s.transporte_tipo||''}</td></tr>
+      <tr><td class="lbl">Puerto o frontera</td><td class="val">${s.transporte_frontera||''}</td></tr>
+      <tr><td class="lbl">Placa o matrícula</td><td class="val">${s.transporte_placa||''}</td></tr>
+      <tr><td class="lbl">Destino del embarque</td><td class="val">${s.transporte_destino||''}</td></tr>
+      <tr><td class="lbl">Compañía transportista</td><td class="val">${s.transporte_compania||''}</td></tr>
+    </table>`;
+  }
+
+  // §9 ESTRATEGIAS Y OBSERVACIONES
+  if(secs.includes('estrategias')){
+    const estrategia = lastInf.estrategias||s.estrategias_observaciones||'';
+    const docsFaltantes = s.documentos_faltantes||'';
+    h += `<div class="sec-num">9. Estrategias y observaciones</div>
+    <table class="sec-tbl">
+      <tr><td class="val" style="white-space:pre-wrap;">${estrategia}${docsFaltantes?'\n\nDOCUMENTOS SOLICITADOS FALTANTES\n'+docsFaltantes:''}</td></tr>
+    </table>`;
+  }
+
+  // §10 AJUSTADOR RESPONSABLE
+  if(secs.includes('cronologia')){
+    const firmList = ajusts.length ? ajusts : [{nombre:'Javier Chávez Á.',cnsf:'C34388',correo:'jchavez@aasa.com.mx',telefono:'(55)6302-9178'},{nombre:'Ernesto Almaraz Ll.',cnsf:'C15979',correo:'ealmaraz@aasa.com.mx',telefono:'(55)5593-8823'}];
+    const ajText = firmList.map(a=>`${a.nombre}${a.telefono?' / '+a.telefono:''}${a.correo?' / '+a.correo:''}`).join('\n');
+    h += `<div class="sec-num">10. Ajustador responsable y titular del despacho</div>
+    <table class="sec-tbl">
+      <tr><td class="val" style="white-space:pre-wrap;">${ajText}</td></tr>
+    </table>`;
+  }
+
+  // §11 CRONOLOGÍA PRELIMINAR
+  if(secs.includes('cronologia')){
+    h += `<div class="sec-num">11. Cronología preliminar</div>
+    <table class="crono-tbl">
+      <tr>
+        <th>Fecha ocurrencia</th><th>Fecha asignación</th>
+        <th>Fecha 1er. contacto</th><th>Fecha 1ª visita</th>
+      </tr>
+      <tr>
+        <td>${fD(s.fecha_siniestro)}</td>
+        <td>${fD(s.fecha_asignacion)}</td>
+        <td>${fD(s.fecha_primer_contacto)}</td>
+        <td>${fD(s.fecha_primera_visita)}</td>
+      </tr>
+      <tr>
+        <th>Hora ocurrencia</th><th>Hora asignación</th>
+        <th>Hora 1er. contacto</th><th>Hora 1ª visita</th>
+      </tr>
+      <tr>
+        <td>${fT(s.hora_ocurrencia)}</td>
+        <td>${fT(s.hora_asignacion)}</td>
+        <td>${fT(s.hora_primer_contacto)}</td>
+        <td>${fT(s.hora_primera_visita)}</td>
+      </tr>
+    </table>`;
+
+    // Firma
+    const firmList2 = ajusts.length ? ajusts : [{nombre:'Javier Chávez Á.',cnsf:'C34388'}];
+    h += `<div class="firma-wrap">`;
+    firmList2.forEach(aj=>{
+      h += `<div class="firma-item">
+        <div class="firma-line"></div>
+        <div class="firma-nom">${aj.nombre||''}</div>
+        <div style="font-size:9px;color:#555;">Cédula CNSF: ${aj.cnsf||''}</div>
+      </div>`;
+    });
+    h += `</div>`;
+  }
+
+  h += `</body></html>`;
+  return h;
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// descargarWordGNP — genera .docx GNP con banner y estructura clonada
+// ══════════════════════════════════════════════════════════════════════
+async function descargarWordGNP(){
+  const id=parseInt(v('r-caso'));
+  if(!id){ toast('Selecciona un expediente primero.'); return; }
+  const s=data.sin.find(x=>x.id===id); if(!s) return;
+  toast('Generando informe Word GNP…');
+
+  const { Document, Packer, Paragraph, Table, TableRow, TableCell, TextRun, ImageRun,
+          AlignmentType, WidthType, BorderStyle, ShadingType, VerticalAlign,
+          Header, Footer, LevelFormat, PageBreak, PageNumber } = docx;
+
+  const pol      = data.pol.find(p=>p.id===s.id_poliza)||{};
+  const asdo     = data.asdo.find(a=>a.id===pol.id_asegurado)||{};
+  const lastInf  = data.inf.filter(i=>i.id_siniestro===s.id).sort((a,b)=>b.id-a.id)[0]||{};
+  const resRows  = data.res.filter(r=>r.id_siniestro===s.id);
+  const resVig   = {};
+  resRows.forEach(r=>{if(!resVig[r.concepto]||r.id>resVig[r.concepto].id)resVig[r.concepto]=r;});
+  const rvList   = Object.values(resVig);
+  const coasRows = data.coas.filter(c=>c.id_siniestro===s.id);
+  const sinAjusts= data.sinajust.filter(a=>a.id_siniestro===s.id);
+  const ajusts   = sinAjusts.map(sa=>data.ajust.find(a=>a.id===sa.id_ajustador)).filter(Boolean);
+  const now      = new Date().toLocaleDateString('es-MX',{day:'2-digit',month:'long',year:'numeric'});
+
+  const fD = d=>{ if(!d) return ''; const[y,m,dy]=d.split('-'); return dy+'/'+m+'/'+y; };
+  const fDL= d=>{ if(!d) return ''; const ms=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre']; const[y,m,dy]=d.split('-'); return parseInt(dy)+' de '+ms[parseInt(m)-1]+' de '+y; };
+  const fT = t=>t?t.slice(0,5):'';
+  const fM = n=>{ if(!n&&n!==0) return '—'; return new Intl.NumberFormat('es-MX',{minimumFractionDigits:2}).format(n); };
+
+  const cob1       = rvList[0]||{};
+  const res_bruta  = rvList.reduce((a,r)=>a+(r.monto||0),0);
+  const dep_pct    = rvList.length?(rvList.reduce((a,r)=>a+(r.depreciacion_pct||0),0)/rvList.length):0;
+  const p_ajustada = rvList.reduce((a,r)=>a+(r.monto_perdida_estimada||r.monto||0),0);
+  const deducible  = rvList.reduce((a,r)=>a+(r.deducible||0),0);
+  const p_indemniz = p_ajustada - deducible;
+  const coas_aseg  = rvList.reduce((a,r)=>a+(r.monto_coaseguro||0),0);
+  const res_neta   = p_indemniz - coas_aseg;
+  const bases_det  = rvList.map(r=>r.bases_determinacion).filter(Boolean).join(' ');
+  const monedaStr  = pol.moneda||'MXN';
+
+  // ── Helpers ─────────────────────────────────────────────────────────
+  const BLUE='1F3864', GRAY='F2F2F2', BLACK='000000', WHITE='FFFFFF';
+  const bThin={style:BorderStyle.SINGLE,size:4,color:'999999'};
+  const bNone={style:BorderStyle.NONE,size:0,color:'FFFFFF'};
+  const allB={top:bThin,bottom:bThin,left:bThin,right:bThin};
+  const noB ={top:bNone,bottom:bNone,left:bNone,right:bNone};
+  const PAGE_W=12240, CONTENT_W=9639; // letter, margins from original
+
+  const tx=(text,o={})=>new TextRun({text:String(text??''),font:'Arial',
+    size:o.size||18,bold:o.bold||false,color:o.color||BLACK,italics:o.italics||false});
+  const pr=(children,o={})=>new Paragraph({
+    children:Array.isArray(children)?children:[children],
+    alignment:o.align||AlignmentType.LEFT,
+    spacing:{before:o.sb??40,after:o.sa??40},
+    border:o.border,
+  });
+  const ep=()=>pr([tx('')],{sb:20,sa:20});
+
+  const mkC=(content,o={})=>new TableCell({
+    width:o.w?{size:o.w,type:WidthType.DXA}:undefined,
+    columnSpan:o.span,
+    shading:o.bg?{fill:o.bg,type:ShadingType.CLEAR}:undefined,
+    borders:o.borders??allB,
+    margins:{top:60,bottom:60,left:100,right:100},
+    verticalAlign:o.va||VerticalAlign.TOP,
+    children:Array.isArray(content)?content:[
+      pr([tx(String(content??''),{bold:o.bold,size:o.size||18,color:o.color||BLACK})],
+         {align:o.align||AlignmentType.LEFT,sb:20,sa:20})
+    ],
+  });
+  const lbl=(t,w)=>mkC(t,{w,bold:true,size:17,bg:'F0F0F0'});
+  const val=(t,w,sp)=>mkC(t,{w,size:17,span:sp});
+  const secTitle=(num,text)=>pr(
+    [tx(num+'. '+text.toUpperCase(),{bold:true,size:19})],
+    {sb:180,sa:80,border:{bottom:{style:BorderStyle.SINGLE,size:4,color:'999999',space:2}}}
+  );
+
+  // ── Banner GNP (ImageRun) ────────────────────────────────────────────
+  let bannerRun=null;
+  try{
+    const b64str = GNP_BANNER_B64.split(',')[1];
+    const byteArr= Uint8Array.from(atob(b64str),c=>c.charCodeAt(0));
+    bannerRun = new ImageRun({data:byteArr,transformation:{width:504,height:53},type:'jpg'});
+  }catch(e){ bannerRun=null; }
+
+  // ── HEADER ───────────────────────────────────────────────────────────
+  const makeHeader=()=>new Header({children:[
+    bannerRun
+      ? new Paragraph({children:[bannerRun],spacing:{before:0,after:0}})
+      : pr([tx('GNP / ALMARAZ AJUSTADORES, S.A.',{bold:true,size:20,color:BLUE})],{sb:0,sa:0}),
+  ]});
+  const makeFooter=()=>new Footer({children:[
+    new Table({
+      width:{size:CONTENT_W,type:WidthType.DXA},
+      columnWidths:[CONTENT_W-2000,2000],
+      borders:{top:{style:BorderStyle.SINGLE,size:2,color:'CCCCCC',space:2},
+               bottom:bNone,left:bNone,right:bNone,insideH:bNone,insideV:bNone},
+      rows:[new TableRow({children:[
+        new TableCell({width:{size:CONTENT_W-2000,type:WidthType.DXA},borders:noB,
+          margins:{top:60,bottom:0,left:0,right:120},
+          children:[pr([tx(asdo.nombre||'',{size:16,color:'4472C4'}),tx('  '+(s.tramite_gnp||s.numero_siniestro||''),{size:16,color:'4472C4'})],{sb:0,sa:0})]}),
+        new TableCell({width:{size:2000,type:WidthType.DXA},borders:noB,
+          margins:{top:60,bottom:0,left:0,right:0},verticalAlign:VerticalAlign.CENTER,
+          children:[pr([
+            new TextRun({text:'Página ',size:16,color:'4472C4',font:'Arial'}),
+            new TextRun({children:[PageNumber.CURRENT],size:16,color:'4472C4',font:'Arial'}),
+            new TextRun({text:' de ',size:16,color:'4472C4',font:'Arial'}),
+            new TextRun({children:[PageNumber.TOTAL_PAGES],size:16,color:'4472C4',font:'Arial'}),
+          ],{align:AlignmentType.RIGHT,sb:0,sa:0})]}),
+      ]})]
+    }),
+  ]});
+
+  // ── TABLA DE IDENTIFICACIÓN ──────────────────────────────────────────
+  const vigStr = pol.vigencia_ini
+    ? 'Del '+fDL(pol.vigencia_ini)+'  Al '+fDL(pol.vigencia_fin) : '';
+
+  const W2=Math.floor(CONTENT_W/2), W3=Math.floor(CONTENT_W/3), W4=Math.floor(CONTENT_W/4);
+
+  const idRows=[
+    new TableRow({children:[lbl('No. Siniestro',W3),val(s.numero_siniestro||'',W3),lbl('Jefe Depto',W3-100),val(s.gnp_jefe_depto||'',100+CONTENT_W-W3*3)]}),
+    new TableRow({children:[lbl('No. Trámite',W3),val(s.tramite_gnp||'',W3),lbl('Oficina',W4-100),val(s.gnp_oficina||'',100),lbl('Póliza',W3-W4),val(pol.numero||'',CONTENT_W-W3*2-W4+100)]}),
+    new TableRow({children:[lbl('Ramo',W3),val(pol.ramo||'',W3-100),lbl('Subramo',100),val(pol.subramo||s.subramo||'',W3-100),lbl('Vigencia',100),val(vigStr,CONTENT_W-W3*2+100)]}),
+    new TableRow({children:[lbl('Fecha de siniestro',W3),val(fD(s.fecha_siniestro),W3),lbl('Agente',W3-100),val(pol.agente||'',CONTENT_W-W3*2+100)]}),
+    new TableRow({children:[lbl('Asegurado',W3),val(asdo.nombre||'',W3),lbl('Referencia Asegurado',W3-100),val(s.referencia_asegurado||'',CONTENT_W-W3*2+100)]}),
+    new TableRow({children:[lbl('Importe reclamado',W3),val(fM(p_ajustada),W3),lbl('Moneda',W4-100),val('MXN '+(monedaStr==='MXN'?'(X)':'( )')+'   USD '+(monedaStr==='USD'?'(X)':'( )'),CONTENT_W-W3*2-W4+100)]}),
+    new TableRow({children:[lbl('Clave ajustador GNP',W3),val(s.gnp_clave_ajustador||'',W3),lbl('Referencia ajustador',W3-100),val(s.referencia_ajustadora||'',CONTENT_W-W3*2+100)]}),
+    new TableRow({children:[lbl('Giro del asegurado',W3),val(s.giro_asegurado||'',CONTENT_W-W3,3)]}),
+    new TableRow({children:[lbl('Causa del siniestro',W3),val(s.causa||'',W3),lbl('Comentario de la causa',W3-100),val(s.causa_comentario||'',CONTENT_W-W3*2+100)]}),
+    new TableRow({children:[lbl('Clave evento (catastrófico)',W3),val(s.clave_evento_catastrofico||'',W3),lbl('Riesgo afectado',W3-100),val(s.riesgo_afectado||'',CONTENT_W-W3*2+100)]}),
+  ];
+
+  // ── ESTIMACIÓN COBERTURAS (tabla 3 cols) ─────────────────────────────
+  const bHdr={style:BorderStyle.SINGLE,size:4,color:'1F3864'};
+  const cobW=[CONTENT_W-3200,1600,1600];
+  const cobHdr=(t,w)=>mkC(t,{w,bold:true,size:17,bg:'1F3864',color:'FFFFFF',align:AlignmentType.CENTER});
+  const cobLbl=(t)=>mkC(t,{w:cobW[0],size:17,bg:'E8EDF5',bold:true});
+  const cobVal=(t,idx)=>mkC(t,{w:cobW[idx],size:17,align:AlignmentType.RIGHT});
+  const cob1MPA=(cob1.monto_perdida_estimada||cob1.monto||0)-(cob1.deducible||0);
+  const cobRows=[
+    new TableRow({children:[cobHdr('Coberturas o secciones',cobW[0]),cobHdr('Cobertura 1  '+(cob1.concepto||''),cobW[1]),cobHdr('Estimación Total',cobW[2])]}),
+    new TableRow({children:[cobLbl('Reserva bruta'),cobVal(monedaStr+' '+fM(cob1.monto||0),1),cobVal(monedaStr+' '+fM(res_bruta),2)]}),
+    new TableRow({children:[cobLbl('Depreciación '+dep_pct.toFixed(2)+'% promedio'),mkC('',{w:cobW[1]}),mkC('',{w:cobW[2]})]}),
+    new TableRow({children:[cobLbl('Monto Pérdida Ajustada'),cobVal(monedaStr+' '+fM(cob1.monto_perdida_estimada||cob1.monto||0),1),cobVal(monedaStr+' '+fM(p_ajustada),2)]}),
+    new TableRow({children:[cobLbl('Deducible'),cobVal(monedaStr+' '+fM(cob1.deducible||0),1),cobVal(monedaStr+' '+fM(deducible),2)]}),
+    new TableRow({children:[cobLbl('Monto Pérdida Indemnizable'),cobVal(monedaStr+' '+fM(cob1MPA),1),cobVal(monedaStr+' '+fM(p_indemniz),2)]}),
+    new TableRow({children:[cobLbl('Coaseguro Asegurado'),cobVal(cob1.coaseguro_pct?monedaStr+' '+fM(cob1.monto_coaseguro||0):'N/A',1),cobVal(coas_aseg?monedaStr+' '+fM(coas_aseg):'N/A',2)]}),
+    new TableRow({children:[cobLbl('Reserva Neta'),cobVal(monedaStr+' '+fM(cob1MPA-(cob1.monto_coaseguro||0)),1),cobVal(monedaStr+' '+fM(res_neta),2)]}),
+    new TableRow({children:[new TableCell({columnSpan:3,borders:allB,width:{size:CONTENT_W,type:WidthType.DXA},shading:{fill:'FAFBFC',type:ShadingType.CLEAR},margins:{top:60,bottom:60,left:100,right:100},children:[pr([tx('Especificar las bases que se tomaron para determinar la reserva:',{bold:true,size:17})],{sb:0,sa:20}),pr([tx(bases_det,{size:17,italics:true})],{sb:0,sa:0})]})]}),
+    new TableRow({children:[cobLbl('Honorarios ajustador'),mkC('',{w:cobW[1]}),mkC('',{w:cobW[2]})]}),
+    new TableRow({children:[cobLbl('Honorarios perito y/o asesor'),mkC('',{w:cobW[1]}),mkC('',{w:cobW[2]})]}),
+    new TableRow({children:[cobLbl('Gastos ajuste'),mkC('',{w:cobW[1]}),mkC('',{w:cobW[2]})]}),
+    new TableRow({children:[cobLbl('Gastos perito y/o asesor'),mkC('',{w:cobW[1]}),mkC('',{w:cobW[2]})]}),
+  ];
+
+  // ── COASEGURO tabla ───────────────────────────────────────────────────
+  const coasHdr=(t,w)=>mkC(t,{w,bold:true,size:17,bg:'1F3864',color:'FFFFFF',align:AlignmentType.CENTER});
+  const coasW=[CONTENT_W-5400,1800,1800,1800];
+  const coasDataRows=coasRows.length?coasRows.map(c=>new TableRow({children:[val(c.nombre||'',coasW[0]),val(c.referencia||'',coasW[1]),val(c.porcentaje?c.porcentaje+'%':'',coasW[2]),val('',coasW[3])]})):
+    [1,2,3,4].map(()=>new TableRow({children:[val('',coasW[0]),val('',coasW[1]),val('',coasW[2]),val('',coasW[3])]}));
+  const coasTableRows=[
+    new TableRow({children:[coasHdr('Nombre de Compañía Coaseguradora',coasW[0]),coasHdr('Referencia (Acuse de recibo)',coasW[1]),coasHdr('Distribución de pérdida',coasW[2]),coasHdr('Distribución de honorarios',coasW[3])]}),
+    ...coasDataRows,
+  ];
+
+  // ── CRONOLOGÍA ────────────────────────────────────────────────────────
+  const crW=Math.floor(CONTENT_W/4);
+  const crHdr=(t)=>mkC(t,{w:crW,bold:true,size:17,bg:'F0F0F0',align:AlignmentType.CENTER});
+  const crVal=(t)=>mkC(t,{w:crW,size:17,align:AlignmentType.CENTER});
+  const cronoRows=[
+    new TableRow({children:[crHdr('Fecha ocurrencia'),crHdr('Fecha asignación'),crHdr('Fecha 1er. contacto'),crHdr('Fecha 1ª visita')]}),
+    new TableRow({children:[crVal(fD(s.fecha_siniestro)),crVal(fD(s.fecha_asignacion)),crVal(fD(s.fecha_primer_contacto)),crVal(fD(s.fecha_primera_visita))]}),
+    new TableRow({children:[crHdr('Hora ocurrencia'),crHdr('Hora asignación'),crHdr('Hora 1er. contacto'),crHdr('Hora 1ª visita')]}),
+    new TableRow({children:[crVal(fT(s.hora_ocurrencia)),crVal(fT(s.hora_asignacion)),crVal(fT(s.hora_primer_contacto)),crVal(fT(s.hora_primera_visita))]}),
+  ];
+
+  // ── FIRMAS ────────────────────────────────────────────────────────────
+  const firmList=ajusts.length?ajusts:[{nombre:'Javier Chávez Á.',cnsf:'C34388'},{nombre:'Ernesto Almaraz Ll.',cnsf:'C15979'}];
+  const fW=Math.floor(CONTENT_W/firmList.length);
+  const sigCells=firmList.map(aj=>new TableCell({width:{size:fW,type:WidthType.DXA},borders:noB,margins:{top:0,bottom:0,left:80,right:80},children:[
+    pr([tx('',{size:18})],{sb:0,sa:60,border:{top:{style:BorderStyle.SINGLE,size:4,color:BLACK,space:2}}}),
+    pr([tx(aj.nombre||'',{bold:true,size:18})],{align:AlignmentType.CENTER,sb:40,sa:20}),
+    pr([tx('Cédula CNSF: '+(aj.cnsf||''),{size:16,color:'555555'})],{align:AlignmentType.CENTER,sb:0,sa:0}),
+  ]}));
+
+  // ── DOCUMENT BODY ─────────────────────────────────────────────────────
+  const children=[
+    pr([tx('Ciudad de México, '+now+'.',{size:19,bold:true})],{sb:0,sa:80}),
+    pr([tx('INFORME PRELIMINAR',{size:24,bold:true})],{sb:0,sa:40}),
+    pr([tx('AT´N.: '+(lastInf.destinatario||''),{size:19,bold:true})],{sb:0,sa:20}),
+    pr([tx('PRESENTE',{size:19,bold:true})],{sb:0,sa:120}),
+    new Table({width:{size:CONTENT_W,type:WidthType.DXA},columnWidths:[W3,W3,W3-100,CONTENT_W-W3*3+100],rows:idRows}),
+    ep(),
+    secTitle('1','Estimación por coberturas y secciones'),
+    new Table({width:{size:CONTENT_W,type:WidthType.DXA},columnWidths:cobW,rows:cobRows}),
+    ep(),
+    secTitle('2','Coaseguro'),
+    new Table({width:{size:CONTENT_W,type:WidthType.DXA},columnWidths:coasW,rows:coasTableRows}),
+    ep(),
+    secTitle('3','Reaseguro'),
+    new Table({width:{size:CONTENT_W,type:WidthType.DXA},columnWidths:[W2,W2],rows:[
+      new TableRow({children:[lbl('Existe cláusula de control o cooperación de reclamos',W2),val('SI '+(s.reaseguro?'( X )':'( )')+'   NO '+(!s.reaseguro?'( X )':'( )'),W2)]}),
+      new TableRow({children:[lbl('Corredor de Reaseguro',W2),val(s.reas_corredor||'',W2)]}),
+    ]}),
+    ep(),
+    secTitle('4','Resultado de la inspección'),
+    new Table({width:{size:CONTENT_W,type:WidthType.DXA},columnWidths:[W2,W2],rows:[
+      new TableRow({children:[lbl('Fecha y hora de inspección',W2),val((s.fecha_primera_visita?fDL(s.fecha_primera_visita)+(s.hora_primera_visita?' a las '+fT(s.hora_primera_visita)+' horas':''):''),W2)]}),
+      new TableRow({children:[lbl('Persona entrevistada / Puesto y/o cargo',W2),val((s.inspeccion_persona||'')+(s.inspeccion_cargo?' / '+s.inspeccion_cargo:''),W2)]}),
+      new TableRow({children:[lbl('Domicilio asegurado / Teléfono',W2),val((pol.domicilio_legal||'')+(s.inspeccion_tel?' / '+s.inspeccion_tel:''),W2)]}),
+      new TableRow({children:[lbl('Lugar de inspección',W2),val(s.inspeccion_domicilio||s.lugar_siniestro||'',W2)]}),
+      new TableRow({children:[lbl('Lugar del siniestro',W2),val(s.lugar_siniestro||'',W2)]}),
+      new TableRow({children:[lbl('Bienes dañados',W2),val(s.bienes_danados||'',W2)]}),
+      new TableRow({children:[lbl('Intervención de Autoridades',W2),val(s.intervencion_autoridades?(s.intervencion_autoridades_detalle||'Sí'):'No',W2)]}),
+    ]}),
+    ep(),
+    secTitle('5','Desarrollo detallado del siniestro'),
+    pr([tx(lastInf.desarrollo_siniestro||s.descripcion||'',{size:18})],{sb:60,sa:60}),
+    ep(),
+    secTitle('6','Salvamento'),
+    new Table({width:{size:CONTENT_W,type:WidthType.DXA},columnWidths:[W2,W2],rows:[
+      new TableRow({children:[new TableCell({columnSpan:2,borders:allB,width:{size:CONTENT_W,type:WidthType.DXA},margins:{top:60,bottom:60,left:100,right:100},children:[pr([tx('SI '+(s.salvamento==='si'?'( X )':'( )')+'   NO '+(s.salvamento==='no'?'( X )':'( )'),{size:18})],{sb:0,sa:0})]})]}),
+      new TableRow({children:[lbl('Detalle de los bienes que se obtendrán como salvamento',W2),val(s.salvamento_detalle||'',W2)]}),
+      new TableRow({children:[lbl('Valor estimado de los bienes',W2),val(s.salvamento_valor_estimado?fM(s.salvamento_valor_estimado):'',W2)]}),
+      new TableRow({children:[lbl('Ubicación física',W2),val(s.salvamento_ubicacion||'',W2)]}),
+      new TableRow({children:[lbl('Persona a entrevistar / Teléfono',W2),val((s.salvamento_persona_contacto||'')+(s.salvamento_telefono?' / '+s.salvamento_telefono:''),W2)]}),
+      new TableRow({children:[lbl('Email para contacto / Móvil',W2),val((s.salvamento_email||'')+(s.salvamento_movil?' / '+s.salvamento_movil:''),W2)]}),
+      new TableRow({children:[lbl('Nombre de posible comprador',W2),val(s.salvamento_comprador||'',W2)]}),
+    ]}),
+    ep(),
+    secTitle('7','Recuperación'),
+    new Table({width:{size:CONTENT_W,type:WidthType.DXA},columnWidths:[W2,W2],rows:[
+      new TableRow({children:[new TableCell({columnSpan:2,borders:allB,width:{size:CONTENT_W,type:WidthType.DXA},margins:{top:60,bottom:60,left:100,right:100},children:[pr([tx('SI '+(s.recuperacion?'( X )':'( )')+'   NO '+(!s.recuperacion?'( X )':'( )'),{size:18})],{sb:0,sa:0})]})]}),
+      new TableRow({children:[lbl('Terceros responsables',W2),val(s.recuperacion_terceros||s.recuperacion_terceros_responsables||'',W2)]}),
+      new TableRow({children:[lbl('Nombre del recuperador',W2),val(s.recuperacion_nombre_recuperador||'',W2)]}),
+      new TableRow({children:[lbl('Carta Porte o Bill of Lading',W2),val(s.recuperacion_carta_porte||'',W2)]}),
+      new TableRow({children:[lbl('Fecha prescripción de la acción',W2),val(fD(s.recuperacion_fecha_prescripcion),W2)]}),
+    ]}),
+    ep(),
+    secTitle('8','Transportes'),
+    new Table({width:{size:CONTENT_W,type:WidthType.DXA},columnWidths:[W2,W2],rows:[
+      new TableRow({children:[lbl('Tipo de transporte',W2),val(s.transporte_tipo||'',W2)]}),
+      new TableRow({children:[lbl('Puerto o frontera',W2),val(s.transporte_frontera||'',W2)]}),
+      new TableRow({children:[lbl('Placa o matrícula',W2),val(s.transporte_placa||'',W2)]}),
+      new TableRow({children:[lbl('Destino del embarque',W2),val(s.transporte_destino||'',W2)]}),
+      new TableRow({children:[lbl('Compañía transportista',W2),val(s.transporte_compania||'',W2)]}),
+    ]}),
+    ep(),
+    secTitle('9','Estrategias y observaciones'),
+    pr([tx(lastInf.estrategias||s.estrategias_observaciones||'',{size:18})],{sb:60,sa:60}),
+    ...(s.documentos_faltantes?[
+      pr([tx('DOCUMENTOS SOLICITADOS FALTANTES',{bold:true,size:18})],{sb:80,sa:40}),
+      pr([tx(s.documentos_faltantes,{size:18})],{sb:0,sa:60}),
+    ]:[]),
+    ep(),
+    secTitle('10','Ajustador responsable y titular del despacho'),
+    pr([tx((ajusts.length?ajusts:[{nombre:'Javier Chávez Á.',cnsf:'C34388',correo:'jchavez@aasa.com.mx',telefono:'(55)6302-9178'},{nombre:'Ernesto Almaraz Ll.',cnsf:'C15979',correo:'ealmaraz@aasa.com.mx',telefono:'(55)5593-8823'}]).map(a=>a.nombre+(a.telefono?' / '+a.telefono:'')+(a.correo?' / '+a.correo:'')).join('\n'),{size:18})],{sb:60,sa:60}),
+    ep(),
+    secTitle('11','Cronología preliminar'),
+    new Table({width:{size:CONTENT_W,type:WidthType.DXA},columnWidths:[crW,crW,crW,crW],rows:cronoRows}),
+    ep(),
+    pr([tx('Atentamente',{size:18})],{align:AlignmentType.CENTER,sb:400,sa:40}),
+    pr([tx('ALMARAZ AJUSTADORES, S. A.',{bold:true,size:18})],{align:AlignmentType.CENTER,sb:0,sa:400}),
+    new Table({width:{size:CONTENT_W,type:WidthType.DXA},columnWidths:firmList.map(()=>fW),
+      borders:{top:bNone,bottom:bNone,left:bNone,right:bNone,insideH:bNone,insideV:bNone},
+      rows:[new TableRow({children:sigCells})]}),
+  ];
+
+  const doc=new Document({
+    styles:{default:{document:{run:{font:'Arial',size:18,color:BLACK}}}},
+    sections:[{
+      properties:{
+        page:{size:{width:PAGE_W,height:15840},
+              margin:{top:1418,bottom:851,left:1701,right:900,header:709,footer:709}},
+        titlePage:false,
+      },
+      headers:{default:makeHeader()},
+      footers:{default:makeFooter()},
+      children,
+    }],
+  });
+
+  const blob=await Packer.toBlob(doc);
+  const filename=(s.tramite_gnp||s.numero_exp)+'_INFORME_GNP.docx';
+  if(window.showSaveFilePicker){
+    try{
+      const fh=await window.showSaveFilePicker({
+        suggestedName:filename,
+        types:[{description:'Documento Word',accept:{'application/vnd.openxmlformats-officedocument.wordprocessingml.document':['.docx']}}]
+      });
+      const writable=await fh.createWritable();
+      await writable.write(blob);
+      await writable.close();
+      toast('Informe GNP guardado.');
+      return;
+    }catch(e){ if(e.name==='AbortError') return; }
+  }
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download=filename; a.style.display='none';
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{ document.body.removeChild(a); URL.revokeObjectURL(url); },1000);
+  toast('Informe GNP descargado.');
 }
 
 function buildFormalGenerico(s, secs, aseg){
