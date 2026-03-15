@@ -2540,7 +2540,7 @@ function buildGNP(s, secs){
 
   // Tabla de identificación (espejo exacto del documento GNP)
   const vigStr = pol.vigencia_ini
-    ? `Del ${fDL(pol.vigencia_ini)}<br>Al ${fDL(pol.vigencia_fin)}` : '';
+    ? fD(pol.vigencia_ini)+' al '+fD(pol.vigencia_fin) : '';
   h += `<table class="id-tbl">
     <tr>
       <td class="lbl">No. Siniestro</td><td class="val">${s.numero_siniestro||''}</td>
@@ -3271,7 +3271,7 @@ async function descargarWordGNP(){
 
   // ── TABLA DE IDENTIFICACIÓN ──────────────────────────────────────────
   const vigStr = pol.vigencia_ini
-    ? 'Del '+fDL(pol.vigencia_ini)+'  Al '+fDL(pol.vigencia_fin) : '';
+    ? fD(pol.vigencia_ini)+' al '+fD(pol.vigencia_fin) : '';
 
   const W2=Math.floor(CONTENT_W/2), W3=Math.floor(CONTENT_W/3), W4=Math.floor(CONTENT_W/4);
 
