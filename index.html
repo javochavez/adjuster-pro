@@ -368,7 +368,28 @@ td { padding:9px 10px; vertical-align:middle; }
   <div class="form-grid">
     <div class="fg"><label>No. de expediente</label><input type="text" id="s-exp" placeholder="SIN-2026-001"></div>
     <div class="fg"><label>No. de siniestro</label><input type="text" id="s-numsin" placeholder="Opcional — llenar cuando se tenga"></div>
-    <div class="fg"><label>Póliza</label><select id="s-poliza" onchange="actualizarCamposAseg()"></select></div>
+
+    <!-- Compañía — selector directo, controla campos condicionales -->
+    <div class="fg full">
+      <label>Compañía aseguradora</label>
+      <select id="s-aseg-direct" onchange="actualizarCamposAseg()">
+        <option value="">— Selecciona la compañía —</option>
+      </select>
+    </div>
+
+    <!-- Campo GNP — visible solo cuando se selecciona GNP -->
+    <div class="fg full" id="campo-gnp" style="display:none;">
+      <label style="color:#ffcc80;">&#9654; Trámite GNP</label>
+      <input type="text" id="s-tramite-gnp" placeholder="Número de trámite GNP">
+    </div>
+
+    <!-- Campo Atlas — visible solo cuando se selecciona Seguros Atlas -->
+    <div class="fg full" id="campo-atlas" style="display:none;">
+      <label style="color:#90caf9;">&#9654; OT (Orden de Trabajo)</label>
+      <input type="text" id="s-ot" placeholder="Número de OT Seguros Atlas">
+    </div>
+
+    <div class="fg"><label>Póliza</label><select id="s-poliza"></select></div>
     <div class="fg"><label>Tipo de siniestro</label><input type="text" id="s-tipo" placeholder="Incendio, robo, etc."></div>
     <div class="fg"><label>Causa</label><input type="text" id="s-causa"></div>
     <div class="fg"><label>Estatus</label>
@@ -383,16 +404,6 @@ td { padding:9px 10px; vertical-align:middle; }
     <div class="fg"><label>Fecha de asignación</label><input type="date" id="s-fasig"></div>
     <div class="fg"><label>Fecha de inspección</label><input type="date" id="s-finsp"></div>
     <div class="fg"><label>Fecha límite de informe</label><input type="date" id="s-finf"></div>
-    <!-- Campo GNP — solo visible cuando la póliza es de GNP -->
-    <div class="fg full" id="campo-gnp" style="display:none;">
-      <label style="color:#ffcc80;">Trámite GNP</label>
-      <input type="text" id="s-tramite-gnp" placeholder="Número de trámite GNP">
-    </div>
-    <!-- Campo Atlas — solo visible cuando la póliza es de Seguros Atlas -->
-    <div class="fg full" id="campo-atlas" style="display:none;">
-      <label style="color:#90caf9;">OT (Orden de Trabajo)</label>
-      <input type="text" id="s-ot" placeholder="Número de OT Seguros Atlas">
-    </div>
     <div class="fg full"><label>Descripción</label><textarea id="s-desc"></textarea></div>
     <div class="fg full"><label>Notas</label><textarea id="s-notas"></textarea></div>
   </div>
@@ -792,13 +803,14 @@ function renderAll(){ renderDash(); renderSiniestros(); renderPolizas(); renderA
 
 /* ── SELECTORES ── */
 function poblarSelectores(){
-  const aOpts = data.aseg.map(a=>`<option value="${a.id}">${a.nombre}</option>`).join('');
+  const aOpts = data.aseg.map(a=>`<option value="${a.id}" data-cod="${a.codigo_sistema||''}">${a.nombre}</option>`).join('');
   const dOpts = data.asdo.map(a=>`<option value="${a.id}">${a.nombre}</option>`).join('');
   const pOpts = data.pol.map(p=>`<option value="${p.id}">${p.numero}</option>`).join('');
   g('p-aseg').innerHTML=aOpts; g('p-asdo').innerHTML=dOpts;
   g('co-aseg').innerHTML='<option value="">—</option>'+aOpts;
   g('co-asdo').innerHTML='<option value="">—</option>'+dOpts;
-  g('s-poliza').innerHTML=pOpts;
+  g('s-poliza').innerHTML='<option value="">— Sin póliza aún —</option>'+pOpts;
+  g('s-aseg-direct').innerHTML='<option value="">— Selecciona la compañía —</option>'+aOpts;
   g('r-caso').innerHTML='<option value="">— Selecciona —</option>'+data.sin.map(s=>`<option value="${s.id}">${s.numero_exp}</option>`).join('');
 }
 
@@ -1011,12 +1023,20 @@ function renderInformesRows(rows){
 
 /* ── CAMPO CONDICIONAL GNP / ATLAS ── */
 function actualizarCamposAseg(){
-  const polId=parseInt(v('s-poliza'));
-  const pol=data.pol.find(p=>p.id===polId)||{};
-  const aseg=data.aseg.find(a=>a.id===pol.id_aseguradora)||{};
-  const cod=(aseg.codigo_sistema||'').toUpperCase();
-  g('campo-gnp').style.display  = cod==='GNP'   ? 'block':'none';
-  g('campo-atlas').style.display= cod==='ATLAS'  ? 'block':'none';
+  const sel = g('s-aseg-direct');
+  const asegId = parseInt(sel.value);
+  const aseg = data.aseg.find(a=>a.id===asegId)||{};
+  const cod = (aseg.codigo_sistema||'').toUpperCase();
+  g('campo-gnp').style.display   = cod==='GNP'  ? 'block' : 'none';
+  g('campo-atlas').style.display = cod==='ATLAS' ? 'block' : 'none';
+  if(cod!=='GNP')   g('s-tramite-gnp').value='';
+  if(cod!=='ATLAS') g('s-ot').value='';
+  // Filtrar pólizas de la aseguradora seleccionada
+  const polFil = asegId
+    ? data.pol.filter(p=>p.id_aseguradora===asegId)
+    : data.pol;
+  g('s-poliza').innerHTML='<option value="">— Sin póliza aún —</option>'+
+    polFil.map(p=>`<option value="${p.id}">${p.numero}</option>`).join('');
 }
 
 function volverLista(){ g('sin-detail-view').style.display='none'; g('sin-list-view').style.display='block'; currentSin=null; }
@@ -1109,8 +1129,10 @@ function abrirModal(id){
     ['s-exp','s-numsin','s-tipo','s-causa','s-desc','s-notas','s-tramite-gnp','s-ot','s-finsp','s-finf','s-fsin'].forEach(f=>g(f).value='');
     g('s-fasig').value=today;
     g('s-est').value='asignado';
+    g('s-aseg-direct').value='';
     g('campo-gnp').style.display='none';
     g('campo-atlas').style.display='none';
+    g('s-poliza').innerHTML='<option value="">— Sin póliza aún —</option>'+data.pol.map(p=>`<option value="${p.id}">${p.numero}</option>`).join('');
   }
   if(id==='modal-aseg'){
     g('ae-id').value='';
@@ -1173,14 +1195,22 @@ function editarSiniestro(id){
   const s=data.sin.find(x=>x.id===id); if(!s) return;
   g('sin-modal-title').textContent='Editar expediente'; g('s-id').value=s.id;
   g('s-exp').value=s.numero_exp||''; g('s-numsin').value=s.numero_siniestro||'';
-  g('s-poliza').value=s.id_poliza||'';
   g('s-tipo').value=s.tipo_siniestro||''; g('s-causa').value=s.causa||'';
   g('s-desc').value=s.descripcion||''; g('s-notas').value=s.notas||'';
   g('s-est').value=s.estatus||'asignado'; g('s-fsin').value=s.fecha_siniestro||'';
   g('s-fasig').value=s.fecha_asignacion||''; g('s-finsp').value=s.fecha_inspeccion||'';
   g('s-finf').value=s.fecha_informe||'';
   g('s-tramite-gnp').value=s.tramite_gnp||''; g('s-ot').value=s.ot||'';
-  actualizarCamposAseg();
+  // Determinar aseguradora desde la póliza
+  const pol=data.pol.find(p=>p.id===s.id_poliza)||{};
+  if(pol.id_aseguradora){
+    g('s-aseg-direct').value=pol.id_aseguradora;
+    actualizarCamposAseg();
+    // restaurar valores condicionales después de filtrar
+    g('s-tramite-gnp').value=s.tramite_gnp||'';
+    g('s-ot').value=s.ot||'';
+  }
+  g('s-poliza').value=s.id_poliza||'';
   g('modal-sin').classList.add('open');
 }
 
