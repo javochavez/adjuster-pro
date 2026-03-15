@@ -175,6 +175,12 @@ td { padding:9px 10px; vertical-align:middle; }
 
 /* ── MISC ── */
 .loading { text-align:center; padding:3rem; color:var(--text-ter); font-size:12px; font-style:italic; }
+.alerta-critica { background:rgba(220,60,60,.15); border-left:3px solid #e24b4a; }
+.alerta-warning  { background:rgba(186,117,23,.12); border-left:3px solid #BA7517; }
+.dias-badge { display:inline-block; padding:3px 10px; border-radius:99px; font-size:11px; font-weight:700; }
+.dias-critico { background:rgba(220,60,60,.25); color:#ef9f9f; border:1px solid rgba(220,60,60,.4); }
+.dias-warning  { background:rgba(186,117,23,.25); color:#ffcc80; border:1px solid rgba(186,117,23,.4); }
+.nav-badge { display:inline-block; background:#e24b4a; color:#fff; border-radius:99px; font-size:10px; font-weight:700; padding:1px 6px; margin-left:4px; vertical-align:middle; }
 .section-title { font-size:11px; font-weight:600; color:var(--text-sec); text-transform:uppercase; letter-spacing:.07em; margin-bottom:10px; }
 .toast { position:fixed; bottom:20px; right:20px; background:var(--accent); color:#fff; padding:9px 16px; border-radius:var(--r); font-size:12px; z-index:999; opacity:0; transition:opacity .3s; pointer-events:none; }
 .toast.show { opacity:1; }
@@ -216,6 +222,7 @@ td { padding:9px 10px; vertical-align:middle; }
       <button class="nav-btn" onclick="switchMain('siniestros',this)">Expedientes</button>
       <button class="nav-btn" onclick="switchMain('polizas',this)">Pólizas</button>
       <button class="nav-btn" onclick="switchMain('catalogos',this)">Catálogos</button>
+      <button class="nav-btn" onclick="switchMain('alertas',this)" id="nav-alertas">Alertas</button>
       <button class="nav-btn" onclick="switchMain('reportes',this)">Reportes</button>
     </div>
     <div class="topbar-right">
@@ -232,13 +239,39 @@ td { padding:9px 10px; vertical-align:middle; }
       <!-- DASHBOARD -->
       <div id="panel-dashboard" class="panel active">
         <div class="dash-grid" id="dash-metrics"></div>
+        <div id="dash-alerta-banner"></div>
         <div class="section-title">Expedientes activos</div>
         <div class="tbl-wrap">
           <table><thead><tr>
             <th>Expediente</th><th>Asegurado</th><th>Aseguradora</th><th>Ramo</th>
-            <th>Reserva vigente</th><th>Saldo técnico</th><th>Estatus</th>
+            <th>Reserva vigente</th><th>Saldo técnico</th><th>Último movimiento</th><th>Estatus</th>
           </tr></thead>
           <tbody id="dash-body"></tbody></table>
+        </div>
+      </div>
+
+      <!-- ALERTAS -->
+      <div id="panel-alertas" class="panel">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div>
+            <div style="font-size:15px;font-weight:600;color:var(--text);">Alertas de inactividad</div>
+            <div style="font-size:12px;color:var(--text-sec);margin-top:2px;">Expedientes activos sin movimiento registrado en el sistema</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <label style="font-size:12px;color:var(--text-sec);">Días sin movimiento ≥</label>
+            <input type="number" id="alerta-dias" value="15" min="1" max="365" style="width:60px;padding:5px 8px;font-size:12px;border:1px solid var(--border-md);border-radius:var(--r);background:var(--surface);color:var(--text);font-family:inherit;" oninput="renderAlertas()">
+            <button class="btn btn-primary" style="font-size:12px;" onclick="renderAlertas()">Actualizar</button>
+          </div>
+        </div>
+        <div id="alertas-resumen" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;"></div>
+        <div class="tbl-wrap">
+          <table id="alertas-table">
+            <thead><tr>
+              <th>Expediente</th><th>Asegurado</th><th>Aseguradora</th><th>Estatus</th>
+              <th>Último movimiento</th><th>Días inactivo</th><th>Tipo de último movimiento</th><th></th>
+            </tr></thead>
+            <tbody id="alertas-body"></tbody>
+          </table>
         </div>
       </div>
 
@@ -978,7 +1011,7 @@ async function loadAll(){
   renderAll();
 }
 
-function renderAll(){ renderDash(); renderSiniestros(); renderPolizas(); renderAseguradoras(); renderAsegurados(); renderContactos(); renderTC(); poblarSelectores(); }
+function renderAll(){ renderDash(); renderAlertas(); renderSiniestros(); renderPolizas(); renderAseguradoras(); renderAsegurados(); renderContactos(); renderTC(); poblarSelectores(); }
 
 /* ── SELECTORES ── */
 function poblarSelectores(){
@@ -995,32 +1028,144 @@ function poblarSelectores(){
 
 /* ── DASHBOARD ── */
 function recalcDash(){ renderDash(); }
+
+function ultimoMovimiento(sinId){
+  // Recopila la fecha más reciente de cualquier registro vinculado al expediente
+  const fechas=[];
+  const addF=(arr,campo)=>arr.filter(r=>r.id_siniestro===sinId).forEach(r=>{ if(r[campo]) fechas.push({fecha:r[campo],tipo:campo}); });
+  addF(data.res,'fecha');
+  addF(data.pag,'fecha');
+  addF(data.hon,'fecha_pacto');
+  addF(data.hon,'fecha_pago');
+  addF(data.viat,'fecha');
+  addF(data.act,'fecha');
+  addF(data.bit,'fecha');
+  addF(data.inf,'fecha_envio');
+  addF(data.doc,'fecha');
+  // También la fecha de asignación del expediente
+  const sin=data.sin.find(s=>s.id===sinId);
+  if(sin?.fecha_asignacion) fechas.push({fecha:sin.fecha_asignacion,tipo:'asignacion'});
+  if(!fechas.length) return null;
+  fechas.sort((a,b)=>new Date(b.fecha)-new Date(a.fecha));
+  return fechas[0];
+}
+
+const TIPO_LABEL={
+  fecha:'Registro', fecha_pacto:'Honorario pactado', fecha_pago:'Honorario pagado',
+  fecha_envio:'Informe enviado', asignacion:'Asignación', created_at:'Creación'
+};
+
+function diasInactivo(fechaStr){
+  if(!fechaStr) return 9999;
+  const hoy=new Date(); hoy.setHours(0,0,0,0);
+  const f=new Date(fechaStr); f.setHours(0,0,0,0);
+  return Math.floor((hoy-f)/(1000*60*60*24));
+}
+
 function renderDash(){
   const activos = data.sin.filter(s=>s.estatus!=='cerrado');
   const totRes  = data.sin.reduce((a,s)=>{ const rv=reservaVigente(s.id); return a+rv; },0);
   const totPag  = data.pag.reduce((a,p)=>a+toMXN(p.monto,p.moneda,p.tipo_cambio_mxn),0);
   const totHon  = data.hon.reduce((a,h)=>a+toMXN(h.monto,h.moneda,h.tipo_cambio_mxn),0);
   const totViat = data.viat.reduce((a,v)=>a+toMXN(v.monto,v.moneda,v.tipo_cambio_mxn),0);
+
+  // Contar inactivos ≥15 días
+  const inactivos15 = activos.filter(s=>{ const um=ultimoMovimiento(s.id); return diasInactivo(um?.fecha)>=15; });
+  const inactivos30 = activos.filter(s=>{ const um=ultimoMovimiento(s.id); return diasInactivo(um?.fecha)>=30; });
+
   g('dash-metrics').innerHTML=`
     <div class="mc"><div class="mc-lbl">Expedientes activos</div><div class="mc-val">${activos.length}<span style="font-size:13px;font-weight:400;color:var(--text-sec)"> / ${data.sin.length}</span></div></div>
     <div class="mc"><div class="mc-lbl">Reserva vigente total</div><div class="mc-val" style="font-size:15px;">${fmtMXN(totRes)}</div><div class="mc-sub">MXN equivalente</div></div>
     <div class="mc"><div class="mc-lbl">Pagos acumulados</div><div class="mc-val" style="font-size:15px;">${fmtMXN(totPag)}</div><div class="mc-sub">MXN equivalente</div></div>
-    <div class="mc"><div class="mc-lbl">Exposición total</div><div class="mc-val" style="font-size:15px;color:#ffcc80;">${fmtMXN(totRes+totHon+totViat)}</div><div class="mc-sub">Reserva + honorarios + viáticos</div></div>`;
-  g('dash-body').innerHTML = activos.slice(0,15).map(s=>{
+    <div class="mc" style="cursor:pointer;" onclick="switchMain('alertas',document.getElementById('nav-alertas'))">
+      <div class="mc-lbl">Sin movimiento ≥15 días</div>
+      <div class="mc-val" style="font-size:20px;color:${inactivos15.length>0?'#ef9f9f':'#a5d6a7'};">${inactivos15.length}</div>
+      <div class="mc-sub">${inactivos30.length} con ≥30 días — clic para ver alertas</div>
+    </div>`;
+
+  // Banner de alerta si hay expedientes críticos
+  const banner=g('dash-alerta-banner');
+  if(inactivos15.length>0){
+    banner.innerHTML=`<div style="background:rgba(220,60,60,.12);border:1px solid rgba(220,60,60,.3);border-radius:var(--rl);padding:10px 14px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-size:12px;color:#ef9f9f;">⚠ ${inactivos15.length} expediente${inactivos15.length>1?'s':''} sin movimiento en los últimos 15 días o más.</span>
+      <button class="btn btn-sm" style="font-size:11px;color:#ef9f9f;border-color:rgba(220,60,60,.4);" onclick="switchMain('alertas',document.getElementById('nav-alertas'))">Ver alertas →</button>
+    </div>`;
+    // Badge en nav
+    const navBtn=g('nav-alertas');
+    if(navBtn&&!navBtn.querySelector('.nav-badge')) navBtn.innerHTML+='<span class="nav-badge">'+inactivos15.length+'</span>';
+  } else { banner.innerHTML=''; }
+
+  g('dash-body').innerHTML = activos.slice(0,20).map(s=>{
     const pol=data.pol.find(p=>p.id===s.id_poliza)||{};
     const asdo=data.asdo.find(a=>a.id===pol.id_asegurado)||{};
     const aseg=data.aseg.find(a=>a.id===pol.id_aseguradora)||{};
     const rv=reservaVigente(s.id);
     const pags=data.pag.filter(p=>p.id_siniestro===s.id).reduce((a,p)=>a+toMXN(p.monto,p.moneda,p.tipo_cambio_mxn),0);
     const saldo=rv-pags;
-    return `<tr onclick="verSiniestro(${s.id})">
+    const um=ultimoMovimiento(s.id);
+    const dias=diasInactivo(um?.fecha);
+    const diasCls=dias>=30?'dias-critico':dias>=15?'dias-warning':'';
+    const rowCls=dias>=30?'alerta-critica':dias>=15?'alerta-warning':'';
+    return `<tr class="${rowCls}" onclick="verSiniestro(${s.id})" style="cursor:pointer;">
       <td><strong>${s.numero_exp}</strong></td>
       <td>${asdo.nombre||'—'}</td><td>${aseg.nombre||'—'}</td>
       <td>${RAMOS[pol.ramo]||pol.ramo||'—'}</td>
       <td>${fmtMXN(rv)}</td>
       <td style="color:${saldo>0?'#ffcc80':'#a5d6a7'}">${fmtMXN(saldo)}</td>
+      <td>${um?`<span class="dias-badge ${diasCls}">${fmtD(um.fecha)}</span><div class="td-sub" style="margin-top:2px;">${diasCls?dias+' días sin movimiento':''}</div>`:'<span style="color:var(--text-ter);">Sin registros</span>'}</td>
       <td><span class="badge ${EST[s.estatus]?.cls||''}">${EST[s.estatus]?.label||s.estatus}</span></td>
-    </tr>`;}).join('')||'<tr><td colspan="7" class="empty">Sin expedientes activos.</td></tr>';
+    </tr>`;}).join('')||'<tr><td colspan="8" class="empty">Sin expedientes activos.</td></tr>';
+}
+
+function renderAlertas(){
+  const limiteDias=parseInt(g('alerta-dias')?.value)||15;
+  const activos=data.sin.filter(s=>s.estatus!=='cerrado');
+  const inactivos=activos.map(s=>{
+    const um=ultimoMovimiento(s.id);
+    return {s, um, dias:diasInactivo(um?.fecha)};
+  }).filter(x=>x.dias>=limiteDias).sort((a,b)=>b.dias-a.dias);
+
+  const crit=inactivos.filter(x=>x.dias>=30).length;
+  const warn=inactivos.filter(x=>x.dias>=15&&x.dias<30).length;
+
+  g('alertas-resumen').innerHTML=`
+    <div class="mc" style="border-left-color:#e24b4a;">
+      <div class="mc-lbl">Críticos (≥30 días)</div>
+      <div class="mc-val" style="color:#ef9f9f;">${crit}</div>
+    </div>
+    <div class="mc" style="border-left-color:#BA7517;">
+      <div class="mc-lbl">Advertencia (15–29 días)</div>
+      <div class="mc-val" style="color:#ffcc80;">${warn}</div>
+    </div>
+    <div class="mc">
+      <div class="mc-lbl">Total sin movimiento ≥${limiteDias} días</div>
+      <div class="mc-val">${inactivos.length}</div>
+    </div>`;
+
+  if(!inactivos.length){
+    g('alertas-body').innerHTML=`<tr><td colspan="8" class="empty" style="color:#a5d6a7;">✓ Todos los expedientes activos tienen movimiento reciente.</td></tr>`;
+    return;
+  }
+
+  g('alertas-body').innerHTML=inactivos.map(({s,um,dias})=>{
+    const pol=data.pol.find(p=>p.id===s.id_poliza)||{};
+    const asdo=data.asdo.find(a=>a.id===pol.id_asegurado)||{};
+    const aseg=data.aseg.find(a=>a.id===pol.id_aseguradora)||{};
+    const critico=dias>=30;
+    const tipLabel=um?({
+      fecha:'Último registro', fecha_pacto:'Honorario pactado', fecha_pago:'Honorario pagado',
+      fecha_envio:'Informe enviado', asignacion:'Fecha de asignación'
+    }[um.tipo]||'Registro'):'Sin registros';
+    return `<tr class="${critico?'alerta-critica':'alerta-warning'}" style="cursor:pointer;" onclick="verSiniestro(${s.id})">
+      <td><strong>${s.numero_exp}</strong></td>
+      <td>${asdo.nombre||'—'}</td>
+      <td>${aseg.nombre||'—'}</td>
+      <td><span class="badge ${EST[s.estatus]?.cls||''}">${EST[s.estatus]?.label||s.estatus}</span></td>
+      <td>${um?fmtD(um.fecha):'—'}</td>
+      <td><span class="dias-badge ${critico?'dias-critico':'dias-warning'}">${dias} días</span></td>
+      <td style="font-size:11px;color:var(--text-sec);">${tipLabel}</td>
+      <td><button class="btn btn-sm" onclick="event.stopPropagation();verSiniestro(${s.id});switchMain('siniestros',document.querySelector('.nav-btn:nth-child(2)'))">Ver expediente</button></td>
+    </tr>`;}).join('');
 }
 
 function reservaVigente(sinId){
@@ -2564,6 +2709,7 @@ function switchMain(tab,btn){
   document.querySelectorAll('.topbar-mid .nav-btn').forEach(b=>b.classList.remove('active'));
   g('panel-'+tab).classList.add('active'); btn.classList.add('active');
   if(tab==='reportes') poblarSelectores();
+  if(tab==='alertas') renderAlertas();
 }
 
 /* ── INIT ── */
