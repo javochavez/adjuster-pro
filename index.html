@@ -3466,7 +3466,7 @@ async function descargarWordGNP(){
     ]:[]),
     ep(),
     secTitle('10','Ajustador responsable y titular del despacho'),
-    pr([tx((ajusts.length?ajusts:[{nombre:'Javier Chávez Á.',cnsf:'C34388',correo:'jchavez@aasa.com.mx',telefono:'(55)6302-9178'},{nombre:'Ernesto Almaraz Ll.',cnsf:'C15979',correo:'ealmaraz@aasa.com.mx',telefono:'(55)5593-8823'}]).map(a=>a.nombre+(a.telefono?' / '+a.telefono:'')+(a.correo?' / '+a.correo:'')).join('\n'),{size:18})],{sb:60,sa:60}),
+    ...(ajusts.length?ajusts:[{nombre:'Javier Chávez Á.',cnsf:'C34388',correo:'jchavez@aasa.com.mx',telefono:'(55)6302-9178'},{nombre:'Ernesto Almaraz Ll.',cnsf:'C15979',correo:'ealmaraz@aasa.com.mx',telefono:'(55)5593-8823'}]).map(a=>pr([tx(a.nombre+(a.telefono?' / '+a.telefono:'')+(a.correo?' / '+a.correo:''),{size:18})],{sb:40,sa:20})),
     ep(),
     secTitle('11','Cronología preliminar'),
     new Table({width:{size:CONTENT_W,type:WidthType.DXA},columnWidths:[crW,crW,crW,crW],rows:cronoRows}),
@@ -3492,7 +3492,14 @@ async function descargarWordGNP(){
     }],
   });
 
-  const blob=await Packer.toBlob(doc);
+  let blob;
+  try{
+    blob=await Packer.toBlob(doc);
+  }catch(err){
+    toast('Error generando Word GNP: '+err.message);
+    console.error('Packer GNP error:',err);
+    return;
+  }
   const filename=(s.tramite_gnp||s.numero_exp)+'_INFORME_GNP.docx';
   if(window.showSaveFilePicker){
     try{
