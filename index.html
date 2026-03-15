@@ -421,16 +421,22 @@ td { padding:9px 10px; vertical-align:middle; }
   <div class="form-grid">
     <div class="fg"><label>Número de póliza</label><input type="text" id="p-num" placeholder="POL-2026-001"></div>
     <div class="fg"><label>Ramo</label>
-      <select id="p-ramo">
+      <select id="p-ramo" onchange="toggleRamoOtro()">
         <option value="incendio">Incendio y líneas aliadas</option>
         <option value="robo">Robo</option>
         <option value="rc">Responsabilidad civil</option>
         <option value="transporte">Transporte</option>
         <option value="energia">Energía</option>
         <option value="construccion">Construcción y montaje</option>
+        <option value="equipo_contratistas">Equipo de Contratistas</option>
         <option value="interrupcion">Interrupción de negocios</option>
         <option value="catastrofico">Catastrófico</option>
+        <option value="__otro__">Otro (especificar)…</option>
       </select></div>
+    <div class="fg" id="ramo-otro-wrap" style="display:none;">
+      <label>Especificar ramo</label>
+      <input type="text" id="p-ramo-otro" placeholder="Nombre del ramo">
+    </div>
     <div class="fg"><label>Aseguradora</label><select id="p-aseg"></select></div>
     <div class="fg"><label>Asegurado</label><select id="p-asdo"></select></div>
     <div class="fg"><label>Vigencia inicio</label><input type="date" id="p-vini"></div>
@@ -685,6 +691,19 @@ td { padding:9px 10px; vertical-align:middle; }
     <div class="fg"><label>Hora</label><input type="time" id="bit-hora"></div>
     <div class="fg"><label>Horas de atención</label><input type="number" id="bit-horas" value="0" min="0" max="23" placeholder="0"></div>
     <div class="fg"><label>Minutos de atención</label><input type="number" id="bit-minutos" value="0" min="0" max="59" placeholder="0"></div>
+    <div class="fg full"><label>Tipo de actividad</label>
+      <select id="bit-tipo" onchange="toggleBitOtro()">
+        <option value="Inspección">Inspección</option>
+        <option value="Informe">Informe</option>
+        <option value="Reunión">Reunión</option>
+        <option value="Traslado">Traslado</option>
+        <option value="Conferencia telefónica">Conferencia telefónica</option>
+        <option value="__otro__">Otro (especificar)…</option>
+      </select></div>
+    <div class="fg full" id="bit-otro-wrap" style="display:none;">
+      <label>Especificar tipo de actividad</label>
+      <input type="text" id="bit-tipo-otro" placeholder="Describe el tipo de actividad">
+    </div>
     <div class="fg full"><label>Nota de actividad</label><textarea id="bit-nota" style="min-height:100px;" placeholder="Descripción detallada de la actividad desarrollada..."></textarea></div>
   </div>
   <div class="modal-footer">
@@ -736,6 +755,7 @@ const EST = {
 const RAMOS = {
   incendio:'Incendio y líneas aliadas', robo:'Robo', rc:'Resp. civil',
   transporte:'Transporte', energia:'Energía', construccion:'Construcción',
+  equipo_contratistas:'Equipo de Contratistas',
   interrupcion:'Interrupción de negocios', catastrofico:'Catastrófico'
 };
 const MON_CLS = {MXN:'b-mxn', USD:'b-usd', EUR:'b-eur'};
@@ -1021,6 +1041,14 @@ function renderInformesRows(rows){
   </tr>`).join('');
 }
 
+/* ── TOGGLES OTRO ── */
+function toggleBitOtro(){
+  g('bit-otro-wrap').style.display = v('bit-tipo')==='__otro__' ? 'block' : 'none';
+}
+function toggleRamoOtro(){
+  g('ramo-otro-wrap').style.display = v('p-ramo')==='__otro__' ? 'block' : 'none';
+}
+
 /* ── CAMPO CONDICIONAL GNP / ATLAS ── */
 function actualizarCamposAseg(){
   const sel = g('s-aseg-direct');
@@ -1151,8 +1179,10 @@ function abrirModal(id){
   if(id==='modal-pol'){
     g('pol-modal-title').textContent='Nueva póliza';
     g('p-id').value='';
-    ['p-num','p-vini','p-vfin','p-notas'].forEach(f=>g(f).value='');
+    ['p-num','p-vini','p-vfin','p-notas','p-ramo-otro'].forEach(f=>g(f).value='');
     g('p-suma').value=''; g('p-mon').value='MXN'; g('p-tc').value='1';
+    g('p-ramo').value='incendio';
+    g('ramo-otro-wrap').style.display='none';
   }
   if(id==='modal-tc')  g('tc-fecha').value=today;
   if(id==='modal-hon') g('ho-fpacto').value=today;
@@ -1162,6 +1192,9 @@ function abrirModal(id){
     g('bit-horas').value='0';
     g('bit-minutos').value='0';
     g('bit-nota').value='';
+    g('bit-tipo').value='Inspección';
+    g('bit-tipo-otro').value='';
+    g('bit-otro-wrap').style.display='none';
   }
   if(id==='modal-inf'){
     g('inf-fecha').value=today;
@@ -1216,7 +1249,9 @@ function editarSiniestro(id){
 
 async function guardarPoliza(){
   const id=v('p-id');
-  const d2={numero:v('p-num'),id_aseguradora:parseInt(v('p-aseg'))||null,id_asegurado:parseInt(v('p-asdo'))||null,ramo:v('p-ramo'),vigencia_ini:v('p-vini')||null,vigencia_fin:v('p-vfin')||null,suma_asegurada:parseFloat(v('p-suma'))||0,moneda:v('p-mon'),tipo_cambio:parseFloat(v('p-tc'))||1,notas:v('p-notas')};
+  const ramoSel=v('p-ramo');
+  const ramo = ramoSel==='__otro__' ? (v('p-ramo-otro').trim()||'otro') : ramoSel;
+  const d2={numero:v('p-num'),id_aseguradora:parseInt(v('p-aseg'))||null,id_asegurado:parseInt(v('p-asdo'))||null,ramo,vigencia_ini:v('p-vini')||null,vigencia_fin:v('p-vfin')||null,suma_asegurada:parseFloat(v('p-suma'))||0,moneda:v('p-mon'),tipo_cambio:parseFloat(v('p-tc'))||1,notas:v('p-notas')};
   if(id){ await db.from('polizas').update(d2).eq('id',id); toast('Póliza actualizada.'); }
   else { await db.from('polizas').insert(d2); toast('Póliza creada.'); }
   cerrarModal('modal-pol'); await loadAll();
@@ -1225,11 +1260,15 @@ async function guardarPoliza(){
 function editarPoliza(id){
   const p=data.pol.find(x=>x.id===id); if(!p) return;
   g('pol-modal-title').textContent='Editar póliza'; g('p-id').value=p.id;
-  g('p-num').value=p.numero||''; g('p-ramo').value=p.ramo||'';
-  g('p-aseg').value=p.id_aseguradora||''; g('p-asdo').value=p.id_asegurado||'';
+  g('p-num').value=p.numero||''; g('p-aseg').value=p.id_aseguradora||'';
+  g('p-asdo').value=p.id_asegurado||'';
   g('p-vini').value=p.vigencia_ini||''; g('p-vfin').value=p.vigencia_fin||'';
   g('p-suma').value=p.suma_asegurada||''; g('p-mon').value=p.moneda||'MXN';
   g('p-tc').value=p.tipo_cambio||1; g('p-notas').value=p.notas||'';
+  // Si el ramo guardado existe en el select, seleccionarlo; si no, usar __otro__
+  const ramoOpt = g('p-ramo').querySelector(`option[value="${p.ramo}"]`);
+  if(ramoOpt){ g('p-ramo').value=p.ramo; g('ramo-otro-wrap').style.display='none'; }
+  else { g('p-ramo').value='__otro__'; g('p-ramo-otro').value=p.ramo||''; g('ramo-otro-wrap').style.display='block'; }
   g('modal-pol').classList.add('open');
 }
 
@@ -1253,13 +1292,15 @@ async function guardarBitacora(){
   if(!currentSin) return;
   const nota=v('bit-nota');
   if(!nota.trim()){ toast('La nota no puede estar vacía.'); return; }
+  const tipoSel=v('bit-tipo');
+  const tipo = tipoSel==='__otro__' ? (v('bit-tipo-otro').trim()||'Otro') : tipoSel;
   await db.from('bitacora_ajustador').insert({
     id_siniestro:currentSin.id,
     fecha:v('bit-fecha')||new Date().toISOString().slice(0,10),
     hora:v('bit-hora')||new Date().toTimeString().slice(0,8),
     horas:parseInt(v('bit-horas'))||0,
     minutos:parseInt(v('bit-minutos'))||0,
-    nota,
+    nota: `[${tipo}] ${nota}`,
     usuario:g('user-lbl').textContent
   });
   toast('Nota de bitácora registrada.');
