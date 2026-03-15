@@ -3,182 +3,191 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AdjusterPro — Control de Casos</title>
+<title>Sistema de Gestión de Ajuste de Siniestros</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  :root {
-    --bg:         #0d1b2e;
-    --bg2:        #112240;
-    --surface:    #162d4a;
-    --surface2:   #1e3a5f;
-    --border:     rgba(100,160,255,0.12);
-    --border-md:  rgba(100,160,255,0.22);
-    --border-hi:  rgba(100,160,255,0.40);
-    --text:       #e8f0fe;
-    --text-sec:   #8bafd4;
-    --text-ter:   #4e7aaa;
-    --accent:     #1565c0;
-    --accent-hi:  #1976d2;
-    --accent-lit: #42a5f5;
-    --radius-md:  8px;
-    --radius-lg:  12px;
-  }
-  body { font-family: 'Trebuchet MS', 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 14px; line-height: 1.5; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:        #0b1929;
+  --bg2:       #0f2236;
+  --surface:   #132d47;
+  --surface2:  #1a3a5c;
+  --border:    rgba(100,160,255,0.11);
+  --border-md: rgba(100,160,255,0.22);
+  --border-hi: rgba(100,160,255,0.38);
+  --text:      #deeaf8;
+  --text-sec:  #7aaed4;
+  --text-ter:  #3d6e9e;
+  --accent:    #1558b0;
+  --accent-hi: #1a6fda;
+  --accent-lt: #4da3f5;
+  --danger:    rgba(220,60,60,0.85);
+  --success:   #2e7d52;
+  --warn:      #8a5a00;
+  --r: 8px; --rl: 12px;
+}
+body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 13px; }
 
-  /* LOGIN */
-  .login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1rem; background: var(--bg); }
-  .login-card { background: var(--surface); border: 1px solid var(--border-md); border-radius: var(--radius-lg); padding: 2.5rem 2rem; width: 360px; }
-  .login-brand { font-size: 24px; font-weight: 700; letter-spacing: -0.02em; color: var(--text); margin-bottom: 4px; }
-  .login-brand em { color: var(--accent-lit); font-style: normal; }
-  .login-sub { font-size: 12px; color: var(--text-sec); margin-bottom: 2rem; letter-spacing: 0.04em; text-transform: uppercase; }
-  .login-card .fg { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
-  .login-card .fg label { font-size: 11px; color: var(--text-sec); text-transform: uppercase; letter-spacing: 0.07em; }
-  .login-card .fg input { padding: 10px 12px; font-size: 14px; border: 1px solid var(--border-md); border-radius: var(--radius-md); background: var(--bg2); color: var(--text); font-family: inherit; }
-  .login-card .fg input:focus { outline: none; border-color: var(--accent-lit); background: var(--bg); }
-  .login-btn { width: 100%; padding: 11px; background: var(--accent); color: #fff; border: none; border-radius: var(--radius-md); font-size: 14px; font-family: inherit; cursor: pointer; margin-top: 6px; font-weight: 700; letter-spacing: 0.03em; transition: background 0.15s; }
-  .login-btn:hover { background: var(--accent-hi); }
-  .login-error { font-size: 12px; color: #ef9f9f; margin-top: 10px; text-align: center; min-height: 18px; }
+/* ── LOGIN ── */
+.login-wrap { min-height:100vh; display:flex; align-items:center; justify-content:center; background:var(--bg); }
+.login-card { background:var(--surface); border:1px solid var(--border-md); border-radius:var(--rl); padding:2.5rem 2rem; width:360px; }
+.login-brand { font-size:20px; font-weight:700; color:var(--text); margin-bottom:3px; }
+.login-brand em { color:var(--accent-lt); font-style:normal; }
+.login-sub { font-size:11px; color:var(--text-sec); text-transform:uppercase; letter-spacing:.06em; margin-bottom:1.75rem; }
+.lf { display:flex; flex-direction:column; gap:4px; margin-bottom:12px; }
+.lf label { font-size:11px; color:var(--text-sec); text-transform:uppercase; letter-spacing:.06em; }
+.lf input { padding:9px 11px; font-size:13px; border:1px solid var(--border-md); border-radius:var(--r); background:var(--bg2); color:var(--text); font-family:inherit; }
+.lf input:focus { outline:none; border-color:var(--accent-lt); }
+.login-btn { width:100%; padding:10px; background:var(--accent); color:#fff; border:none; border-radius:var(--r); font-size:14px; font-family:inherit; cursor:pointer; font-weight:600; margin-top:4px; }
+.login-btn:hover { background:var(--accent-hi); }
+.login-err { font-size:12px; color:#f08080; margin-top:8px; text-align:center; min-height:16px; }
 
-  /* APP */
-  #app { display: none; }
-  .topbar { background: var(--bg2); border-bottom: 1px solid var(--border-md); padding: 0 1.5rem; display: flex; align-items: center; justify-content: space-between; height: 58px; position: sticky; top: 0; z-index: 50; }
-  .brand { font-size: 17px; font-weight: 700; letter-spacing: -0.01em; color: var(--text); }
-  .brand em { color: var(--accent-lit); font-style: normal; }
-  .brand span { font-style: normal; font-weight: 400; font-size: 12px; color: var(--text-sec); margin-left: 10px; letter-spacing: 0.03em; text-transform: uppercase; }
-  .topbar-right { display: flex; align-items: center; gap: 16px; }
-  .user-info { font-size: 12px; color: var(--text-sec); }
-  .tc-box { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-sec); }
-  .tc-box input { width: 76px; padding: 4px 8px; font-size: 12px; border: 1px solid var(--border-md); border-radius: var(--radius-md); background: var(--bg); color: var(--text); font-family: inherit; }
-  .nav { display: flex; gap: 2px; }
-  .nav-btn { background: transparent; border: none; padding: 7px 15px; border-radius: var(--radius-md); cursor: pointer; font-size: 13px; color: var(--text-sec); font-family: inherit; transition: all 0.15s; letter-spacing: 0.01em; }
-  .nav-btn:hover { background: var(--surface); color: var(--text); }
-  .nav-btn.active { background: var(--accent); color: #fff; font-weight: 600; }
-  .logout-btn { background: transparent; border: 1px solid var(--border-md); padding: 5px 14px; border-radius: var(--radius-md); cursor: pointer; font-size: 12px; color: var(--text-sec); font-family: inherit; transition: all 0.15s; }
-  .logout-btn:hover { border-color: var(--border-hi); color: var(--text); }
+/* ── LAYOUT ── */
+#app { display:none; height:100vh; display:none; flex-direction:column; }
+.topbar { background:var(--bg2); border-bottom:1px solid var(--border-md); height:52px; display:flex; align-items:center; padding:0 1rem; gap:16px; flex-shrink:0; }
+.brand { font-size:15px; font-weight:700; white-space:nowrap; }
+.brand em { color:var(--accent-lt); font-style:normal; }
+.brand span { font-size:11px; font-weight:400; color:var(--text-sec); margin-left:8px; text-transform:uppercase; letter-spacing:.04em; }
+.topbar-mid { flex:1; display:flex; gap:2px; }
+.nav-btn { background:transparent; border:none; padding:6px 13px; border-radius:var(--r); cursor:pointer; font-size:12px; color:var(--text-sec); font-family:inherit; transition:all .12s; white-space:nowrap; }
+.nav-btn:hover { background:var(--surface); color:var(--text); }
+.nav-btn.active { background:var(--accent); color:#fff; font-weight:600; }
+.topbar-right { display:flex; align-items:center; gap:10px; }
+.tc-row { display:flex; align-items:center; gap:5px; font-size:11px; color:var(--text-ter); }
+.tc-row input { width:64px; padding:3px 6px; font-size:11px; border:1px solid var(--border-md); border-radius:6px; background:var(--bg); color:var(--text); font-family:inherit; }
+.user-lbl { font-size:11px; color:var(--text-sec); }
+.logout-btn { background:transparent; border:1px solid var(--border-md); padding:4px 11px; border-radius:var(--r); cursor:pointer; font-size:11px; color:var(--text-sec); font-family:inherit; }
+.logout-btn:hover { border-color:var(--border-hi); color:var(--text); }
 
-  .main { max-width: 1100px; margin: 0 auto; padding: 1.5rem; }
-  .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 1.25rem; }
-  .mc { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1rem 1.25rem; border-left: 3px solid var(--accent); }
-  .mc-label { font-size: 11px; color: var(--text-ter); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 6px; }
-  .mc-val { font-size: 20px; font-weight: 700; letter-spacing: -0.02em; color: var(--text); }
+.body-wrap { flex:1; overflow:hidden; display:flex; }
+.main { flex:1; overflow-y:auto; padding:1.25rem; }
 
-  .panel { display: none; }
-  .panel.active { display: block; }
+/* ── PANELS ── */
+.panel { display:none; }
+.panel.active { display:block; }
 
-  .toolbar { display: flex; gap: 10px; margin-bottom: 12px; align-items: center; }
-  .toolbar input[type=text] { flex: 1; padding: 8px 12px; font-size: 13px; border: 1px solid var(--border-md); border-radius: var(--radius-md); background: var(--surface); color: var(--text); font-family: inherit; }
-  .toolbar input[type=text]:focus { outline: none; border-color: var(--accent-lit); }
-  .toolbar select { padding: 8px 10px; font-size: 13px; border: 1px solid var(--border-md); border-radius: var(--radius-md); background: var(--surface); color: var(--text); font-family: inherit; }
+/* ── DASHBOARD METRICS ── */
+.dash-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:1.25rem; }
+.dash-grid.wide { grid-template-columns:repeat(3,1fr); }
+.mc { background:var(--surface); border:1px solid var(--border); border-left:3px solid var(--accent); border-radius:var(--rl); padding:.9rem 1.1rem; }
+.mc-lbl { font-size:10px; color:var(--text-ter); text-transform:uppercase; letter-spacing:.07em; margin-bottom:5px; }
+.mc-val { font-size:20px; font-weight:700; color:var(--text); letter-spacing:-.02em; }
+.mc-sub { font-size:10px; color:var(--text-ter); margin-top:2px; }
 
-  .btn { padding: 8px 18px; border-radius: var(--radius-md); cursor: pointer; font-size: 13px; font-family: inherit; border: 1px solid var(--border-md); background: var(--surface); color: var(--text); transition: all 0.15s; }
-  .btn:hover { border-color: var(--border-hi); background: var(--surface2); }
-  .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600; }
-  .btn-primary:hover { background: var(--accent-hi); border-color: var(--accent-hi); }
+/* ── TOOLBAR ── */
+.toolbar { display:flex; gap:8px; margin-bottom:10px; align-items:center; flex-wrap:wrap; }
+.toolbar input[type=text], .toolbar select { padding:7px 10px; font-size:12px; border:1px solid var(--border-md); border-radius:var(--r); background:var(--surface); color:var(--text); font-family:inherit; }
+.toolbar input[type=text] { flex:1; min-width:200px; }
 
-  .tbl-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
-  table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  thead th { text-align: left; padding: 10px 12px; font-size: 11px; color: var(--text-ter); border-bottom: 1px solid var(--border-md); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; background: var(--bg2); }
-  tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
-  tbody tr:last-child { border-bottom: none; }
-  tbody tr:hover { background: var(--surface2); }
-  tbody td { padding: 11px 12px; vertical-align: middle; color: var(--text); }
-  .td-sub { font-size: 11px; color: var(--text-ter); margin-top: 2px; }
-  .td-actions { display: flex; gap: 6px; }
-  .td-actions button { padding: 4px 10px; font-size: 11px; border-radius: 6px; cursor: pointer; border: 1px solid var(--border-md); background: transparent; color: var(--text-sec); font-family: inherit; transition: all 0.15s; }
-  .td-actions button:hover { background: var(--surface2); border-color: var(--border-hi); color: var(--text); }
-  .td-actions .del { color: #ef9f9f; border-color: rgba(239,99,99,0.3); }
-  .td-actions .del:hover { background: rgba(239,99,99,0.12); }
+/* ── BUTTONS ── */
+.btn { padding:7px 15px; border-radius:var(--r); cursor:pointer; font-size:12px; font-family:inherit; border:1px solid var(--border-md); background:var(--surface); color:var(--text); transition:all .12s; }
+.btn:hover { background:var(--surface2); border-color:var(--border-hi); }
+.btn-primary { background:var(--accent); color:#fff; border-color:var(--accent); font-weight:600; }
+.btn-primary:hover { background:var(--accent-hi); }
+.btn-sm { padding:4px 10px; font-size:11px; }
+.btn-danger { color:#f08080; border-color:rgba(220,80,80,.3); }
+.btn-danger:hover { background:rgba(220,60,60,.15); }
 
-  .badge { display: inline-block; padding: 3px 10px; border-radius: 99px; font-size: 11px; font-weight: 600; letter-spacing: 0.02em; }
-  .s-asignado  { background: rgba(21,101,192,0.25); color: #90caf9; border: 1px solid rgba(21,101,192,0.4); }
-  .s-inspeccion{ background: rgba(186,117,23,0.25); color: #ffcc80; border: 1px solid rgba(186,117,23,0.4); }
-  .s-informe   { background: rgba(83,74,183,0.25); color: #ce93d8; border: 1px solid rgba(83,74,183,0.4); }
-  .s-cobro     { background: rgba(59,109,17,0.25); color: #a5d6a7; border: 1px solid rgba(59,109,17,0.4); }
-  .s-cerrado   { background: rgba(80,80,80,0.25); color: #b0bec5; border: 1px solid rgba(80,80,80,0.4); }
-  .i-borrador  { background: rgba(80,80,80,0.25); color: #b0bec5; border: 1px solid rgba(80,80,80,0.4); }
-  .i-enviado   { background: rgba(21,101,192,0.25); color: #90caf9; border: 1px solid rgba(21,101,192,0.4); }
-  .i-acuse     { background: rgba(59,109,17,0.25); color: #a5d6a7; border: 1px solid rgba(59,109,17,0.4); }
-  .cur-usd     { background: rgba(83,74,183,0.25); color: #ce93d8; border: 1px solid rgba(83,74,183,0.4); }
-  .cur-mxn     { background: rgba(8,80,65,0.35); color: #80cbc4; border: 1px solid rgba(8,80,65,0.5); }
+/* ── TABLES ── */
+.tbl-wrap { background:var(--surface); border:1px solid var(--border); border-radius:var(--rl); overflow:hidden; }
+table { width:100%; border-collapse:collapse; font-size:12px; }
+thead th { text-align:left; padding:8px 10px; font-size:10px; color:var(--text-ter); border-bottom:1px solid var(--border-md); text-transform:uppercase; letter-spacing:.06em; background:var(--bg2); font-weight:500; }
+tbody tr { border-bottom:1px solid var(--border); transition:background .1s; cursor:pointer; }
+tbody tr:last-child { border-bottom:none; }
+tbody tr:hover { background:var(--surface2); }
+td { padding:9px 10px; vertical-align:middle; }
+.td-sub { font-size:10px; color:var(--text-ter); margin-top:1px; }
+.td-acts { display:flex; gap:5px; }
 
-  .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 200; align-items: center; justify-content: center; }
-  .overlay.open { display: flex; }
-  .modal { background: var(--surface); border-radius: var(--radius-lg); border: 1px solid var(--border-md); padding: 1.75rem; width: 620px; max-height: 90vh; overflow-y: auto; }
-  .modal-sm { width: 480px; }
-  .modal-title { font-size: 16px; font-weight: 700; margin-bottom: 1.25rem; letter-spacing: -0.01em; color: var(--text); }
-  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  .fg { display: flex; flex-direction: column; gap: 5px; }
-  .fg.full { grid-column: 1 / -1; }
-  .fg label { font-size: 11px; color: var(--text-sec); text-transform: uppercase; letter-spacing: 0.07em; }
-  .fg input, .fg select, .fg textarea { padding: 8px 10px; font-size: 13px; border: 1px solid var(--border-md); border-radius: var(--radius-md); background: var(--bg2); color: var(--text); font-family: inherit; }
-  .fg textarea { resize: vertical; min-height: 80px; }
-  .fg input:focus, .fg select:focus, .fg textarea:focus { outline: none; border-color: var(--accent-lit); background: var(--bg); }
-  .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+/* ── BADGES ── */
+.badge { display:inline-block; padding:2px 9px; border-radius:99px; font-size:10px; font-weight:600; }
+.b-asignado   { background:rgba(21,88,176,.3); color:#90caf9; border:1px solid rgba(21,88,176,.5); }
+.b-inspeccion { background:rgba(180,110,0,.3); color:#ffcc80; border:1px solid rgba(180,110,0,.5); }
+.b-informe    { background:rgba(90,50,180,.3); color:#ce93d8; border:1px solid rgba(90,50,180,.5); }
+.b-cobro      { background:rgba(30,100,30,.3); color:#a5d6a7; border:1px solid rgba(30,100,30,.5); }
+.b-cerrado    { background:rgba(70,70,70,.3); color:#b0bec5; border:1px solid rgba(70,70,70,.5); }
+.b-mxn { background:rgba(8,80,65,.3); color:#80cbc4; border:1px solid rgba(8,80,65,.5); }
+.b-usd { background:rgba(80,50,180,.3); color:#ce93d8; border:1px solid rgba(80,50,180,.5); }
+.b-eur { background:rgba(180,100,0,.3); color:#ffcc80; border:1px solid rgba(180,100,0,.5); }
+.b-pactado  { background:rgba(30,80,160,.25); color:#90caf9; }
+.b-parcial  { background:rgba(160,100,0,.25); color:#ffcc80; }
+.b-pagado   { background:rgba(20,90,40,.25); color:#a5d6a7; }
 
-  .hon-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1rem 1.25rem; margin-bottom: 10px; border-left: 3px solid var(--accent); }
-  .hon-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
-  .hon-exp { font-weight: 700; font-size: 14px; color: var(--text); }
-  .hon-ased { font-size: 12px; color: var(--text-sec); }
-  .h-row { display: flex; justify-content: space-between; padding: 7px 0; border-top: 1px solid var(--border); font-size: 13px; }
-  .h-label { color: var(--text-sec); }
-  .h-val { font-weight: 700; color: var(--text); }
+/* ── MODALS ── */
+.overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:200; align-items:center; justify-content:center; }
+.overlay.open { display:flex; }
+.modal { background:var(--surface); border:1px solid var(--border-md); border-radius:var(--rl); padding:1.5rem; width:640px; max-height:90vh; overflow-y:auto; }
+.modal-sm { width:460px; }
+.modal-lg { width:780px; }
+.modal-title { font-size:15px; font-weight:700; margin-bottom:1.1rem; }
+.form-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.fg { display:flex; flex-direction:column; gap:3px; }
+.fg.full { grid-column:1/-1; }
+.fg.third { grid-column:span 1; }
+.fg label { font-size:10px; color:var(--text-sec); text-transform:uppercase; letter-spacing:.06em; }
+.fg input, .fg select, .fg textarea { padding:7px 9px; font-size:12px; border:1px solid var(--border-md); border-radius:var(--r); background:var(--bg2); color:var(--text); font-family:inherit; }
+.fg textarea { resize:vertical; min-height:70px; }
+.fg input:focus, .fg select:focus, .fg textarea:focus { outline:none; border-color:var(--accent-lt); }
+.modal-footer { display:flex; gap:8px; justify-content:flex-end; margin-top:1.25rem; padding-top:.9rem; border-top:1px solid var(--border); }
 
-  .bit-list { display: flex; flex-direction: column; gap: 8px; }
-  .bit-item { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: var(--radius-md); padding: 12px 14px; }
-  .bit-meta { font-size: 11px; color: var(--text-ter); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.04em; }
-  .bit-text { font-size: 13px; line-height: 1.6; color: var(--text); }
+/* ── EXPEDIENTE DETAIL ── */
+.exp-header { background:var(--surface); border:1px solid var(--border); border-radius:var(--rl); padding:1.1rem 1.25rem; margin-bottom:12px; display:flex; justify-content:space-between; align-items:flex-start; }
+.exp-title { font-size:18px; font-weight:700; letter-spacing:-.02em; }
+.exp-sub { font-size:12px; color:var(--text-sec); margin-top:3px; }
+.fin-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:12px; }
+.fin-card { background:var(--surface); border:1px solid var(--border); border-left:3px solid var(--accent); border-radius:var(--rl); padding:.8rem 1rem; }
+.fin-lbl { font-size:10px; color:var(--text-ter); text-transform:uppercase; letter-spacing:.06em; margin-bottom:4px; }
+.fin-val { font-size:16px; font-weight:700; }
+.fin-val.warn { color:#ffcc80; }
+.fin-val.ok   { color:#a5d6a7; }
+.fin-val.info { color:#90caf9; }
+.tabs { display:flex; gap:2px; margin-bottom:10px; border-bottom:1px solid var(--border-md); padding-bottom:2px; }
+.tab-btn { background:transparent; border:none; padding:6px 14px; border-radius:var(--r) var(--r) 0 0; cursor:pointer; font-size:12px; color:var(--text-sec); font-family:inherit; }
+.tab-btn:hover { color:var(--text); background:var(--surface2); }
+.tab-btn.active { color:var(--accent-lt); font-weight:600; border-bottom:2px solid var(--accent-lt); }
+.tab-pane { display:none; }
+.tab-pane.active { display:block; }
+.back-btn { background:transparent; border:1px solid var(--border-md); padding:5px 12px; border-radius:var(--r); cursor:pointer; font-size:11px; color:var(--text-sec); font-family:inherit; margin-bottom:12px; }
+.back-btn:hover { border-color:var(--border-hi); color:var(--text); }
 
-  .toast { position: fixed; bottom: 24px; right: 24px; background: var(--accent); color: #fff; padding: 10px 18px; border-radius: var(--radius-md); font-size: 13px; z-index: 999; opacity: 0; transition: opacity 0.3s; pointer-events: none; border: 1px solid var(--accent-hi); }
-  .toast.show { opacity: 1; }
-  .loading { text-align: center; padding: 3rem; color: var(--text-ter); font-size: 13px; font-style: italic; }
+/* ── REPORTE ── */
+.rpt-wrap { background:#fff; border-radius:var(--r); padding:24px; color:#111; font-size:12px; line-height:1.6; }
+.rpt-header { display:flex; justify-content:space-between; align-items:flex-start; padding-bottom:10px; border-bottom:2px solid #1558b0; margin-bottom:14px; }
+.rpt-logo { max-height:55px; max-width:150px; object-fit:contain; }
+.rpt-firm-name { font-size:13px; font-weight:700; color:#1558b0; text-align:right; }
+.rpt-firm-data { font-size:10px; color:#555; line-height:1.8; text-align:right; }
+.rpt-title { font-size:15px; font-weight:700; color:#1558b0; margin-bottom:3px; }
+.rpt-subtitle { font-size:11px; color:#777; margin-bottom:14px; }
+.rpt-sec { margin-bottom:12px; }
+.rpt-sec-title { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:#1558b0; border-bottom:1px solid #c5d8f5; padding-bottom:3px; margin-bottom:7px; }
+.rpt-g2 { display:grid; grid-template-columns:1fr 1fr; gap:3px 14px; }
+.rpt-row { display:flex; justify-content:space-between; padding:2px 0; border-bottom:.5px solid #eee; font-size:11px; }
+.rpt-row:last-child { border-bottom:none; }
+.rpt-lbl { color:#666; }
+.rpt-val { font-weight:600; color:#111; text-align:right; }
+.rpt-nota { font-size:11px; background:#f5f8ff; border-left:3px solid #1558b0; padding:7px 10px; color:#333; margin-bottom:6px; }
+.rpt-tbl { width:100%; border-collapse:collapse; font-size:10px; }
+.rpt-tbl th { background:#1558b0; color:#fff; padding:4px 7px; text-align:left; }
+.rpt-tbl td { padding:4px 7px; border-bottom:.5px solid #dde; }
+.rpt-tbl tr:nth-child(even) td { background:#f5f8ff; }
+.rpt-footer { margin-top:16px; padding-top:8px; border-top:1px solid #ddd; font-size:9px; color:#aaa; display:flex; justify-content:space-between; }
 
-  /* REPORTES */
-  .r-check { display:flex; align-items:center; gap:8px; font-size:13px; color:var(--text-sec); cursor:pointer; padding:4px 6px; border-radius:6px; transition:background 0.1s; }
-  .r-check:hover { background:var(--surface2); }
-  .r-check input { accent-color: var(--accent-lit); width:14px; height:14px; cursor:pointer; }
+/* ── MISC ── */
+.loading { text-align:center; padding:3rem; color:var(--text-ter); font-size:12px; font-style:italic; }
+.section-title { font-size:11px; font-weight:600; color:var(--text-sec); text-transform:uppercase; letter-spacing:.07em; margin-bottom:10px; }
+.toast { position:fixed; bottom:20px; right:20px; background:var(--accent); color:#fff; padding:9px 16px; border-radius:var(--r); font-size:12px; z-index:999; opacity:0; transition:opacity .3s; pointer-events:none; }
+.toast.show { opacity:1; }
+.r-check { display:flex; align-items:center; gap:7px; font-size:12px; color:var(--text-sec); cursor:pointer; padding:3px 6px; border-radius:6px; }
+.r-check:hover { background:var(--surface2); }
+.r-check input { accent-color:var(--accent-lt); width:13px; height:13px; }
+.empty { text-align:center; padding:2rem; color:var(--text-ter); font-style:italic; font-size:12px; }
 
-  /* REPORTE IMPRIMIBLE */
-  .rpt { font-family: 'Trebuchet MS', sans-serif; color: #111; background: #fff; padding: 0; font-size: 12px; line-height: 1.6; }
-  .rpt-header { display:flex; justify-content:space-between; align-items:flex-start; padding-bottom:12px; border-bottom:2px solid #1565c0; margin-bottom:16px; }
-  .rpt-logo { max-height:60px; max-width:160px; object-fit:contain; }
-  .rpt-firm { text-align:right; }
-  .rpt-firm-name { font-size:14px; font-weight:700; color:#1565c0; }
-  .rpt-firm-data { font-size:11px; color:#555; line-height:1.8; }
-  .rpt-title { font-size:16px; font-weight:700; color:#1565c0; margin-bottom:4px; }
-  .rpt-subtitle { font-size:12px; color:#777; margin-bottom:16px; }
-  .rpt-section { margin-bottom:14px; }
-  .rpt-section-title { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1565c0; border-bottom:1px solid #c5d8f5; padding-bottom:4px; margin-bottom:8px; }
-  .rpt-grid { display:grid; grid-template-columns:1fr 1fr; gap:4px 16px; }
-  .rpt-row { display:flex; justify-content:space-between; padding:3px 0; border-bottom:0.5px solid #eee; font-size:12px; }
-  .rpt-row:last-child { border-bottom:none; }
-  .rpt-lbl { color:#666; }
-  .rpt-val { font-weight:600; color:#111; text-align:right; }
-  .rpt-nota { font-size:12px; color:#333; background:#f5f8ff; border-left:3px solid #1565c0; padding:8px 12px; border-radius:0 4px 4px 0; }
-  .rpt-tbl { width:100%; border-collapse:collapse; font-size:11px; margin-top:4px; }
-  .rpt-tbl th { background:#1565c0; color:#fff; padding:5px 8px; text-align:left; font-weight:600; letter-spacing:0.03em; }
-  .rpt-tbl td { padding:5px 8px; border-bottom:0.5px solid #dde; color:#222; }
-  .rpt-tbl tr:last-child td { border-bottom:none; }
-  .rpt-tbl tr:nth-child(even) td { background:#f5f8ff; }
-  .rpt-footer { margin-top:20px; padding-top:10px; border-top:1px solid #ddd; font-size:10px; color:#aaa; display:flex; justify-content:space-between; }
-  .rpt-badge { display:inline-block; padding:2px 8px; border-radius:99px; font-size:10px; font-weight:600; }
-  .rpt-s-asignado  { background:#E6F1FB; color:#0C447C; }
-  .rpt-s-inspeccion{ background:#FAEEDA; color:#633806; }
-  .rpt-s-informe   { background:#EEEDFE; color:#3C3489; }
-  .rpt-s-cobro     { background:#EAF3DE; color:#27500A; }
-  .rpt-s-cerrado   { background:#F1EFE8; color:#5F5E5A; }
-
-  @media print {
-    body > *:not(#print-frame) { display: none !important; }
-    #print-frame { display: block !important; position: fixed; inset: 0; background: #fff; z-index: 9999; overflow: auto; padding: 20mm 15mm; }
-  }
-
-  @media (max-width: 700px) {
-    .metrics { grid-template-columns: 1fr 1fr; }
-    .topbar { flex-wrap: wrap; height: auto; padding: 10px; gap: 8px; }
-    .modal { width: 95vw; }
-    .form-grid { grid-template-columns: 1fr; }
-  }
+@media(max-width:700px){
+  .dash-grid,.fin-grid{ grid-template-columns:1fr 1fr; }
+  .form-grid{ grid-template-columns:1fr; }
+  .modal{ width:96vw; }
+  .topbar{ flex-wrap:wrap; height:auto; padding:8px; }
+}
 </style>
 </head>
 <body>
@@ -187,212 +196,457 @@
 <div class="login-wrap" id="login-wrap">
   <div class="login-card">
     <div class="login-brand"><em>Adjuster</em>Pro</div>
-    <div class="login-sub">Control de Casos — Acceso restringido</div>
-    <div class="fg">
-      <label>Correo electrónico</label>
-      <input type="email" id="l-email" placeholder="usuario@aasa.com.mx" autocomplete="email">
-    </div>
-    <div class="fg">
-      <label>Contraseña</label>
-      <input type="password" id="l-pass" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
-    </div>
-    <button class="login-btn" onclick="doLogin()" id="login-btn">Ingresar</button>
-    <div class="login-error" id="login-error"></div>
+    <div class="login-sub">Sistema Integral de Gestión de Siniestros</div>
+    <div class="lf"><label>Correo electrónico</label>
+      <input type="email" id="l-email" placeholder="usuario@aasa.com.mx" autocomplete="email"></div>
+    <div class="lf"><label>Contraseña</label>
+      <input type="password" id="l-pass" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <button class="login-btn" id="login-btn" onclick="doLogin()">Ingresar</button>
+    <div class="login-err" id="login-err"></div>
   </div>
 </div>
 
 <!-- APP -->
 <div id="app">
   <div class="topbar">
-    <div class="brand"><em>Adjuster</em>Pro <span>Control de Casos</span></div>
+    <div class="brand"><em>Adjuster</em>Pro <span>Gestión de Siniestros</span></div>
+    <div class="topbar-mid">
+      <button class="nav-btn active" onclick="switchMain('dashboard',this)">Dashboard</button>
+      <button class="nav-btn" onclick="switchMain('siniestros',this)">Expedientes</button>
+      <button class="nav-btn" onclick="switchMain('polizas',this)">Pólizas</button>
+      <button class="nav-btn" onclick="switchMain('catalogos',this)">Catálogos</button>
+      <button class="nav-btn" onclick="switchMain('reportes',this)">Reportes</button>
+    </div>
     <div class="topbar-right">
-      <span class="user-info" id="user-email"></span>
-      <div class="tc-box">
-        <span>USD/MXN</span>
-        <input type="number" id="tc-input" value="17.50" step="0.01" oninput="renderMetrics()">
-      </div>
-      <nav class="nav">
-        <button class="nav-btn active" onclick="switchTab('casos',this)">Casos</button>
-        <button class="nav-btn" onclick="switchTab('informes',this)">Informes</button>
-        <button class="nav-btn" onclick="switchTab('honorarios',this)">Honorarios</button>
-        <button class="nav-btn" onclick="switchTab('bitacora',this)">Bitácora</button>
-        <button class="nav-btn" onclick="switchTab('reportes',this)">Reportes</button>
-      </nav>
+      <div class="tc-row">USD/MXN <input type="number" id="tc-usd" value="17.50" step="0.01" oninput="recalcDash()"></div>
+      <div class="tc-row">EUR/MXN <input type="number" id="tc-eur" value="19.20" step="0.01" oninput="recalcDash()"></div>
+      <span class="user-lbl" id="user-lbl"></span>
       <button class="logout-btn" onclick="doLogout()">Salir</button>
     </div>
   </div>
 
-  <div class="main">
-    <div class="metrics">
-      <div class="mc"><div class="mc-label">Casos activos</div><div class="mc-val" id="m-activos">—</div></div>
-      <div class="mc"><div class="mc-label">Reclamado total (MXN eq.)</div><div class="mc-val" id="m-reclamado">—</div></div>
-      <div class="mc"><div class="mc-label">Honorarios totales (MXN eq.)</div><div class="mc-val" id="m-honorarios">—</div></div>
-      <div class="mc"><div class="mc-label">Por cobrar (MXN eq.)</div><div class="mc-val" id="m-cobrar" style="color:#BA7517;">—</div></div>
-    </div>
+  <div class="body-wrap">
+    <div class="main">
 
-    <div id="panel-casos" class="panel active">
-      <div class="toolbar">
-        <input type="text" id="search" placeholder="Buscar expediente, asegurado o aseguradora..." oninput="renderTabla()">
-        <button class="btn btn-primary" onclick="abrirModal('modal-caso')">+ Nuevo caso</button>
-      </div>
-      <div class="tbl-wrap">
-        <table>
-          <thead><tr>
-            <th>Expediente</th><th>Asegurado</th><th>Aseguradora</th><th>Tipo</th>
-            <th>Moneda</th><th>Reclamado</th><th>Asignación</th><th>Estatus</th><th></th>
+      <!-- DASHBOARD -->
+      <div id="panel-dashboard" class="panel active">
+        <div class="dash-grid" id="dash-metrics"></div>
+        <div class="section-title">Expedientes activos</div>
+        <div class="tbl-wrap">
+          <table><thead><tr>
+            <th>Expediente</th><th>Asegurado</th><th>Aseguradora</th><th>Ramo</th>
+            <th>Reserva vigente</th><th>Saldo técnico</th><th>Estatus</th>
           </tr></thead>
-          <tbody id="tabla-body"><tr><td colspan="9" class="loading">Cargando casos...</td></tr></tbody>
-        </table>
+          <tbody id="dash-body"></tbody></table>
+        </div>
       </div>
-    </div>
 
-    <div id="panel-informes" class="panel">
-      <div class="toolbar">
-        <select id="filtro-inf" onchange="renderInformes()"><option value="">Todos los casos</option></select>
-        <button class="btn btn-primary" onclick="abrirModal('modal-informe')">+ Nuevo informe</button>
-      </div>
-      <div class="tbl-wrap">
-        <table>
-          <thead><tr>
-            <th>No.</th><th>Expediente</th><th>Tipo</th><th>Destinatario</th><th>Fecha</th><th>Estatus</th><th></th>
-          </tr></thead>
-          <tbody id="inf-body"><tr><td colspan="7" class="loading">Cargando informes...</td></tr></tbody>
-        </table>
-      </div>
-    </div>
-
-    <div id="panel-honorarios" class="panel">
-      <div id="hon-content"><div class="loading">Cargando honorarios...</div></div>
-    </div>
-
-    <div id="panel-bitacora" class="panel">
-      <div class="toolbar">
-        <select id="filtro-bit" onchange="renderBitacora()"><option value="">Todos los casos</option></select>
-        <button class="btn btn-primary" onclick="abrirModal('modal-bitacora')">+ Nueva nota</button>
-      </div>
-      <div class="bit-list" id="bit-list"><div class="loading">Cargando bitácora...</div></div>
-    </div>
-
-    <!-- REPORTES -->
-    <div id="panel-reportes" class="panel">
-      <div style="display:grid;grid-template-columns:300px 1fr;gap:16px;align-items:start;">
-
-        <!-- Constructor -->
-        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;">
-          <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:14px;text-transform:uppercase;letter-spacing:0.06em;">Constructor de reporte</div>
-
-          <div class="fg" style="margin-bottom:12px;">
-            <label>Caso</label>
-            <select id="r-caso" onchange="previsualizarReporte()"><option value="">— Selecciona un caso —</option></select>
+      <!-- EXPEDIENTES -->
+      <div id="panel-siniestros" class="panel">
+        <div id="sin-list-view">
+          <div class="toolbar">
+            <input type="text" id="sin-search" placeholder="Buscar por expediente, asegurado o aseguradora..." oninput="renderSiniestros()">
+            <select id="sin-filtro-est" onchange="renderSiniestros()">
+              <option value="">Todos los estatus</option>
+              <option value="asignado">Asignado</option>
+              <option value="inspeccion">En inspección</option>
+              <option value="informe">Elaborando informe</option>
+              <option value="cobro">Pendiente de cobro</option>
+              <option value="cerrado">Cerrado</option>
+            </select>
+            <button class="btn btn-primary" onclick="abrirModal('modal-sin')">+ Nuevo expediente</button>
           </div>
-
-          <div style="font-size:11px;color:var(--text-ter);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;">Secciones a incluir</div>
-
-          <div id="r-secciones" style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px;">
-            <label class="r-check"><input type="checkbox" value="siniestro" checked onchange="previsualizarReporte()"> Datos del siniestro</label>
-            <label class="r-check"><input type="checkbox" value="aseguradora" checked onchange="previsualizarReporte()"> Aseguradora y contacto</label>
-            <label class="r-check"><input type="checkbox" value="montos" checked onchange="previsualizarReporte()"> Montos</label>
-            <label class="r-check"><input type="checkbox" value="fechas" checked onchange="previsualizarReporte()"> Fechas clave</label>
-            <label class="r-check"><input type="checkbox" value="honorarios" checked onchange="previsualizarReporte()"> Honorarios y pagos</label>
-            <label class="r-check"><input type="checkbox" value="informes" checked onchange="previsualizarReporte()"> Informes enviados</label>
-            <label class="r-check"><input type="checkbox" value="bitacora" checked onchange="previsualizarReporte()"> Bitácora de seguimiento</label>
-            <label class="r-check"><input type="checkbox" value="notas" checked onchange="previsualizarReporte()"> Notas iniciales</label>
-          </div>
-
-          <div class="fg" style="margin-bottom:12px;">
-            <label>Logotipo (imagen)</label>
-            <input type="file" id="r-logo" accept="image/*" onchange="cargarLogo(this)" style="font-size:12px;padding:5px 8px;">
-          </div>
-
-          <div style="display:flex;flex-direction:column;gap:8px;">
-            <button class="btn btn-primary" onclick="imprimirReporte()" style="width:100%;">Imprimir / Guardar PDF</button>
-            <div style="font-size:11px;color:var(--text-ter);text-align:center;">En el diálogo de impresión selecciona<br>"Guardar como PDF"</div>
+          <div class="tbl-wrap">
+            <table><thead><tr>
+              <th>Expediente</th><th>Póliza</th><th>Asegurado</th><th>Tipo</th>
+              <th>Fecha siniestro</th><th>Asignación</th><th>Estatus</th><th></th>
+            </tr></thead>
+            <tbody id="sin-body"></tbody></table>
           </div>
         </div>
-
-        <!-- Vista previa -->
-        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;">
-          <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:14px;text-transform:uppercase;letter-spacing:0.06em;">Vista previa</div>
-          <div id="r-preview"><div class="loading">Selecciona un caso para previsualizar el reporte.</div></div>
-        </div>
-
+        <div id="sin-detail-view" style="display:none;"></div>
       </div>
-    </div>
 
-<!-- MODAL CASO -->
-<div class="overlay" id="modal-caso">
+      <!-- PÓLIZAS -->
+      <div id="panel-polizas" class="panel">
+        <div class="toolbar">
+          <input type="text" id="pol-search" placeholder="Buscar póliza, asegurado o aseguradora..." oninput="renderPolizas()">
+          <button class="btn btn-primary" onclick="abrirModal('modal-pol')">+ Nueva póliza</button>
+        </div>
+        <div class="tbl-wrap">
+          <table><thead><tr>
+            <th>Número</th><th>Asegurada</th><th>Aseguradora</th><th>Ramo</th>
+            <th>Vigencia</th><th>Suma asegurada</th><th>Moneda</th><th></th>
+          </tr></thead>
+          <tbody id="pol-body"></tbody></table>
+        </div>
+      </div>
+
+      <!-- CATÁLOGOS -->
+      <div id="panel-catalogos" class="panel">
+        <div style="display:flex;gap:8px;margin-bottom:14px;">
+          <button class="tab-btn active" onclick="switchCat('aseg',this)">Aseguradoras</button>
+          <button class="tab-btn" onclick="switchCat('asdo',this)">Asegurados</button>
+          <button class="tab-btn" onclick="switchCat('cont',this)">Contactos</button>
+          <button class="tab-btn" onclick="switchCat('tc',this)">Tipos de cambio</button>
+        </div>
+        <div id="cat-aseg">
+          <div class="toolbar">
+            <input type="text" id="aseg-search" placeholder="Buscar aseguradora..." oninput="renderAseguradoras()">
+            <button class="btn btn-primary" onclick="abrirModal('modal-aseg')">+ Nueva aseguradora</button>
+          </div>
+          <div class="tbl-wrap"><table><thead><tr><th>Clave</th><th>Nombre</th><th>Teléfono</th><th>Correo</th><th></th></tr></thead>
+          <tbody id="aseg-body"></tbody></table></div>
+        </div>
+        <div id="cat-asdo" style="display:none;">
+          <div class="toolbar">
+            <input type="text" id="asdo-search" placeholder="Buscar asegurado..." oninput="renderAsegurados()">
+            <button class="btn btn-primary" onclick="abrirModal('modal-asdo')">+ Nuevo asegurado</button>
+          </div>
+          <div class="tbl-wrap"><table><thead><tr><th>Nombre</th><th>RFC</th><th>Tipo</th><th>Teléfono</th><th>Correo</th><th></th></tr></thead>
+          <tbody id="asdo-body"></tbody></table></div>
+        </div>
+        <div id="cat-cont" style="display:none;">
+          <div class="toolbar">
+            <button class="btn btn-primary" onclick="abrirModal('modal-cont')">+ Nuevo contacto</button>
+          </div>
+          <div class="tbl-wrap"><table><thead><tr><th>Nombre</th><th>Cargo</th><th>Aseguradora / Asegurado</th><th>Teléfono</th><th>Correo</th><th></th></tr></thead>
+          <tbody id="cont-body"></tbody></table></div>
+        </div>
+        <div id="cat-tc" style="display:none;">
+          <div class="toolbar">
+            <button class="btn btn-primary" onclick="abrirModal('modal-tc')">+ Nuevo tipo de cambio</button>
+          </div>
+          <div class="tbl-wrap"><table><thead><tr><th>Moneda</th><th>Tasa MXN</th><th>Fecha</th><th>Fuente</th><th></th></tr></thead>
+          <tbody id="tc-body"></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- REPORTES -->
+      <div id="panel-reportes" class="panel">
+        <div style="display:grid;grid-template-columns:280px 1fr;gap:14px;align-items:start;">
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:1.1rem;">
+            <div class="section-title">Constructor de reporte</div>
+            <div class="fg" style="margin-bottom:10px;"><label>Expediente</label>
+              <select id="r-caso" onchange="previsualizarReporte()"><option value="">— Selecciona —</option></select></div>
+            <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.06em;margin-bottom:7px;">Secciones</div>
+            <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:14px;">
+              <label class="r-check"><input type="checkbox" value="siniestro" checked onchange="previsualizarReporte()"> Datos del siniestro</label>
+              <label class="r-check"><input type="checkbox" value="poliza" checked onchange="previsualizarReporte()"> Póliza y cobertura</label>
+              <label class="r-check"><input type="checkbox" value="financiero" checked onchange="previsualizarReporte()"> Resumen financiero</label>
+              <label class="r-check"><input type="checkbox" value="reservas" checked onchange="previsualizarReporte()"> Reservas por concepto</label>
+              <label class="r-check"><input type="checkbox" value="pagos" checked onchange="previsualizarReporte()"> Pagos registrados</label>
+              <label class="r-check"><input type="checkbox" value="honorarios" checked onchange="previsualizarReporte()"> Honorarios y viáticos</label>
+              <label class="r-check"><input type="checkbox" value="actividades" checked onchange="previsualizarReporte()"> Actividades</label>
+              <label class="r-check"><input type="checkbox" value="documentos" checked onchange="previsualizarReporte()"> Documentos emitidos</label>
+            </div>
+            <div class="fg" style="margin-bottom:10px;"><label>Logotipo</label>
+              <input type="file" id="r-logo" accept="image/*" onchange="cargarLogo(this)" style="font-size:11px;padding:4px 6px;"></div>
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              <button class="btn btn-primary" onclick="imprimirReporte()" style="width:100%;">Imprimir / Guardar PDF</button>
+              <div style="font-size:10px;color:var(--text-ter);text-align:center;">Selecciona "Guardar como PDF"<br>en el diálogo de impresión</div>
+            </div>
+          </div>
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:1.1rem;">
+            <div class="section-title">Vista previa</div>
+            <div id="r-preview"><div class="loading">Selecciona un expediente para previsualizar.</div></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ── MODALS ── -->
+
+<!-- Siniestro -->
+<div class="overlay" id="modal-sin">
 <div class="modal">
-  <div class="modal-title" id="modal-caso-title">Registrar nuevo caso</div>
-  <input type="hidden" id="f-id">
+  <div class="modal-title" id="sin-modal-title">Nuevo expediente</div>
+  <input type="hidden" id="s-id">
   <div class="form-grid">
-    <div class="fg"><label>No. de expediente</label><input type="text" id="f-exp" placeholder="EXP-2026-001"></div>
-    <div class="fg"><label>Tipo de siniestro</label>
-      <select id="f-tipo"><option>Incendio</option><option>Robo</option><option>Daños por agua</option><option>Terremoto</option><option>Interrupción de negocios</option><option>Catastrófico</option><option>Construcción</option><option>Energía</option><option>Otro</option></select>
-    </div>
-    <div class="fg full"><label>Asegurado</label><input type="text" id="f-asegurado" placeholder="Nombre o razón social"></div>
-    <div class="fg"><label>Aseguradora</label><input type="text" id="f-aseguradora"></div>
-    <div class="fg"><label>Contacto aseguradora</label><input type="text" id="f-contacto" placeholder="Nombre y teléfono"></div>
-    <div class="fg"><label>Moneda del caso</label>
-      <select id="f-moneda"><option value="MXN">MXN — Peso mexicano</option><option value="USD">USD — Dólar americano</option></select>
-    </div>
+    <div class="fg"><label>No. de expediente</label><input type="text" id="s-exp" placeholder="SIN-2026-001"></div>
+    <div class="fg"><label>Póliza</label><select id="s-poliza"></select></div>
+    <div class="fg"><label>Tipo de siniestro</label><input type="text" id="s-tipo" placeholder="Incendio, robo, etc."></div>
+    <div class="fg"><label>Causa</label><input type="text" id="s-causa"></div>
+    <div class="fg"><label>Fecha del siniestro</label><input type="date" id="s-fsin"></div>
+    <div class="fg"><label>Fecha de asignación</label><input type="date" id="s-fasig"></div>
+    <div class="fg"><label>Fecha de inspección</label><input type="date" id="s-finsp"></div>
+    <div class="fg"><label>Fecha límite de informe</label><input type="date" id="s-finf"></div>
     <div class="fg"><label>Estatus</label>
-      <select id="f-estatus"><option value="asignado">Asignado</option><option value="inspeccion">En inspección</option><option value="informe">Elaborando informe</option><option value="cobro">Pendiente de cobro</option><option value="cerrado">Cerrado</option></select>
-    </div>
-    <div class="fg"><label>Monto reclamado</label><input type="number" id="f-reclamado" placeholder="0.00"></div>
-    <div class="fg"><label>Reserva estimada</label><input type="number" id="f-reserva" placeholder="0.00"></div>
-    <div class="fg"><label>Honorarios pactados</label><input type="number" id="f-honorarios" placeholder="0.00"></div>
-    <div class="fg"><label>Fecha de asignación</label><input type="date" id="f-fasig"></div>
-    <div class="fg"><label>Fecha de inspección</label><input type="date" id="f-finsp"></div>
-    <div class="fg"><label>Fecha límite de informe</label><input type="date" id="f-finf"></div>
-    <div class="fg"><label>Ubicación del siniestro</label><input type="text" id="f-ubic" placeholder="Ciudad, Estado, País"></div>
-    <div class="fg full"><label>Notas iniciales</label><textarea id="f-notas" placeholder="Descripción del siniestro o instrucciones iniciales..."></textarea></div>
+      <select id="s-est">
+        <option value="asignado">Asignado</option>
+        <option value="inspeccion">En inspección</option>
+        <option value="informe">Elaborando informe</option>
+        <option value="cobro">Pendiente de cobro</option>
+        <option value="cerrado">Cerrado</option>
+      </select></div>
+    <div class="fg full"><label>Descripción</label><textarea id="s-desc"></textarea></div>
+    <div class="fg full"><label>Notas</label><textarea id="s-notas"></textarea></div>
   </div>
   <div class="modal-footer">
-    <button class="btn" onclick="cerrarModal('modal-caso')">Cancelar</button>
-    <button class="btn btn-primary" onclick="guardarCaso()">Guardar caso</button>
+    <button class="btn" onclick="cerrarModal('modal-sin')">Cancelar</button>
+    <button class="btn btn-primary" onclick="guardarSiniestro()">Guardar</button>
   </div>
-</div>
-</div>
+</div></div>
 
-<!-- MODAL INFORME -->
-<div class="overlay" id="modal-informe">
-<div class="modal modal-sm">
-  <div class="modal-title">Registrar informe</div>
+<!-- Póliza -->
+<div class="overlay" id="modal-pol">
+<div class="modal modal-lg">
+  <div class="modal-title" id="pol-modal-title">Nueva póliza</div>
+  <input type="hidden" id="p-id">
   <div class="form-grid">
-    <div class="fg full"><label>Expediente</label><select id="i-caso"></select></div>
-    <div class="fg"><label>No. de informe</label><input type="text" id="i-num" placeholder="INF-001"></div>
-    <div class="fg"><label>Tipo de informe</label>
-      <select id="i-tipo"><option>Informe preliminar</option><option>Informe de actualización</option><option>Informe de inspección</option><option>Informe final</option><option>Informe complementario</option></select>
-    </div>
-    <div class="fg full"><label>Destinatario</label><input type="text" id="i-dest" placeholder="Nombre, cargo, aseguradora"></div>
-    <div class="fg"><label>Fecha</label><input type="date" id="i-fecha"></div>
-    <div class="fg"><label>Estatus</label>
-      <select id="i-estatus"><option value="borrador">Borrador</option><option value="enviado">Enviado</option><option value="acuse">Acuse recibido</option></select>
-    </div>
-    <div class="fg full"><label>Resumen</label><textarea id="i-resumen" placeholder="Principales hallazgos o contenido..."></textarea></div>
+    <div class="fg"><label>Número de póliza</label><input type="text" id="p-num" placeholder="POL-2026-001"></div>
+    <div class="fg"><label>Ramo</label>
+      <select id="p-ramo">
+        <option value="incendio">Incendio y líneas aliadas</option>
+        <option value="robo">Robo</option>
+        <option value="rc">Responsabilidad civil</option>
+        <option value="transporte">Transporte</option>
+        <option value="energia">Energía</option>
+        <option value="construccion">Construcción y montaje</option>
+        <option value="interrupcion">Interrupción de negocios</option>
+        <option value="catastrofico">Catastrófico</option>
+      </select></div>
+    <div class="fg"><label>Aseguradora</label><select id="p-aseg"></select></div>
+    <div class="fg"><label>Asegurado</label><select id="p-asdo"></select></div>
+    <div class="fg"><label>Vigencia inicio</label><input type="date" id="p-vini"></div>
+    <div class="fg"><label>Vigencia fin</label><input type="date" id="p-vfin"></div>
+    <div class="fg"><label>Suma asegurada</label><input type="number" id="p-suma" placeholder="0.00"></div>
+    <div class="fg"><label>Moneda</label>
+      <select id="p-mon"><option value="MXN">MXN</option><option value="USD">USD</option><option value="EUR">EUR</option></select></div>
+    <div class="fg"><label>Tipo de cambio</label><input type="number" id="p-tc" value="1" step="0.01"></div>
+    <div class="fg full"><label>Notas</label><textarea id="p-notas"></textarea></div>
   </div>
   <div class="modal-footer">
-    <button class="btn" onclick="cerrarModal('modal-informe')">Cancelar</button>
-    <button class="btn btn-primary" onclick="guardarInforme()">Guardar informe</button>
+    <button class="btn" onclick="cerrarModal('modal-pol')">Cancelar</button>
+    <button class="btn btn-primary" onclick="guardarPoliza()">Guardar</button>
   </div>
-</div>
-</div>
+</div></div>
 
-<!-- MODAL BITACORA -->
-<div class="overlay" id="modal-bitacora">
+<!-- Aseguradora -->
+<div class="overlay" id="modal-aseg">
 <div class="modal modal-sm">
-  <div class="modal-title">Nueva nota de seguimiento</div>
-  <div style="display:flex;flex-direction:column;gap:12px;">
-    <div class="fg"><label>Caso</label><select id="b-caso"></select></div>
-    <div class="fg"><label>Fecha</label><input type="date" id="b-fecha"></div>
-    <div class="fg"><label>Nota</label><textarea id="b-nota" style="min-height:110px;" placeholder="Acción, comunicación o avance..."></textarea></div>
+  <div class="modal-title">Aseguradora</div>
+  <input type="hidden" id="ae-id">
+  <div class="form-grid">
+    <div class="fg"><label>Clave</label><input type="text" id="ae-clave" placeholder="AXA"></div>
+    <div class="fg"><label>Nombre</label><input type="text" id="ae-nombre"></div>
+    <div class="fg"><label>Teléfono</label><input type="text" id="ae-tel"></div>
+    <div class="fg"><label>Correo</label><input type="email" id="ae-email"></div>
+    <div class="fg full"><label>Notas</label><textarea id="ae-notas" style="min-height:50px;"></textarea></div>
   </div>
   <div class="modal-footer">
-    <button class="btn" onclick="cerrarModal('modal-bitacora')">Cancelar</button>
-    <button class="btn btn-primary" onclick="guardarNota()">Guardar nota</button>
+    <button class="btn" onclick="cerrarModal('modal-aseg')">Cancelar</button>
+    <button class="btn btn-primary" onclick="guardarAseguradora()">Guardar</button>
   </div>
-</div>
-</div>
+</div></div>
+
+<!-- Asegurado -->
+<div class="overlay" id="modal-asdo">
+<div class="modal modal-sm">
+  <div class="modal-title">Asegurado</div>
+  <input type="hidden" id="ad-id">
+  <div class="form-grid">
+    <div class="fg full"><label>Nombre / Razón social</label><input type="text" id="ad-nombre"></div>
+    <div class="fg"><label>RFC</label><input type="text" id="ad-rfc"></div>
+    <div class="fg"><label>Tipo</label>
+      <select id="ad-tipo"><option value="moral">Persona moral</option><option value="fisica">Persona física</option></select></div>
+    <div class="fg"><label>Teléfono</label><input type="text" id="ad-tel"></div>
+    <div class="fg"><label>Correo</label><input type="email" id="ad-email"></div>
+    <div class="fg full"><label>Dirección</label><input type="text" id="ad-dir"></div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn" onclick="cerrarModal('modal-asdo')">Cancelar</button>
+    <button class="btn btn-primary" onclick="guardarAsegurado()">Guardar</button>
+  </div>
+</div></div>
+
+<!-- Contacto -->
+<div class="overlay" id="modal-cont">
+<div class="modal modal-sm">
+  <div class="modal-title">Contacto</div>
+  <input type="hidden" id="co-id">
+  <div class="form-grid">
+    <div class="fg full"><label>Nombre</label><input type="text" id="co-nombre"></div>
+    <div class="fg"><label>Cargo</label><input type="text" id="co-cargo"></div>
+    <div class="fg"><label>Teléfono</label><input type="text" id="co-tel"></div>
+    <div class="fg full"><label>Correo</label><input type="email" id="co-email"></div>
+    <div class="fg"><label>Aseguradora</label><select id="co-aseg"><option value="">—</option></select></div>
+    <div class="fg"><label>Asegurado</label><select id="co-asdo"><option value="">—</option></select></div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn" onclick="cerrarModal('modal-cont')">Cancelar</button>
+    <button class="btn btn-primary" onclick="guardarContacto()">Guardar</button>
+  </div>
+</div></div>
+
+<!-- Tipo de cambio -->
+<div class="overlay" id="modal-tc">
+<div class="modal modal-sm">
+  <div class="modal-title">Tipo de cambio</div>
+  <div class="form-grid">
+    <div class="fg"><label>Moneda</label>
+      <select id="tc-mon"><option value="USD">USD</option><option value="EUR">EUR</option></select></div>
+    <div class="fg"><label>Tasa MXN por unidad</label><input type="number" id="tc-tasa" step="0.0001"></div>
+    <div class="fg"><label>Fecha</label><input type="date" id="tc-fecha"></div>
+    <div class="fg"><label>Fuente</label><input type="text" id="tc-fuente" placeholder="Banxico, Manual..."></div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn" onclick="cerrarModal('modal-tc')">Cancelar</button>
+    <button class="btn btn-primary" onclick="guardarTC()">Guardar</button>
+  </div>
+</div></div>
+
+<!-- Reserva -->
+<div class="overlay" id="modal-res">
+<div class="modal modal-sm">
+  <div class="modal-title">Reserva</div>
+  <input type="hidden" id="res-id">
+  <div class="form-grid">
+    <div class="fg full"><label>Concepto</label>
+      <select id="res-concepto">
+        <option value="edificio">Edificio / estructura</option>
+        <option value="contenidos">Contenidos / inventario</option>
+        <option value="maquinaria">Maquinaria y equipo</option>
+        <option value="perdida_utilidades">Pérdida de utilidades</option>
+        <option value="rc">Responsabilidad civil</option>
+        <option value="transporte">Transporte de mercancías</option>
+        <option value="equipo_electronico">Equipo electrónico</option>
+        <option value="otro">Otro</option>
+      </select></div>
+    <div class="fg"><label>Monto</label><input type="number" id="res-monto" placeholder="0.00"></div>
+    <div class="fg"><label>Moneda</label>
+      <select id="res-mon"><option value="MXN">MXN</option><option value="USD">USD</option><option value="EUR">EUR</option></select></div>
+    <div class="fg"><label>Tipo de cambio</label><input type="number" id="res-tc" value="1" step="0.0001"></div>
+    <div class="fg"><label>Fecha</label><input type="date" id="res-fecha"></div>
+    <div class="fg full"><label>Notas</label><textarea id="res-notas" style="min-height:50px;"></textarea></div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn" onclick="cerrarModal('modal-res')">Cancelar</button>
+    <button class="btn btn-primary" onclick="guardarReserva()">Guardar</button>
+  </div>
+</div></div>
+
+<!-- Pago -->
+<div class="overlay" id="modal-pago">
+<div class="modal modal-sm">
+  <div class="modal-title">Pago</div>
+  <input type="hidden" id="pg-id">
+  <div class="form-grid">
+    <div class="fg full"><label>Tipo de pago</label>
+      <select id="pg-tipo">
+        <option value="indemnizacion">Indemnización al asegurado</option>
+        <option value="honorarios_ajustador">Honorarios del ajustador</option>
+        <option value="viaticos">Viáticos y gastos</option>
+        <option value="honorarios_peritos">Honorarios de peritos</option>
+        <option value="gastos_legales">Gastos legales</option>
+        <option value="salvamento">Salvamento / recuperos</option>
+      </select></div>
+    <div class="fg full"><label>Beneficiario</label><input type="text" id="pg-benef"></div>
+    <div class="fg"><label>Monto</label><input type="number" id="pg-monto" placeholder="0.00"></div>
+    <div class="fg"><label>Moneda</label>
+      <select id="pg-mon"><option value="MXN">MXN</option><option value="USD">USD</option><option value="EUR">EUR</option></select></div>
+    <div class="fg"><label>Tipo de cambio</label><input type="number" id="pg-tc" value="1" step="0.0001"></div>
+    <div class="fg"><label>Fecha</label><input type="date" id="pg-fecha"></div>
+    <div class="fg full"><label>Referencia</label><input type="text" id="pg-ref"></div>
+    <div class="fg full"><label>Notas</label><textarea id="pg-notas" style="min-height:50px;"></textarea></div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn" onclick="cerrarModal('modal-pago')">Cancelar</button>
+    <button class="btn btn-primary" onclick="guardarPago()">Guardar</button>
+  </div>
+</div></div>
+
+<!-- Honorario -->
+<div class="overlay" id="modal-hon">
+<div class="modal modal-sm">
+  <div class="modal-title">Honorario</div>
+  <input type="hidden" id="ho-id">
+  <div class="form-grid">
+    <div class="fg full"><label>Concepto</label><input type="text" id="ho-concepto"></div>
+    <div class="fg"><label>Monto pactado</label><input type="number" id="ho-monto" placeholder="0.00"></div>
+    <div class="fg"><label>Moneda</label>
+      <select id="ho-mon"><option value="MXN">MXN</option><option value="USD">USD</option><option value="EUR">EUR</option></select></div>
+    <div class="fg"><label>Tipo de cambio</label><input type="number" id="ho-tc" value="1" step="0.0001"></div>
+    <div class="fg"><label>Pagado</label><input type="number" id="ho-pagado" value="0"></div>
+    <div class="fg"><label>Estatus</label>
+      <select id="ho-est"><option value="pactado">Pactado</option><option value="parcial">Parcial</option><option value="pagado">Pagado</option></select></div>
+    <div class="fg"><label>Fecha de pacto</label><input type="date" id="ho-fpacto"></div>
+    <div class="fg"><label>Fecha de pago</label><input type="date" id="ho-fpago"></div>
+    <div class="fg full"><label>Notas</label><textarea id="ho-notas" style="min-height:50px;"></textarea></div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn" onclick="cerrarModal('modal-hon')">Cancelar</button>
+    <button class="btn btn-primary" onclick="guardarHonorario()">Guardar</button>
+  </div>
+</div></div>
+
+<!-- Viático -->
+<div class="overlay" id="modal-viat">
+<div class="modal modal-sm">
+  <div class="modal-title">Viático / Gasto</div>
+  <div class="form-grid">
+    <div class="fg full"><label>Descripción</label><input type="text" id="vt-desc"></div>
+    <div class="fg"><label>Monto</label><input type="number" id="vt-monto" placeholder="0.00"></div>
+    <div class="fg"><label>Moneda</label>
+      <select id="vt-mon"><option value="MXN">MXN</option><option value="USD">USD</option><option value="EUR">EUR</option></select></div>
+    <div class="fg"><label>Tipo de cambio</label><input type="number" id="vt-tc" value="1" step="0.0001"></div>
+    <div class="fg"><label>Fecha</label><input type="date" id="vt-fecha"></div>
+    <div class="fg full"><label>Notas</label><textarea id="vt-notas" style="min-height:50px;"></textarea></div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn" onclick="cerrarModal('modal-viat')">Cancelar</button>
+    <button class="btn btn-primary" onclick="guardarViatico()">Guardar</button>
+  </div>
+</div></div>
+
+<!-- Actividad -->
+<div class="overlay" id="modal-act">
+<div class="modal modal-sm">
+  <div class="modal-title">Actividad</div>
+  <div class="form-grid">
+    <div class="fg"><label>Tipo</label>
+      <select id="ac-tipo">
+        <option value="inspeccion">Inspección</option>
+        <option value="reunion">Reunión</option>
+        <option value="llamada">Llamada</option>
+        <option value="correo">Correo</option>
+        <option value="viaje">Viaje</option>
+        <option value="otro">Otro</option>
+      </select></div>
+    <div class="fg"><label>Fecha</label><input type="date" id="ac-fecha"></div>
+    <div class="fg full"><label>Descripción</label><textarea id="ac-desc"></textarea></div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn" onclick="cerrarModal('modal-act')">Cancelar</button>
+    <button class="btn btn-primary" onclick="guardarActividad()">Guardar</button>
+  </div>
+</div></div>
+
+<!-- Documento -->
+<div class="overlay" id="modal-doc">
+<div class="modal modal-sm">
+  <div class="modal-title">Documento emitido</div>
+  <div class="form-grid">
+    <div class="fg"><label>Tipo</label>
+      <select id="dc-tipo">
+        <option value="preliminar">Informe preliminar</option>
+        <option value="actualizacion">Informe de actualización</option>
+        <option value="final">Informe final</option>
+        <option value="solicitud_documentos">Solicitud de documentos</option>
+      </select></div>
+    <div class="fg"><label>No. de versión</label><input type="number" id="dc-ver" value="1" min="1"></div>
+    <div class="fg"><label>Fecha</label><input type="date" id="dc-fecha"></div>
+    <div class="fg full"><label>Nombre del archivo</label><input type="text" id="dc-nombre" placeholder="INF_ACT_SIN-2026-001_No001.docx"></div>
+    <div class="fg full"><label>Notas</label><textarea id="dc-notas" style="min-height:50px;"></textarea></div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn" onclick="cerrarModal('modal-doc')">Cancelar</button>
+    <button class="btn btn-primary" onclick="guardarDocumento()">Guardar</button>
+  </div>
+</div></div>
 
 <div class="toast" id="toast"></div>
 
@@ -400,557 +654,617 @@
 const SUPA_URL = 'https://lxtieqaldwcntxaqklww.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx4dGllcWFsZHdjbnR4YXFrbHd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0NTk3NjcsImV4cCI6MjA4OTAzNTc2N30.-OvmJm4j70xWq-kz8X1OIoYsEh7KvCIQGqAjiLGaz-g';
 const db = supabase.createClient(SUPA_URL, SUPA_KEY);
-
-const ALLOWED = ['jchavez@aasa.com.mx', 'emalagon@aasa.com.mx'];
+const ALLOWED = ['jchavez@aasa.com.mx','emalagon@aasa.com.mx'];
 
 const EST = {
-  asignado:{label:'Asignado',cls:'s-asignado'},
-  inspeccion:{label:'En inspección',cls:'s-inspeccion'},
-  informe:{label:'Elaborando informe',cls:'s-informe'},
-  cobro:{label:'Pendiente de cobro',cls:'s-cobro'},
-  cerrado:{label:'Cerrado',cls:'s-cerrado'}
+  asignado:  {label:'Asignado',   cls:'b-asignado'},
+  inspeccion:{label:'En inspección', cls:'b-inspeccion'},
+  informe:   {label:'Elaborando informe', cls:'b-informe'},
+  cobro:     {label:'Pte. de cobro', cls:'b-cobro'},
+  cerrado:   {label:'Cerrado',    cls:'b-cerrado'}
 };
-const IEST = {
-  borrador:{label:'Borrador',cls:'i-borrador'},
-  enviado:{label:'Enviado',cls:'i-enviado'},
-  acuse:{label:'Acuse recibido',cls:'i-acuse'}
+const RAMOS = {
+  incendio:'Incendio y líneas aliadas', robo:'Robo', rc:'Resp. civil',
+  transporte:'Transporte', energia:'Energía', construccion:'Construcción',
+  interrupcion:'Interrupción de negocios', catastrofico:'Catastrófico'
 };
+const MON_CLS = {MXN:'b-mxn', USD:'b-usd', EUR:'b-eur'};
+const HON_EST = {pactado:'b-pactado', parcial:'b-parcial', pagado:'b-pagado'};
 
-let casos = [], informes = [], pagos = [], bitacora = [];
+let data = { sin:[], pol:[], aseg:[], asdo:[], cont:[], res:[], pag:[], hon:[], viat:[], act:[], doc:[], tc:[] };
+let currentSin = null;
+let logoDataUrl = null;
 
-function tc() { return parseFloat(document.getElementById('tc-input').value) || 17.50; }
-function toMXN(m, mon) { return mon === 'USD' ? m * tc() : m; }
-function fmt(n, mon) {
-  if (n === null || n === undefined) return '—';
-  return Number(n).toLocaleString('es-MX', {style:'currency', currency: mon||'MXN', maximumFractionDigits:0});
-}
-function fmtDate(d) { if (!d) return '—'; const [y,m,day] = d.split('-'); return `${day}/${m}/${y}`; }
-function toast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg; t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2800);
-}
+/* ── UTILS ── */
+function tcUSD(){ return parseFloat(document.getElementById('tc-usd').value)||17.5; }
+function tcEUR(){ return parseFloat(document.getElementById('tc-eur').value)||19.2; }
+function toMXN(m, mon, tc){ if(mon==='MXN') return m; if(mon==='USD') return m*tcUSD(); if(mon==='EUR') return m*tcEUR(); return m*(tc||1); }
+function fmt(n, mon){ if(!n&&n!==0) return '—'; return Number(n).toLocaleString('es-MX',{style:'currency',currency:mon||'MXN',maximumFractionDigits:0}); }
+function fmtD(d){ if(!d) return '—'; const [y,m,day]=d.split('-'); return `${day}/${m}/${y}`; }
+function fmtMXN(n){ return Number(n||0).toLocaleString('es-MX',{style:'currency',currency:'MXN',maximumFractionDigits:0}); }
+function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2600); }
+function g(id){ return document.getElementById(id); }
+function v(id){ return (g(id)||{}).value||''; }
 
 /* ── AUTH ── */
-async function doLogin() {
-  const email = document.getElementById('l-email').value.trim().toLowerCase();
-  const pass  = document.getElementById('l-pass').value;
-  const errEl = document.getElementById('login-error');
-  const btn   = document.getElementById('login-btn');
-
-  errEl.textContent = '';
-  if (!ALLOWED.includes(email)) {
-    errEl.textContent = 'Acceso no autorizado para este correo.';
-    return;
-  }
-  btn.textContent = 'Verificando...';
-  btn.disabled = true;
-
-  const { data, error } = await db.auth.signInWithPassword({ email, password: pass });
-
-  btn.textContent = 'Ingresar';
-  btn.disabled = false;
-
-  if (error) {
-    errEl.textContent = 'Correo o contraseña incorrectos.';
-    return;
-  }
-  mostrarApp(data.user.email);
+async function doLogin(){
+  const email=v('l-email').trim().toLowerCase(), pass=v('l-pass');
+  const errEl=g('login-err'), btn=g('login-btn');
+  errEl.textContent='';
+  if(!ALLOWED.includes(email)){ errEl.textContent='Acceso no autorizado.'; return; }
+  btn.textContent='Verificando...'; btn.disabled=true;
+  const {data:d,error}=await db.auth.signInWithPassword({email,password:pass});
+  btn.textContent='Ingresar'; btn.disabled=false;
+  if(error){ errEl.textContent='Correo o contraseña incorrectos.'; return; }
+  mostrarApp(d.user.email);
 }
+async function doLogout(){ await db.auth.signOut(); g('app').style.display='none'; g('login-wrap').style.display='flex'; g('l-pass').value=''; }
+function mostrarApp(email){ g('login-wrap').style.display='none'; g('app').style.display='flex'; g('user-lbl').textContent=email; loadAll(); }
 
-async function doLogout() {
-  await db.auth.signOut();
-  document.getElementById('app').style.display = 'none';
-  document.getElementById('login-wrap').style.display = 'flex';
-  document.getElementById('l-pass').value = '';
-  document.getElementById('login-error').textContent = '';
-}
-
-function mostrarApp(email) {
-  document.getElementById('login-wrap').style.display = 'none';
-  document.getElementById('app').style.display = 'block';
-  document.getElementById('user-email').textContent = email;
-  loadAll();
-}
-
-/* ── DATA ── */
-async function loadAll() {
-  const [c, i, p, b] = await Promise.all([
-    db.from('casos').select('*').order('id', {ascending: false}),
-    db.from('informes').select('*').order('id', {ascending: false}),
-    db.from('pagos').select('*'),
-    db.from('bitacora').select('*').order('id', {ascending: false}),
+/* ── DATA LOAD ── */
+async function loadAll(){
+  const [sin,pol,aseg,asdo,cont,res,pag,hon,viat,act,doc,tc] = await Promise.all([
+    db.from('siniestros').select('*').order('id',{ascending:false}),
+    db.from('polizas').select('*').order('id',{ascending:false}),
+    db.from('aseguradoras').select('*').order('nombre'),
+    db.from('asegurados').select('*').order('nombre'),
+    db.from('contactos').select('*').order('nombre'),
+    db.from('reservas').select('*').order('fecha',{ascending:false}),
+    db.from('pagos').select('*').order('fecha',{ascending:false}),
+    db.from('honorarios').select('*').order('id',{ascending:false}),
+    db.from('viaticos').select('*').order('fecha',{ascending:false}),
+    db.from('actividades').select('*').order('fecha',{ascending:false}),
+    db.from('documentos').select('*').order('fecha',{ascending:false}),
+    db.from('tipos_cambio').select('*').order('fecha',{ascending:false}),
   ]);
-  casos    = c.data || [];
-  informes = i.data || [];
-  pagos    = p.data || [];
-  bitacora = b.data || [];
+  data.sin  = sin.data||[];  data.pol  = pol.data||[];
+  data.aseg = aseg.data||[]; data.asdo = asdo.data||[];
+  data.cont = cont.data||[]; data.res  = res.data||[];
+  data.pag  = pag.data||[];  data.hon  = hon.data||[];
+  data.viat = viat.data||[]; data.act  = act.data||[];
+  data.doc  = doc.data||[];  data.tc   = tc.data||[];
   renderAll();
-  poblarSelectores();
 }
 
-function poblarSelectores() {
-  const opts = casos.map(c => `<option value="${c.id}">${c.exp} — ${c.asegurado}</option>`).join('');
-  ['filtro-inf','filtro-bit'].forEach(id => {
-    const sel = document.getElementById(id);
-    const cur = sel.value;
-    sel.innerHTML = '<option value="">Todos los casos</option>' + opts;
-    if (cur) sel.value = cur;
+function renderAll(){ renderDash(); renderSiniestros(); renderPolizas(); renderAseguradoras(); renderAsegurados(); renderContactos(); renderTC(); poblarSelectores(); }
+
+/* ── SELECTORES ── */
+function poblarSelectores(){
+  const aOpts = data.aseg.map(a=>`<option value="${a.id}">${a.nombre}</option>`).join('');
+  const dOpts = data.asdo.map(a=>`<option value="${a.id}">${a.nombre}</option>`).join('');
+  const pOpts = data.pol.map(p=>`<option value="${p.id}">${p.numero}</option>`).join('');
+  g('p-aseg').innerHTML=aOpts; g('p-asdo').innerHTML=dOpts;
+  g('co-aseg').innerHTML='<option value="">—</option>'+aOpts;
+  g('co-asdo').innerHTML='<option value="">—</option>'+dOpts;
+  g('s-poliza').innerHTML=pOpts;
+  g('r-caso').innerHTML='<option value="">— Selecciona —</option>'+data.sin.map(s=>`<option value="${s.id}">${s.numero_exp}</option>`).join('');
+}
+
+/* ── DASHBOARD ── */
+function recalcDash(){ renderDash(); }
+function renderDash(){
+  const activos = data.sin.filter(s=>s.estatus!=='cerrado');
+  const totRes  = data.sin.reduce((a,s)=>{ const rv=reservaVigente(s.id); return a+rv; },0);
+  const totPag  = data.pag.reduce((a,p)=>a+toMXN(p.monto,p.moneda,p.tipo_cambio_mxn),0);
+  const totHon  = data.hon.reduce((a,h)=>a+toMXN(h.monto,h.moneda,h.tipo_cambio_mxn),0);
+  const totViat = data.viat.reduce((a,v)=>a+toMXN(v.monto,v.moneda,v.tipo_cambio_mxn),0);
+  g('dash-metrics').innerHTML=`
+    <div class="mc"><div class="mc-lbl">Expedientes activos</div><div class="mc-val">${activos.length}<span style="font-size:13px;font-weight:400;color:var(--text-sec)"> / ${data.sin.length}</span></div></div>
+    <div class="mc"><div class="mc-lbl">Reserva vigente total</div><div class="mc-val" style="font-size:15px;">${fmtMXN(totRes)}</div><div class="mc-sub">MXN equivalente</div></div>
+    <div class="mc"><div class="mc-lbl">Pagos acumulados</div><div class="mc-val" style="font-size:15px;">${fmtMXN(totPag)}</div><div class="mc-sub">MXN equivalente</div></div>
+    <div class="mc"><div class="mc-lbl">Exposición total</div><div class="mc-val" style="font-size:15px;color:#ffcc80;">${fmtMXN(totRes+totHon+totViat)}</div><div class="mc-sub">Reserva + honorarios + viáticos</div></div>`;
+  g('dash-body').innerHTML = activos.slice(0,15).map(s=>{
+    const pol=data.pol.find(p=>p.id===s.id_poliza)||{};
+    const asdo=data.asdo.find(a=>a.id===pol.id_asegurado)||{};
+    const aseg=data.aseg.find(a=>a.id===pol.id_aseguradora)||{};
+    const rv=reservaVigente(s.id);
+    const pags=data.pag.filter(p=>p.id_siniestro===s.id).reduce((a,p)=>a+toMXN(p.monto,p.moneda,p.tipo_cambio_mxn),0);
+    const saldo=rv-pags;
+    return `<tr onclick="verSiniestro(${s.id})">
+      <td><strong>${s.numero_exp}</strong></td>
+      <td>${asdo.nombre||'—'}</td><td>${aseg.nombre||'—'}</td>
+      <td>${RAMOS[pol.ramo]||pol.ramo||'—'}</td>
+      <td>${fmtMXN(rv)}</td>
+      <td style="color:${saldo>0?'#ffcc80':'#a5d6a7'}">${fmtMXN(saldo)}</td>
+      <td><span class="badge ${EST[s.estatus]?.cls||''}">${EST[s.estatus]?.label||s.estatus}</span></td>
+    </tr>`;}).join('')||'<tr><td colspan="7" class="empty">Sin expedientes activos.</td></tr>';
+}
+
+function reservaVigente(sinId){
+  const byConcepto={};
+  data.res.filter(r=>r.id_siniestro===sinId).forEach(r=>{
+    if(!byConcepto[r.concepto]||r.id>byConcepto[r.concepto].id) byConcepto[r.concepto]=r;
   });
-  ['i-caso','b-caso'].forEach(id => { document.getElementById(id).innerHTML = opts; });
+  return Object.values(byConcepto).reduce((a,r)=>a+toMXN(r.monto,r.moneda,r.tipo_cambio_mxn),0);
 }
 
-function initReportes() {
-  const sel = document.getElementById('r-caso');
-  const cur = sel.value;
-  sel.innerHTML = '<option value="">— Selecciona un caso —</option>' + casos.map(c => `<option value="${c.id}">${c.exp} — ${c.asegurado}</option>`).join('');
-  if (cur) { sel.value = cur; previsualizarReporte(); }
-}
-
-function renderMetrics() {
-  const activos  = casos.filter(c => c.estatus !== 'cerrado').length;
-  const totalRec = casos.reduce((a,c) => a + toMXN(Number(c.reclamado)||0, c.moneda), 0);
-  const totalHon = casos.reduce((a,c) => a + toMXN(Number(c.honorarios)||0, c.moneda), 0);
-  const pendHon  = pagos.filter(p => p.pagado < p.monto).reduce((a,p) => a + toMXN((p.monto - p.pagado), p.moneda), 0);
-  document.getElementById('m-activos').textContent   = activos + ' de ' + casos.length;
-  document.getElementById('m-reclamado').textContent  = fmt(Math.round(totalRec), 'MXN');
-  document.getElementById('m-honorarios').textContent = fmt(Math.round(totalHon), 'MXN');
-  document.getElementById('m-cobrar').textContent     = fmt(Math.round(pendHon), 'MXN');
-}
-
-function renderTabla() {
-  const q = (document.getElementById('search').value || '').toLowerCase();
-  const fil = casos.filter(c =>
-    c.exp.toLowerCase().includes(q) ||
-    (c.asegurado||'').toLowerCase().includes(q) ||
-    (c.aseguradora||'').toLowerCase().includes(q)
-  );
-  document.getElementById('tabla-body').innerHTML = fil.length ? fil.map(c => `
-    <tr>
-      <td><strong>${c.exp}</strong></td>
-      <td>${c.asegurado||'—'}<div class="td-sub">${c.ubic||''}</div></td>
-      <td>${c.aseguradora||'—'}</td>
-      <td>${c.tipo||'—'}</td>
-      <td><span class="badge ${c.moneda==='USD'?'cur-usd':'cur-mxn'}">${c.moneda}</span></td>
-      <td>${fmt(c.reclamado, c.moneda)}</td>
-      <td>${fmtDate(c.fasig)}</td>
-      <td><span class="badge ${EST[c.estatus]?.cls||''}">${EST[c.estatus]?.label||c.estatus}</span></td>
-      <td><div class="td-actions">
-        <button onclick="editarCaso(${c.id})">Editar</button>
-        <button class="del" onclick="eliminarCaso(${c.id})">Eliminar</button>
+/* ── SINIESTROS ── */
+function renderSiniestros(){
+  const q=(v('sin-search')||'').toLowerCase();
+  const est=v('sin-filtro-est');
+  const fil=data.sin.filter(s=>{
+    const pol=data.pol.find(p=>p.id===s.id_poliza)||{};
+    const asdo=data.asdo.find(a=>a.id===pol.id_asegurado)||{};
+    const aseg=data.aseg.find(a=>a.id===pol.id_aseguradora)||{};
+    const match=(s.numero_exp||'').toLowerCase().includes(q)||(asdo.nombre||'').toLowerCase().includes(q)||(aseg.nombre||'').toLowerCase().includes(q);
+    return match&&(!est||s.estatus===est);
+  });
+  g('sin-body').innerHTML=fil.map(s=>{
+    const pol=data.pol.find(p=>p.id===s.id_poliza)||{};
+    const asdo=data.asdo.find(a=>a.id===pol.id_asegurado)||{};
+    return `<tr onclick="verSiniestro(${s.id})">
+      <td><strong>${s.numero_exp}</strong></td>
+      <td>${pol.numero||'—'}</td>
+      <td>${asdo.nombre||'—'}</td>
+      <td>${s.tipo_siniestro||'—'}</td>
+      <td>${fmtD(s.fecha_siniestro)}</td>
+      <td>${fmtD(s.fecha_asignacion)}</td>
+      <td><span class="badge ${EST[s.estatus]?.cls||''}">${EST[s.estatus]?.label||s.estatus}</span></td>
+      <td><div class="td-acts">
+        <button class="btn btn-sm" onclick="event.stopPropagation();editarSiniestro(${s.id})">Editar</button>
+        <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();eliminar('siniestros',${s.id})">Eliminar</button>
       </div></td>
-    </tr>`).join('') : '<tr><td colspan="9" class="loading">Sin resultados.</td></tr>';
+    </tr>`;}).join('')||'<tr><td colspan="8" class="empty">Sin expedientes.</td></tr>';
 }
 
-function renderInformes() {
-  const fil = document.getElementById('filtro-inf').value;
-  const items = fil ? informes.filter(i => i.caso_id == fil) : informes;
-  document.getElementById('inf-body').innerHTML = items.length ? items.map(i => {
-    const caso = casos.find(c => c.id === i.caso_id);
+function verSiniestro(id){
+  currentSin=data.sin.find(s=>s.id===id);
+  if(!currentSin) return;
+  g('sin-list-view').style.display='none';
+  const dv=g('sin-detail-view'); dv.style.display='block';
+  renderDetalle();
+}
+
+function renderDetalle(){
+  const s=currentSin;
+  const pol=data.pol.find(p=>p.id===s.id_poliza)||{};
+  const asdo=data.asdo.find(a=>a.id===pol.id_asegurado)||{};
+  const aseg=data.aseg.find(a=>a.id===pol.id_aseguradora)||{};
+  const rv=reservaVigente(s.id);
+  const pags=data.pag.filter(p=>p.id_siniestro===s.id).reduce((a,p)=>a+toMXN(p.monto,p.moneda,p.tipo_cambio_mxn),0);
+  const hons=data.hon.filter(h=>h.id_siniestro===s.id).reduce((a,h)=>a+toMXN(h.monto,h.moneda,h.tipo_cambio_mxn),0);
+  const viats=data.viat.filter(v=>v.id_siniestro===s.id).reduce((a,v2)=>a+toMXN(v2.monto,v2.moneda,v2.tipo_cambio_mxn),0);
+  const saldo=rv-pags;
+  const exp=rv+hons+viats;
+
+  g('sin-detail-view').innerHTML=`
+  <button class="back-btn" onclick="volverLista()">← Volver a expedientes</button>
+  <div class="exp-header">
+    <div>
+      <div class="exp-title">${s.numero_exp}</div>
+      <div class="exp-sub">${asdo.nombre||'—'} &mdash; ${aseg.nombre||'—'} &mdash; ${s.tipo_siniestro||'—'}</div>
+      <div style="margin-top:6px;"><span class="badge ${EST[s.estatus]?.cls||''}">${EST[s.estatus]?.label||s.estatus}</span></div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-sm" onclick="editarSiniestro(${s.id})">Editar expediente</button>
+    </div>
+  </div>
+  <div class="fin-grid">
+    <div class="fin-card"><div class="fin-lbl">Reserva vigente</div><div class="fin-val info">${fmtMXN(rv)}</div></div>
+    <div class="fin-card"><div class="fin-lbl">Pagos acumulados</div><div class="fin-val">${fmtMXN(pags)}</div></div>
+    <div class="fin-card"><div class="fin-lbl">Saldo técnico</div><div class="fin-val ${saldo>0?'warn':'ok'}">${fmtMXN(saldo)}</div></div>
+    <div class="fin-card"><div class="fin-lbl">Exposición total</div><div class="fin-val warn">${fmtMXN(exp)}</div></div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab2('t-res',this)">Reservas</button>
+    <button class="tab-btn" onclick="switchTab2('t-pag',this)">Pagos</button>
+    <button class="tab-btn" onclick="switchTab2('t-hon',this)">Honorarios</button>
+    <button class="tab-btn" onclick="switchTab2('t-viat',this)">Viáticos</button>
+    <button class="tab-btn" onclick="switchTab2('t-act',this)">Actividades</button>
+    <button class="tab-btn" onclick="switchTab2('t-doc',this)">Documentos</button>
+  </div>
+
+  <div id="t-res" class="tab-pane active">
+    <div class="toolbar"><button class="btn btn-primary" onclick="abrirModal('modal-res')">+ Nueva reserva</button></div>
+    <div class="tbl-wrap"><table><thead><tr><th>Concepto</th><th>Monto</th><th>Moneda</th><th>TC</th><th>Base MXN</th><th>Fecha</th><th></th></tr></thead>
+    <tbody>${renderSubTable(data.res.filter(r=>r.id_siniestro===s.id),'res',['concepto','monto','moneda','tipo_cambio_mxn','monto_base_mxn','fecha'])}</tbody></table></div>
+  </div>
+  <div id="t-pag" class="tab-pane">
+    <div class="toolbar"><button class="btn btn-primary" onclick="abrirModal('modal-pago')">+ Nuevo pago</button></div>
+    <div class="tbl-wrap"><table><thead><tr><th>Tipo</th><th>Beneficiario</th><th>Monto</th><th>Moneda</th><th>Base MXN</th><th>Fecha</th><th></th></tr></thead>
+    <tbody>${renderSubTable(data.pag.filter(p=>p.id_siniestro===s.id),'pago',['tipo','beneficiario','monto','moneda','monto_base_mxn','fecha'])}</tbody></table></div>
+  </div>
+  <div id="t-hon" class="tab-pane">
+    <div class="toolbar"><button class="btn btn-primary" onclick="abrirModal('modal-hon')">+ Nuevo honorario</button></div>
+    <div class="tbl-wrap"><table><thead><tr><th>Concepto</th><th>Pactado</th><th>Pagado</th><th>Moneda</th><th>Estatus</th><th>Fecha pacto</th><th></th></tr></thead>
+    <tbody>${renderSubTable(data.hon.filter(h=>h.id_siniestro===s.id),'hon',['concepto','monto','pagado','moneda','estatus','fecha_pacto'])}</tbody></table></div>
+  </div>
+  <div id="t-viat" class="tab-pane">
+    <div class="toolbar"><button class="btn btn-primary" onclick="abrirModal('modal-viat')">+ Nuevo viático</button></div>
+    <div class="tbl-wrap"><table><thead><tr><th>Descripción</th><th>Monto</th><th>Moneda</th><th>Base MXN</th><th>Fecha</th><th></th></tr></thead>
+    <tbody>${renderSubTable(data.viat.filter(v=>v.id_siniestro===s.id),'viat',['descripcion','monto','moneda','monto_base_mxn','fecha'])}</tbody></table></div>
+  </div>
+  <div id="t-act" class="tab-pane">
+    <div class="toolbar"><button class="btn btn-primary" onclick="abrirModal('modal-act')">+ Nueva actividad</button></div>
+    <div class="tbl-wrap"><table><thead><tr><th>Tipo</th><th>Fecha</th><th>Descripción</th><th></th></tr></thead>
+    <tbody>${renderSubTable(data.act.filter(a=>a.id_siniestro===s.id),'act',['tipo','fecha','descripcion'])}</tbody></table></div>
+  </div>
+  <div id="t-doc" class="tab-pane">
+    <div class="toolbar"><button class="btn btn-primary" onclick="abrirModal('modal-doc')">+ Nuevo documento</button></div>
+    <div class="tbl-wrap"><table><thead><tr><th>Tipo</th><th>Versión</th><th>Archivo</th><th>Fecha</th><th></th></tr></thead>
+    <tbody>${renderSubTable(data.doc.filter(d=>d.id_siniestro===s.id),'doc',['tipo','numero_version','nombre_archivo','fecha'])}</tbody></table></div>
+  </div>`;
+}
+
+function renderSubTable(rows,type,cols){
+  if(!rows.length) return `<tr><td colspan="${cols.length+1}" class="empty">Sin registros.</td></tr>`;
+  return rows.map(r=>{
+    const cells=cols.map(c=>{
+      let val=r[c];
+      if(c==='monto'||c==='monto_base_mxn'||c==='pagado') val=fmtMXN(val);
+      else if(c==='fecha'||c==='fecha_pacto') val=fmtD(val);
+      else if(c==='moneda') val=`<span class="badge ${MON_CLS[val]||''}">${val||'—'}</span>`;
+      else if(c==='estatus') val=`<span class="badge ${HON_EST[val]||''}">${val||'—'}</span>`;
+      else val=val||'—';
+      return `<td>${val}</td>`;
+    }).join('');
+    return `<tr>${cells}<td><button class="btn btn-sm btn-danger" onclick="eliminar('${tableFor(type)}',${r.id})">Eliminar</button></td></tr>`;
+  }).join('');
+}
+
+function tableFor(t){ return {res:'reservas',pago:'pagos',hon:'honorarios',viat:'viaticos',act:'actividades',doc:'documentos'}[t]; }
+
+function volverLista(){ g('sin-detail-view').style.display='none'; g('sin-list-view').style.display='block'; currentSin=null; }
+
+function switchTab2(id,btn){
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  g(id).classList.add('active'); btn.classList.add('active');
+}
+
+/* ── PÓLIZAS ── */
+function renderPolizas(){
+  const q=(v('pol-search')||'').toLowerCase();
+  const fil=data.pol.filter(p=>(p.numero||'').toLowerCase().includes(q)||(data.asdo.find(a=>a.id===p.id_asegurado)?.nombre||'').toLowerCase().includes(q)||(data.aseg.find(a=>a.id===p.id_aseguradora)?.nombre||'').toLowerCase().includes(q));
+  g('pol-body').innerHTML=fil.map(p=>{
+    const asdo=data.asdo.find(a=>a.id===p.id_asegurado)||{};
+    const aseg=data.aseg.find(a=>a.id===p.id_aseguradora)||{};
     return `<tr>
-      <td><strong>${i.num||'—'}</strong></td>
-      <td>${caso ? caso.exp : '—'}</td>
-      <td>${i.tipo||'—'}</td>
-      <td>${i.dest||'—'}</td>
-      <td>${fmtDate(i.fecha)}</td>
-      <td><span class="badge ${IEST[i.estatus]?.cls||''}">${IEST[i.estatus]?.label||i.estatus}</span></td>
-      <td><div class="td-actions"><button class="del" onclick="eliminarInforme(${i.id})">Eliminar</button></div></td>
-    </tr>`;}).join('') : '<tr><td colspan="7" class="loading">Sin informes registrados.</td></tr>';
+      <td><strong>${p.numero}</strong></td>
+      <td>${asdo.nombre||'—'}</td><td>${aseg.nombre||'—'}</td>
+      <td>${RAMOS[p.ramo]||p.ramo||'—'}</td>
+      <td>${fmtD(p.vigencia_ini)} – ${fmtD(p.vigencia_fin)}</td>
+      <td>${fmt(p.suma_asegurada,p.moneda)}</td>
+      <td><span class="badge ${MON_CLS[p.moneda]||''}">${p.moneda}</span></td>
+      <td><div class="td-acts">
+        <button class="btn btn-sm" onclick="editarPoliza(${p.id})">Editar</button>
+        <button class="btn btn-sm btn-danger" onclick="eliminar('polizas',${p.id})">Eliminar</button>
+      </div></td>
+    </tr>`;}).join('')||'<tr><td colspan="8" class="empty">Sin pólizas.</td></tr>';
 }
 
-function renderHonorarios() {
-  if (!pagos.length) { document.getElementById('hon-content').innerHTML = '<div class="loading">Sin honorarios registrados.</div>'; return; }
-  document.getElementById('hon-content').innerHTML = pagos.map(p => {
-    const caso = casos.find(c => c.id === p.caso_id);
-    const pend = (p.monto||0) - (p.pagado||0);
-    const mxnEq = toMXN(pend, p.moneda);
-    return `<div class="hon-card">
-      <div class="hon-head">
-        <div><div class="hon-exp">${caso ? caso.exp : '—'}</div><div class="hon-ased">${caso ? caso.asegurado : ''}</div></div>
-        <span class="badge ${p.moneda==='USD'?'cur-usd':'cur-mxn'}">${p.moneda}</span>
-      </div>
-      <div class="h-row"><span class="h-label">Honorarios pactados</span><span class="h-val">${fmt(p.monto, p.moneda)}</span></div>
-      <div class="h-row"><span class="h-label">Pagado</span><span class="h-val" style="color:#3B6D11;">${fmt(p.pagado, p.moneda)}</span></div>
-      <div class="h-row"><span class="h-label">Pendiente</span><span class="h-val" style="color:${pend>0?'#BA7517':'inherit'};">${fmt(pend, p.moneda)}${p.moneda==='USD'&&pend>0?' <small style="color:#9e9e9b;font-weight:400;">(≈ '+fmt(Math.round(mxnEq),'MXN')+')</small>':''}</span></div>
-      ${p.fecha_pago ? `<div class="h-row"><span class="h-label">Fecha de pago</span><span class="h-val">${fmtDate(p.fecha_pago)}</span></div>` : ''}
-      <div class="h-row" style="border-top:0.5px solid var(--border);margin-top:4px;padding-top:8px;">
-        <span class="h-label">Registrar pago</span>
-        <div style="display:flex;gap:6px;align-items:center;">
-          <input type="number" id="pago-${p.id}" placeholder="Monto" style="width:120px;padding:4px 8px;font-size:12px;border:0.5px solid var(--border-md);border-radius:6px;background:var(--bg);color:var(--text);font-family:'Georgia',serif;">
-          <button class="btn btn-primary" style="padding:4px 12px;font-size:12px;" onclick="registrarPago(${p.id})">Registrar</button>
-        </div>
-      </div>
-    </div>`;}).join('');
+/* ── CATÁLOGOS ── */
+function renderAseguradoras(){
+  const q=(v('aseg-search')||'').toLowerCase();
+  g('aseg-body').innerHTML=data.aseg.filter(a=>(a.nombre||'').toLowerCase().includes(q)).map(a=>`<tr>
+    <td>${a.clave||'—'}</td><td><strong>${a.nombre}</strong></td>
+    <td>${a.telefono||'—'}</td><td>${a.correo||'—'}</td>
+    <td><div class="td-acts"><button class="btn btn-sm" onclick="editarAseguradora(${a.id})">Editar</button>
+    <button class="btn btn-sm btn-danger" onclick="eliminar('aseguradoras',${a.id})">Eliminar</button></div></td>
+  </tr>`).join('')||'<tr><td colspan="5" class="empty">Sin aseguradoras.</td></tr>';
 }
 
-function renderBitacora() {
-  const fil = document.getElementById('filtro-bit').value;
-  const items = fil ? bitacora.filter(b => b.caso_id == fil) : bitacora;
-  document.getElementById('bit-list').innerHTML = items.length ? items.map(b => {
-    const caso = casos.find(c => c.id === b.caso_id);
-    return `<div class="bit-item">
-      <div class="bit-meta">${caso ? caso.exp : '—'} — ${fmtDate(b.fecha)}</div>
-      <div class="bit-text">${b.nota||''}</div>
-    </div>`;}).join('') : '<div class="loading">Sin notas registradas.</div>';
+function renderAsegurados(){
+  const q=(v('asdo-search')||'').toLowerCase();
+  g('asdo-body').innerHTML=data.asdo.filter(a=>(a.nombre||'').toLowerCase().includes(q)).map(a=>`<tr>
+    <td><strong>${a.nombre}</strong></td><td>${a.rfc||'—'}</td>
+    <td>${a.tipo==='fisica'?'Persona física':'Persona moral'}</td>
+    <td>${a.telefono||'—'}</td><td>${a.correo||'—'}</td>
+    <td><div class="td-acts"><button class="btn btn-sm" onclick="editarAsegurado(${a.id})">Editar</button>
+    <button class="btn btn-sm btn-danger" onclick="eliminar('asegurados',${a.id})">Eliminar</button></div></td>
+  </tr>`).join('')||'<tr><td colspan="6" class="empty">Sin asegurados.</td></tr>';
 }
 
-function renderAll() { renderMetrics(); renderTabla(); }
+function renderContactos(){
+  g('cont-body').innerHTML=data.cont.map(c=>{
+    const aseg=data.aseg.find(a=>a.id===c.id_aseguradora);
+    const asdo=data.asdo.find(a=>a.id===c.id_asegurado);
+    return `<tr><td><strong>${c.nombre}</strong></td><td>${c.cargo||'—'}</td>
+      <td>${aseg?aseg.nombre:asdo?asdo.nombre:'—'}</td>
+      <td>${c.telefono||'—'}</td><td>${c.correo||'—'}</td>
+      <td><button class="btn btn-sm btn-danger" onclick="eliminar('contactos',${c.id})">Eliminar</button></td>
+    </tr>`;}).join('')||'<tr><td colspan="6" class="empty">Sin contactos.</td></tr>';
+}
 
-function switchTab(tab, btn) {
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('panel-'+tab).classList.add('active');
+function renderTC(){
+  g('tc-body').innerHTML=data.tc.map(t=>`<tr>
+    <td><span class="badge ${MON_CLS[t.moneda]||''}">${t.moneda}</span></td>
+    <td><strong>${t.tasa_mxn}</strong></td><td>${fmtD(t.fecha)}</td><td>${t.fuente||'—'}</td>
+    <td><button class="btn btn-sm btn-danger" onclick="eliminar('tipos_cambio',${t.id})">Eliminar</button></td>
+  </tr>`).join('')||'<tr><td colspan="5" class="empty">Sin tipos de cambio.</td></tr>';
+}
+
+function switchCat(id,btn){
+  ['aseg','asdo','cont','tc'].forEach(k=>{ const el=g('cat-'+k); if(el) el.style.display=k===id?'block':'none'; });
+  document.querySelectorAll('#panel-catalogos .tab-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
-  if (tab === 'honorarios') renderHonorarios();
-  if (tab === 'bitacora') renderBitacora();
-  if (tab === 'informes') renderInformes();
-  if (tab === 'reportes') initReportes();
 }
 
-function abrirModal(id) {
-  if (id === 'modal-caso') {
-    document.getElementById('modal-caso-title').textContent = 'Registrar nuevo caso';
-    document.getElementById('f-id').value = '';
-    ['f-exp','f-asegurado','f-aseguradora','f-contacto','f-reclamado','f-reserva','f-honorarios','f-ubic','f-notas'].forEach(i => document.getElementById(i).value = '');
-    document.getElementById('f-fasig').value = new Date().toISOString().slice(0,10);
-    document.getElementById('f-finsp').value = '';
-    document.getElementById('f-finf').value = '';
-    document.getElementById('f-moneda').value = 'MXN';
-    document.getElementById('f-estatus').value = 'asignado';
+/* ── MODALS ── */
+function abrirModal(id){
+  const today=new Date().toISOString().slice(0,10);
+  if(id==='modal-res'||id==='modal-pago'||id==='modal-viat'||id==='modal-act'||id==='modal-doc'){
+    const fids={'modal-res':'res-fecha','modal-pago':'pg-fecha','modal-viat':'vt-fecha','modal-act':'ac-fecha','modal-doc':'dc-fecha'};
+    if(fids[id]) g(fids[id]).value=today;
   }
-  if (id === 'modal-informe') {
-    poblarSelectores();
-    document.getElementById('i-fecha').value = new Date().toISOString().slice(0,10);
-    document.getElementById('i-num').value = '';
-    document.getElementById('i-dest').value = '';
-    document.getElementById('i-resumen').value = '';
-  }
-  if (id === 'modal-bitacora') {
-    poblarSelectores();
-    document.getElementById('b-fecha').value = new Date().toISOString().slice(0,10);
-    document.getElementById('b-nota').value = '';
-  }
-  document.getElementById(id).classList.add('open');
+  if(id==='modal-sin') g('s-fasig').value=today;
+  if(id==='modal-tc')  g('tc-fecha').value=today;
+  if(id==='modal-hon') g('ho-fpacto').value=today;
+  g(id).classList.add('open');
 }
+function cerrarModal(id){ g(id).classList.remove('open'); }
 
-function cerrarModal(id) { document.getElementById(id).classList.remove('open'); }
-
-function editarCaso(id) {
-  const c = casos.find(x => x.id === id);
-  if (!c) return;
-  document.getElementById('modal-caso-title').textContent = 'Editar caso ' + c.exp;
-  document.getElementById('f-id').value = c.id;
-  document.getElementById('f-exp').value = c.exp || '';
-  document.getElementById('f-asegurado').value = c.asegurado || '';
-  document.getElementById('f-aseguradora').value = c.aseguradora || '';
-  document.getElementById('f-contacto').value = c.contacto || '';
-  document.getElementById('f-tipo').value = c.tipo || 'Incendio';
-  document.getElementById('f-moneda').value = c.moneda || 'MXN';
-  document.getElementById('f-reclamado').value = c.reclamado || '';
-  document.getElementById('f-reserva').value = c.reserva || '';
-  document.getElementById('f-honorarios').value = c.honorarios || '';
-  document.getElementById('f-estatus').value = c.estatus || 'asignado';
-  document.getElementById('f-fasig').value = c.fasig || '';
-  document.getElementById('f-finsp').value = c.finsp || '';
-  document.getElementById('f-finf').value = c.finf || '';
-  document.getElementById('f-ubic').value = c.ubic || '';
-  document.getElementById('f-notas').value = c.notas || '';
-  document.getElementById('modal-caso').classList.add('open');
-}
-
-async function guardarCaso() {
-  const id = document.getElementById('f-id').value;
-  const data = {
-    exp: document.getElementById('f-exp').value,
-    asegurado: document.getElementById('f-asegurado').value,
-    aseguradora: document.getElementById('f-aseguradora').value,
-    contacto: document.getElementById('f-contacto').value,
-    tipo: document.getElementById('f-tipo').value,
-    moneda: document.getElementById('f-moneda').value,
-    reclamado: parseFloat(document.getElementById('f-reclamado').value) || 0,
-    reserva: parseFloat(document.getElementById('f-reserva').value) || 0,
-    honorarios: parseFloat(document.getElementById('f-honorarios').value) || 0,
-    estatus: document.getElementById('f-estatus').value,
-    fasig: document.getElementById('f-fasig').value || null,
-    finsp: document.getElementById('f-finsp').value || null,
-    finf: document.getElementById('f-finf').value || null,
-    ubic: document.getElementById('f-ubic').value,
-    notas: document.getElementById('f-notas').value,
-  };
-  if (id) {
-    await db.from('casos').update(data).eq('id', id);
-    await db.from('pagos').update({monto: data.honorarios, moneda: data.moneda}).eq('caso_id', id);
-    toast('Caso actualizado.');
-  } else {
-    const { data: nuevo } = await db.from('casos').insert(data).select().single();
-    if (nuevo) await db.from('pagos').insert({caso_id: nuevo.id, moneda: data.moneda, monto: data.honorarios, pagado: 0});
-    toast('Caso registrado.');
-  }
-  cerrarModal('modal-caso');
+/* ── CRUD ── */
+async function eliminar(tabla, id){
+  if(!confirm('¿Eliminar este registro?')) return;
+  await db.from(tabla).delete().eq('id',id);
+  toast('Registro eliminado.');
   await loadAll();
+  if(currentSin) renderDetalle();
 }
 
-async function eliminarCaso(id) {
-  if (!confirm('¿Eliminar este caso y toda su información asociada?')) return;
-  await db.from('casos').delete().eq('id', id);
-  toast('Caso eliminado.');
-  await loadAll();
+async function guardarSiniestro(){
+  const id=v('s-id');
+  const d2={numero_exp:v('s-exp'),id_poliza:parseInt(v('s-poliza'))||null,tipo_siniestro:v('s-tipo'),causa:v('s-causa'),descripcion:v('s-desc'),notas:v('s-notas'),estatus:v('s-est'),fecha_siniestro:v('s-fsin')||null,fecha_asignacion:v('s-fasig')||null,fecha_inspeccion:v('s-finsp')||null,fecha_informe:v('s-finf')||null};
+  if(id){ await db.from('siniestros').update(d2).eq('id',id); toast('Expediente actualizado.'); }
+  else { await db.from('siniestros').insert(d2); toast('Expediente creado.'); }
+  cerrarModal('modal-sin'); await loadAll(); if(currentSin) renderDetalle();
 }
 
-async function guardarInforme() {
-  const casoId = parseInt(document.getElementById('i-caso').value);
-  await db.from('informes').insert({
-    caso_id: casoId,
-    num: document.getElementById('i-num').value,
-    tipo: document.getElementById('i-tipo').value,
-    dest: document.getElementById('i-dest').value,
-    fecha: document.getElementById('i-fecha').value || null,
-    estatus: document.getElementById('i-estatus').value,
-    resumen: document.getElementById('i-resumen').value,
-  });
-  toast('Informe registrado.');
-  cerrarModal('modal-informe');
-  await loadAll();
-  renderInformes();
+function editarSiniestro(id){
+  const s=data.sin.find(x=>x.id===id); if(!s) return;
+  g('sin-modal-title').textContent='Editar expediente'; g('s-id').value=s.id;
+  g('s-exp').value=s.numero_exp||''; g('s-poliza').value=s.id_poliza||'';
+  g('s-tipo').value=s.tipo_siniestro||''; g('s-causa').value=s.causa||'';
+  g('s-desc').value=s.descripcion||''; g('s-notas').value=s.notas||'';
+  g('s-est').value=s.estatus||'asignado'; g('s-fsin').value=s.fecha_siniestro||'';
+  g('s-fasig').value=s.fecha_asignacion||''; g('s-finsp').value=s.fecha_inspeccion||'';
+  g('s-finf').value=s.fecha_informe||'';
+  g('modal-sin').classList.add('open');
 }
 
-async function eliminarInforme(id) {
-  if (!confirm('¿Eliminar este informe?')) return;
-  await db.from('informes').delete().eq('id', id);
-  toast('Informe eliminado.');
-  await loadAll();
-  renderInformes();
+async function guardarPoliza(){
+  const id=v('p-id');
+  const d2={numero:v('p-num'),id_aseguradora:parseInt(v('p-aseg'))||null,id_asegurado:parseInt(v('p-asdo'))||null,ramo:v('p-ramo'),vigencia_ini:v('p-vini')||null,vigencia_fin:v('p-vfin')||null,suma_asegurada:parseFloat(v('p-suma'))||0,moneda:v('p-mon'),tipo_cambio:parseFloat(v('p-tc'))||1,notas:v('p-notas')};
+  if(id){ await db.from('polizas').update(d2).eq('id',id); toast('Póliza actualizada.'); }
+  else { await db.from('polizas').insert(d2); toast('Póliza creada.'); }
+  cerrarModal('modal-pol'); await loadAll();
 }
 
-async function guardarNota() {
-  const nota = document.getElementById('b-nota').value;
-  if (!nota.trim()) return;
-  await db.from('bitacora').insert({
-    caso_id: parseInt(document.getElementById('b-caso').value),
-    fecha: document.getElementById('b-fecha').value || new Date().toISOString().slice(0,10),
-    nota,
-  });
-  toast('Nota registrada.');
-  cerrarModal('modal-bitacora');
-  await loadAll();
-  renderBitacora();
+function editarPoliza(id){
+  const p=data.pol.find(x=>x.id===id); if(!p) return;
+  g('pol-modal-title').textContent='Editar póliza'; g('p-id').value=p.id;
+  g('p-num').value=p.numero||''; g('p-ramo').value=p.ramo||'';
+  g('p-aseg').value=p.id_aseguradora||''; g('p-asdo').value=p.id_asegurado||'';
+  g('p-vini').value=p.vigencia_ini||''; g('p-vfin').value=p.vigencia_fin||'';
+  g('p-suma').value=p.suma_asegurada||''; g('p-mon').value=p.moneda||'MXN';
+  g('p-tc').value=p.tipo_cambio||1; g('p-notas').value=p.notas||'';
+  g('modal-pol').classList.add('open');
 }
 
-async function registrarPago(pagoId) {
-  const monto = parseFloat(document.getElementById('pago-' + pagoId).value);
-  if (!monto || monto <= 0) return;
-  const pago = pagos.find(p => p.id === pagoId);
-  if (!pago) return;
-  const nuevoPagado = Math.min((pago.pagado || 0) + monto, pago.monto);
-  await db.from('pagos').update({pagado: nuevoPagado, fecha_pago: new Date().toISOString().slice(0,10)}).eq('id', pagoId);
-  toast('Pago registrado.');
-  await loadAll();
-  renderHonorarios();
+async function guardarAseguradora(){
+  const id=v('ae-id');
+  const d2={clave:v('ae-clave'),nombre:v('ae-nombre'),telefono:v('ae-tel'),correo:v('ae-email'),notas:v('ae-notas')};
+  if(id){ await db.from('aseguradoras').update(d2).eq('id',id); toast('Aseguradora actualizada.'); }
+  else { await db.from('aseguradoras').insert(d2); toast('Aseguradora creada.'); }
+  cerrarModal('modal-aseg'); await loadAll();
+}
+
+function editarAseguradora(id){
+  const a=data.aseg.find(x=>x.id===id); if(!a) return;
+  g('ae-id').value=a.id; g('ae-clave').value=a.clave||''; g('ae-nombre').value=a.nombre||'';
+  g('ae-tel').value=a.telefono||''; g('ae-email').value=a.correo||''; g('ae-notas').value=a.notas||'';
+  g('modal-aseg').classList.add('open');
+}
+
+async function guardarAsegurado(){
+  const id=v('ad-id');
+  const d2={nombre:v('ad-nombre'),rfc:v('ad-rfc'),tipo:v('ad-tipo'),telefono:v('ad-tel'),correo:v('ad-email'),direccion:v('ad-dir')};
+  if(id){ await db.from('asegurados').update(d2).eq('id',id); toast('Asegurado actualizado.'); }
+  else { await db.from('asegurados').insert(d2); toast('Asegurado creado.'); }
+  cerrarModal('modal-asdo'); await loadAll();
+}
+
+function editarAsegurado(id){
+  const a=data.asdo.find(x=>x.id===id); if(!a) return;
+  g('ad-id').value=a.id; g('ad-nombre').value=a.nombre||''; g('ad-rfc').value=a.rfc||'';
+  g('ad-tipo').value=a.tipo||'moral'; g('ad-tel').value=a.telefono||'';
+  g('ad-email').value=a.correo||''; g('ad-dir').value=a.direccion||'';
+  g('modal-asdo').classList.add('open');
+}
+
+async function guardarContacto(){
+  const d2={nombre:v('co-nombre'),cargo:v('co-cargo'),telefono:v('co-tel'),correo:v('co-email'),id_aseguradora:parseInt(v('co-aseg'))||null,id_asegurado:parseInt(v('co-asdo'))||null};
+  await db.from('contactos').insert(d2); toast('Contacto creado.');
+  cerrarModal('modal-cont'); await loadAll();
+}
+
+async function guardarTC(){
+  await db.from('tipos_cambio').insert({moneda:v('tc-mon'),tasa_mxn:parseFloat(v('tc-tasa'))||1,fecha:v('tc-fecha')||new Date().toISOString().slice(0,10),fuente:v('tc-fuente')});
+  toast('Tipo de cambio registrado.'); cerrarModal('modal-tc'); await loadAll();
+}
+
+async function guardarReserva(){
+  if(!currentSin) return;
+  await db.from('reservas').insert({id_siniestro:currentSin.id,concepto:v('res-concepto'),monto:parseFloat(v('res-monto'))||0,moneda:v('res-mon'),tipo_cambio_mxn:parseFloat(v('res-tc'))||1,fecha:v('res-fecha')||new Date().toISOString().slice(0,10),notas:v('res-notas')});
+  toast('Reserva registrada.'); cerrarModal('modal-res'); await loadAll(); renderDetalle();
+}
+
+async function guardarPago(){
+  if(!currentSin) return;
+  await db.from('pagos').insert({id_siniestro:currentSin.id,tipo:v('pg-tipo'),beneficiario:v('pg-benef'),monto:parseFloat(v('pg-monto'))||0,moneda:v('pg-mon'),tipo_cambio_mxn:parseFloat(v('pg-tc'))||1,fecha:v('pg-fecha')||new Date().toISOString().slice(0,10),referencia:v('pg-ref'),notas:v('pg-notas')});
+  toast('Pago registrado.'); cerrarModal('modal-pago'); await loadAll(); renderDetalle();
+}
+
+async function guardarHonorario(){
+  if(!currentSin) return;
+  await db.from('honorarios').insert({id_siniestro:currentSin.id,concepto:v('ho-concepto'),monto:parseFloat(v('ho-monto'))||0,moneda:v('ho-mon'),tipo_cambio_mxn:parseFloat(v('ho-tc'))||1,pagado:parseFloat(v('ho-pagado'))||0,estatus:v('ho-est'),fecha_pacto:v('ho-fpacto')||null,fecha_pago:v('ho-fpago')||null,notas:v('ho-notas')});
+  toast('Honorario registrado.'); cerrarModal('modal-hon'); await loadAll(); renderDetalle();
+}
+
+async function guardarViatico(){
+  if(!currentSin) return;
+  await db.from('viaticos').insert({id_siniestro:currentSin.id,descripcion:v('vt-desc'),monto:parseFloat(v('vt-monto'))||0,moneda:v('vt-mon'),tipo_cambio_mxn:parseFloat(v('vt-tc'))||1,fecha:v('vt-fecha')||new Date().toISOString().slice(0,10),notas:v('vt-notas')});
+  toast('Viático registrado.'); cerrarModal('modal-viat'); await loadAll(); renderDetalle();
+}
+
+async function guardarActividad(){
+  if(!currentSin) return;
+  await db.from('actividades').insert({id_siniestro:currentSin.id,tipo:v('ac-tipo'),descripcion:v('ac-desc'),fecha:v('ac-fecha')||new Date().toISOString().slice(0,10),usuario:g('user-lbl').textContent});
+  toast('Actividad registrada.'); cerrarModal('modal-act'); await loadAll(); renderDetalle();
+}
+
+async function guardarDocumento(){
+  if(!currentSin) return;
+  await db.from('documentos').insert({id_siniestro:currentSin.id,tipo:v('dc-tipo'),numero_version:parseInt(v('dc-ver'))||1,nombre_archivo:v('dc-nombre'),fecha:v('dc-fecha')||new Date().toISOString().slice(0,10),notas:v('dc-notas'),usuario:g('user-lbl').textContent});
+  toast('Documento registrado.'); cerrarModal('modal-doc'); await loadAll(); renderDetalle();
 }
 
 /* ── REPORTES ── */
-let logoDataUrl = null;
+function cargarLogo(input){ const f=input.files[0]; if(!f) return; const r=new FileReader(); r.onload=e=>{logoDataUrl=e.target.result;previsualizarReporte();}; r.readAsDataURL(f); }
 
-function cargarLogo(input) {
-  const file = input.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => { logoDataUrl = e.target.result; previsualizarReporte(); };
-  reader.readAsDataURL(file);
-}
+function secsActivas(){ return Array.from(document.querySelectorAll('#panel-reportes input[type=checkbox]:checked')).map(c=>c.value); }
 
-function seccionesActivas() {
-  return Array.from(document.querySelectorAll('#r-secciones input[type=checkbox]:checked')).map(c => c.value);
-}
-
-function fmtR(n, mon) {
-  if (n === null || n === undefined || n === 0) return '—';
-  return Number(n).toLocaleString('es-MX', {style:'currency', currency: mon||'MXN', maximumFractionDigits:0});
-}
-
-function fmtDateR(d) { if (!d) return '—'; const [y,m,day]=d.split('-'); return `${day}/${m}/${y}`; }
-
-function buildReportHTML(caso, secs) {
-  const EST_LABEL = { asignado:'Asignado', inspeccion:'En inspección', informe:'Elaborando informe', cobro:'Pendiente de cobro', cerrado:'Cerrado' };
-  const IEST_LABEL = { borrador:'Borrador', enviado:'Enviado', acuse:'Acuse recibido' };
-  const logoHtml = logoDataUrl ? `<img src="${logoDataUrl}" class="rpt-logo">` : `<div style="font-size:18px;font-weight:700;color:#1565c0;">AdjusterPro</div>`;
-  const now = new Date().toLocaleDateString('es-MX', {day:'2-digit',month:'long',year:'numeric'});
-  const badgeCls = 'rpt-s-' + (caso.estatus||'cerrado');
-
-  let html = `<div class="rpt">
+function buildReporte(s, secs){
+  const pol=data.pol.find(p=>p.id===s.id_poliza)||{};
+  const asdo=data.asdo.find(a=>a.id===pol.id_asegurado)||{};
+  const aseg=data.aseg.find(a=>a.id===pol.id_aseguradora)||{};
+  const rv=reservaVigente(s.id);
+  const pags=data.pag.filter(p=>p.id_siniestro===s.id).reduce((a,p)=>a+toMXN(p.monto,p.moneda,p.tipo_cambio_mxn),0);
+  const hons=data.hon.filter(h=>h.id_siniestro===s.id).reduce((a,h)=>a+toMXN(h.monto,h.moneda,h.tipo_cambio_mxn),0);
+  const viats=data.viat.filter(v2=>v2.id_siniestro===s.id).reduce((a,v2)=>a+toMXN(v2.monto,v2.moneda,v2.tipo_cambio_mxn),0);
+  const now=new Date().toLocaleDateString('es-MX',{day:'2-digit',month:'long',year:'numeric'});
+  const badgeSt={asignado:'#E6F1FB',inspeccion:'#FAEEDA',informe:'#EEEDFE',cobro:'#EAF3DE',cerrado:'#F1EFE8'};
+  const badgeTxt={asignado:'#0C447C',inspeccion:'#633806',informe:'#3C3489',cobro:'#27500A',cerrado:'#5F5E5A'};
+  const logoHtml=logoDataUrl?`<img src="${logoDataUrl}" class="rpt-logo">`:`<div style="font-size:16px;font-weight:700;color:#1558b0;">AdjusterPro</div>`;
+  let h=`<div class="rpt-wrap">
   <div class="rpt-header">
-    <div>${logoHtml}</div>
-    <div class="rpt-firm">
-      <div class="rpt-firm-name">Almaraz Ajustadores, S.A.</div>
-      <div class="rpt-firm-data">
-        Javier Chávez — Executive General Adjuster<br>
-        Cédula: C34388 &nbsp;|&nbsp; CDMX, México<br>
-        jchavez@ajustadores.com.mx &nbsp;|&nbsp; +52 (55) 6302-9178
-      </div>
-    </div>
+    ${logoHtml}
+    <div><div class="rpt-firm-name">Almaraz Ajustadores, S.A.</div>
+    <div class="rpt-firm-data">Javier Chávez — Executive General Adjuster<br>Cédula: C34388 &nbsp;|&nbsp; CDMX, México<br>jchavez@ajustadores.com.mx &nbsp;|&nbsp; +52 (55) 6302-9178</div></div>
   </div>
-  <div class="rpt-title">Reporte de Expediente — ${caso.exp}</div>
-  <div class="rpt-subtitle">Generado el ${now} &nbsp;|&nbsp; Estatus: <span class="rpt-badge ${badgeCls}">${EST_LABEL[caso.estatus]||caso.estatus}</span></div>`;
+  <div class="rpt-title">Reporte de Expediente — ${s.numero_exp}</div>
+  <div class="rpt-subtitle">Generado: ${now} &nbsp;|&nbsp; <span style="background:${badgeSt[s.estatus]||'#eee'};color:${badgeTxt[s.estatus]||'#333'};padding:1px 8px;border-radius:99px;font-size:10px;font-weight:600;">${EST[s.estatus]?.label||s.estatus}</span></div>`;
 
-  if (secs.includes('siniestro')) {
-    html += `<div class="rpt-section">
-      <div class="rpt-section-title">Datos del siniestro</div>
-      <div class="rpt-grid">
-        <div class="rpt-row"><span class="rpt-lbl">Asegurado</span><span class="rpt-val">${caso.asegurado||'—'}</span></div>
-        <div class="rpt-row"><span class="rpt-lbl">Tipo de siniestro</span><span class="rpt-val">${caso.tipo||'—'}</span></div>
-        <div class="rpt-row"><span class="rpt-lbl">Ubicación</span><span class="rpt-val">${caso.ubic||'—'}</span></div>
-        <div class="rpt-row"><span class="rpt-lbl">Moneda del caso</span><span class="rpt-val">${caso.moneda||'—'}</span></div>
-      </div></div>`;
+  if(secs.includes('siniestro')) h+=`<div class="rpt-sec"><div class="rpt-sec-title">Datos del siniestro</div>
+    <div class="rpt-g2">
+      <div class="rpt-row"><span class="rpt-lbl">Expediente</span><span class="rpt-val">${s.numero_exp}</span></div>
+      <div class="rpt-row"><span class="rpt-lbl">Tipo</span><span class="rpt-val">${s.tipo_siniestro||'—'}</span></div>
+      <div class="rpt-row"><span class="rpt-lbl">Causa</span><span class="rpt-val">${s.causa||'—'}</span></div>
+      <div class="rpt-row"><span class="rpt-lbl">Fecha del siniestro</span><span class="rpt-val">${fmtD(s.fecha_siniestro)}</span></div>
+      <div class="rpt-row"><span class="rpt-lbl">Asignación</span><span class="rpt-val">${fmtD(s.fecha_asignacion)}</span></div>
+      <div class="rpt-row"><span class="rpt-lbl">Inspección</span><span class="rpt-val">${fmtD(s.fecha_inspeccion)}</span></div>
+    </div>
+    ${s.descripcion?`<div class="rpt-nota" style="margin-top:6px;">${s.descripcion}</div>`:''}
+  </div>`;
+
+  if(secs.includes('poliza')) h+=`<div class="rpt-sec"><div class="rpt-sec-title">Póliza y cobertura</div>
+    <div class="rpt-g2">
+      <div class="rpt-row"><span class="rpt-lbl">No. de póliza</span><span class="rpt-val">${pol.numero||'—'}</span></div>
+      <div class="rpt-row"><span class="rpt-lbl">Ramo</span><span class="rpt-val">${RAMOS[pol.ramo]||pol.ramo||'—'}</span></div>
+      <div class="rpt-row"><span class="rpt-lbl">Asegurado</span><span class="rpt-val">${asdo.nombre||'—'}</span></div>
+      <div class="rpt-row"><span class="rpt-lbl">Aseguradora</span><span class="rpt-val">${aseg.nombre||'—'}</span></div>
+      <div class="rpt-row"><span class="rpt-lbl">Vigencia</span><span class="rpt-val">${fmtD(pol.vigencia_ini)} – ${fmtD(pol.vigencia_fin)}</span></div>
+      <div class="rpt-row"><span class="rpt-lbl">Suma asegurada</span><span class="rpt-val">${fmt(pol.suma_asegurada,pol.moneda)}</span></div>
+    </div></div>`;
+
+  if(secs.includes('financiero')) h+=`<div class="rpt-sec"><div class="rpt-sec-title">Resumen financiero</div>
+    <div class="rpt-g2">
+      <div class="rpt-row"><span class="rpt-lbl">Reserva vigente</span><span class="rpt-val">${fmtMXN(rv)}</span></div>
+      <div class="rpt-row"><span class="rpt-lbl">Pagos acumulados</span><span class="rpt-val">${fmtMXN(pags)}</span></div>
+      <div class="rpt-row"><span class="rpt-lbl">Saldo técnico</span><span class="rpt-val">${fmtMXN(rv-pags)}</span></div>
+      <div class="rpt-row"><span class="rpt-lbl">Honorarios acumulados</span><span class="rpt-val">${fmtMXN(hons)}</span></div>
+      <div class="rpt-row"><span class="rpt-lbl">Viáticos acumulados</span><span class="rpt-val">${fmtMXN(viats)}</span></div>
+      <div class="rpt-row"><span class="rpt-lbl">Exposición total</span><span class="rpt-val">${fmtMXN(rv+hons+viats)}</span></div>
+    </div></div>`;
+
+  if(secs.includes('reservas')){
+    const rows=data.res.filter(r=>r.id_siniestro===s.id);
+    h+=`<div class="rpt-sec"><div class="rpt-sec-title">Reservas por concepto</div>`;
+    if(rows.length) h+=`<table class="rpt-tbl"><thead><tr><th>Concepto</th><th>Monto</th><th>Moneda</th><th>Base MXN</th><th>Fecha</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${r.concepto||'—'}</td><td>${fmt(r.monto,r.moneda)}</td><td>${r.moneda}</td><td>${fmtMXN(r.monto_base_mxn)}</td><td>${fmtD(r.fecha)}</td></tr>`).join('')}</tbody></table>`;
+    else h+=`<p style="color:#999;font-size:11px;">Sin reservas registradas.</p>`;
+    h+=`</div>`;
   }
 
-  if (secs.includes('aseguradora')) {
-    html += `<div class="rpt-section">
-      <div class="rpt-section-title">Aseguradora y contacto</div>
-      <div class="rpt-grid">
-        <div class="rpt-row"><span class="rpt-lbl">Aseguradora</span><span class="rpt-val">${caso.aseguradora||'—'}</span></div>
-        <div class="rpt-row"><span class="rpt-lbl">Contacto</span><span class="rpt-val">${caso.contacto||'—'}</span></div>
-      </div></div>`;
+  if(secs.includes('pagos')){
+    const rows=data.pag.filter(p=>p.id_siniestro===s.id);
+    h+=`<div class="rpt-sec"><div class="rpt-sec-title">Pagos registrados</div>`;
+    if(rows.length) h+=`<table class="rpt-tbl"><thead><tr><th>Tipo</th><th>Beneficiario</th><th>Monto</th><th>Moneda</th><th>Base MXN</th><th>Fecha</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${r.tipo||'—'}</td><td>${r.beneficiario||'—'}</td><td>${fmt(r.monto,r.moneda)}</td><td>${r.moneda}</td><td>${fmtMXN(r.monto_base_mxn)}</td><td>${fmtD(r.fecha)}</td></tr>`).join('')}</tbody></table>`;
+    else h+=`<p style="color:#999;font-size:11px;">Sin pagos registrados.</p>`;
+    h+=`</div>`;
   }
 
-  if (secs.includes('montos')) {
-    html += `<div class="rpt-section">
-      <div class="rpt-section-title">Montos</div>
-      <div class="rpt-grid">
-        <div class="rpt-row"><span class="rpt-lbl">Monto reclamado</span><span class="rpt-val">${fmtR(caso.reclamado, caso.moneda)}</span></div>
-        <div class="rpt-row"><span class="rpt-lbl">Reserva estimada</span><span class="rpt-val">${fmtR(caso.reserva, caso.moneda)}</span></div>
-      </div></div>`;
+  if(secs.includes('honorarios')){
+    const rh=data.hon.filter(r=>r.id_siniestro===s.id);
+    const rv2=data.viat.filter(r=>r.id_siniestro===s.id);
+    h+=`<div class="rpt-sec"><div class="rpt-sec-title">Honorarios y viáticos</div>`;
+    if(rh.length) h+=`<table class="rpt-tbl"><thead><tr><th>Concepto</th><th>Pactado</th><th>Pagado</th><th>Moneda</th><th>Estatus</th></tr></thead><tbody>${rh.map(r=>`<tr><td>${r.concepto||'—'}</td><td>${fmt(r.monto,r.moneda)}</td><td>${fmt(r.pagado,r.moneda)}</td><td>${r.moneda}</td><td>${r.estatus||'—'}</td></tr>`).join('')}</tbody></table>`;
+    if(rv2.length) h+=`<br><table class="rpt-tbl"><thead><tr><th>Viático</th><th>Monto</th><th>Moneda</th><th>Base MXN</th><th>Fecha</th></tr></thead><tbody>${rv2.map(r=>`<tr><td>${r.descripcion||'—'}</td><td>${fmt(r.monto,r.moneda)}</td><td>${r.moneda}</td><td>${fmtMXN(r.monto_base_mxn)}</td><td>${fmtD(r.fecha)}</td></tr>`).join('')}</tbody></table>`;
+    if(!rh.length&&!rv2.length) h+=`<p style="color:#999;font-size:11px;">Sin registros.</p>`;
+    h+=`</div>`;
   }
 
-  if (secs.includes('fechas')) {
-    html += `<div class="rpt-section">
-      <div class="rpt-section-title">Fechas clave</div>
-      <div class="rpt-grid">
-        <div class="rpt-row"><span class="rpt-lbl">Asignación</span><span class="rpt-val">${fmtDateR(caso.fasig)}</span></div>
-        <div class="rpt-row"><span class="rpt-lbl">Inspección</span><span class="rpt-val">${fmtDateR(caso.finsp)}</span></div>
-        <div class="rpt-row"><span class="rpt-lbl">Límite de informe</span><span class="rpt-val">${fmtDateR(caso.finf)}</span></div>
-        <div class="rpt-row"><span class="rpt-lbl">Estatus actual</span><span class="rpt-val">${EST_LABEL[caso.estatus]||caso.estatus}</span></div>
-      </div></div>`;
+  if(secs.includes('actividades')){
+    const rows=data.act.filter(a=>a.id_siniestro===s.id).sort((a,b)=>a.id-b.id);
+    h+=`<div class="rpt-sec"><div class="rpt-sec-title">Actividades</div>`;
+    if(rows.length) rows.forEach(a=>{ h+=`<div style="margin-bottom:6px;"><div style="font-size:9px;color:#999;">${fmtD(a.fecha)} — ${a.tipo||''}</div><div class="rpt-nota">${a.descripcion||''}</div></div>`; });
+    else h+=`<p style="color:#999;font-size:11px;">Sin actividades registradas.</p>`;
+    h+=`</div>`;
   }
 
-  if (secs.includes('honorarios')) {
-    const pago = pagos.find(p => p.caso_id === caso.id);
-    const pendiente = pago ? (pago.monto - pago.pagado) : 0;
-    html += `<div class="rpt-section">
-      <div class="rpt-section-title">Honorarios y pagos</div>
-      <div class="rpt-grid">
-        <div class="rpt-row"><span class="rpt-lbl">Honorarios pactados</span><span class="rpt-val">${pago ? fmtR(pago.monto, pago.moneda) : '—'}</span></div>
-        <div class="rpt-row"><span class="rpt-lbl">Pagado</span><span class="rpt-val">${pago ? fmtR(pago.pagado, pago.moneda) : '—'}</span></div>
-        <div class="rpt-row"><span class="rpt-lbl">Pendiente de cobro</span><span class="rpt-val" style="color:${pendiente>0?'#854F0B':'#3B6D11'}">${pago ? fmtR(pendiente, pago.moneda) : '—'}</span></div>
-        <div class="rpt-row"><span class="rpt-lbl">Fecha de pago</span><span class="rpt-val">${pago && pago.fecha_pago ? fmtDateR(pago.fecha_pago) : '—'}</span></div>
-      </div></div>`;
+  if(secs.includes('documentos')){
+    const rows=data.doc.filter(d=>d.id_siniestro===s.id);
+    h+=`<div class="rpt-sec"><div class="rpt-sec-title">Documentos emitidos</div>`;
+    if(rows.length) h+=`<table class="rpt-tbl"><thead><tr><th>Tipo</th><th>Versión</th><th>Archivo</th><th>Fecha</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${r.tipo||'—'}</td><td>${r.numero_version||1}</td><td>${r.nombre_archivo||'—'}</td><td>${fmtD(r.fecha)}</td></tr>`).join('')}</tbody></table>`;
+    else h+=`<p style="color:#999;font-size:11px;">Sin documentos registrados.</p>`;
+    h+=`</div>`;
   }
 
-  if (secs.includes('informes')) {
-    const infs = informes.filter(i => i.caso_id === caso.id);
-    html += `<div class="rpt-section">
-      <div class="rpt-section-title">Informes enviados</div>`;
-    if (infs.length) {
-      html += `<table class="rpt-tbl"><thead><tr><th>No.</th><th>Tipo</th><th>Destinatario</th><th>Fecha</th><th>Estatus</th></tr></thead><tbody>`;
-      infs.forEach(i => {
-        html += `<tr><td>${i.num||'—'}</td><td>${i.tipo||'—'}</td><td>${i.dest||'—'}</td><td>${fmtDateR(i.fecha)}</td><td>${IEST_LABEL[i.estatus]||i.estatus}</td></tr>`;
-        if (i.resumen) html += `<tr><td colspan="5" style="color:#555;font-style:italic;padding:3px 8px 6px;">${i.resumen}</td></tr>`;
-      });
-      html += `</tbody></table>`;
-    } else { html += `<p style="color:#999;font-size:12px;">Sin informes registrados.</p>`; }
-    html += `</div>`;
-  }
-
-  if (secs.includes('bitacora')) {
-    const notas = bitacora.filter(b => b.caso_id === caso.id).sort((a,b) => a.id - b.id);
-    html += `<div class="rpt-section">
-      <div class="rpt-section-title">Bitácora de seguimiento</div>`;
-    if (notas.length) {
-      notas.forEach(n => {
-        html += `<div style="margin-bottom:8px;"><div style="font-size:10px;color:#999;margin-bottom:2px;">${fmtDateR(n.fecha)}</div><div class="rpt-nota">${n.nota}</div></div>`;
-      });
-    } else { html += `<p style="color:#999;font-size:12px;">Sin notas registradas.</p>`; }
-    html += `</div>`;
-  }
-
-  if (secs.includes('notas') && caso.notas) {
-    html += `<div class="rpt-section">
-      <div class="rpt-section-title">Notas iniciales</div>
-      <div class="rpt-nota">${caso.notas}</div>
-    </div>`;
-  }
-
-  html += `<div class="rpt-footer">
-    <span>Almaraz Ajustadores, S.A. — Javier Chávez, Executive General Adjuster — Cédula C34388</span>
-    <span>${caso.exp} — ${now}</span>
-  </div></div>`;
-
-  return html;
+  h+=`<div class="rpt-footer"><span>Almaraz Ajustadores, S.A. — Javier Chávez, Executive General Adjuster — Cédula C34388</span><span>${s.numero_exp} — ${now}</span></div></div>`;
+  return h;
 }
 
-function previsualizarReporte() {
-  const casoId = parseInt(document.getElementById('r-caso').value);
-  const prev = document.getElementById('r-preview');
-  if (!casoId) { prev.innerHTML = '<div class="loading">Selecciona un caso para previsualizar el reporte.</div>'; return; }
-  const caso = casos.find(c => c.id === casoId);
-  if (!caso) return;
-  const secs = seccionesActivas();
-  prev.innerHTML = `<div style="background:#fff;border-radius:8px;padding:24px;border:1px solid rgba(100,160,255,0.15);">${buildReportHTML(caso, secs)}</div>`;
+function previsualizarReporte(){
+  const id=parseInt(v('r-caso'));
+  const prev=g('r-preview');
+  if(!id){ prev.innerHTML='<div class="loading">Selecciona un expediente para previsualizar.</div>'; return; }
+  const s=data.sin.find(x=>x.id===id); if(!s) return;
+  prev.innerHTML=buildReporte(s,secsActivas());
 }
 
-function imprimirReporte() {
-  const casoId = parseInt(document.getElementById('r-caso').value);
-  if (!casoId) { toast('Selecciona un caso primero.'); return; }
-  const caso = casos.find(c => c.id === casoId);
-  if (!caso) return;
-  const secs = seccionesActivas();
-  const html = buildReportHTML(caso, secs);
-
-  const win = window.open('', '_blank');
-  win.document.write(`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
-  <title>Reporte ${caso.exp}</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Trebuchet MS', sans-serif; background: #fff; color: #111; padding: 15mm 15mm; font-size: 12px; line-height: 1.6; }
-    .rpt-header { display:flex; justify-content:space-between; align-items:flex-start; padding-bottom:12px; border-bottom:2px solid #1565c0; margin-bottom:16px; }
-    .rpt-logo { max-height:60px; max-width:160px; object-fit:contain; }
-    .rpt-firm { text-align:right; }
-    .rpt-firm-name { font-size:14px; font-weight:700; color:#1565c0; }
-    .rpt-firm-data { font-size:11px; color:#555; line-height:1.8; }
-    .rpt-title { font-size:16px; font-weight:700; color:#1565c0; margin-bottom:4px; }
-    .rpt-subtitle { font-size:12px; color:#777; margin-bottom:16px; }
-    .rpt-section { margin-bottom:14px; }
-    .rpt-section-title { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1565c0; border-bottom:1px solid #c5d8f5; padding-bottom:4px; margin-bottom:8px; }
-    .rpt-grid { display:grid; grid-template-columns:1fr 1fr; gap:4px 16px; }
-    .rpt-row { display:flex; justify-content:space-between; padding:3px 0; border-bottom:0.5px solid #eee; font-size:12px; }
-    .rpt-row:last-child { border-bottom:none; }
-    .rpt-lbl { color:#666; }
-    .rpt-val { font-weight:600; color:#111; text-align:right; }
-    .rpt-nota { font-size:12px; color:#333; background:#f5f8ff; border-left:3px solid #1565c0; padding:8px 12px; }
-    .rpt-tbl { width:100%; border-collapse:collapse; font-size:11px; margin-top:4px; }
-    .rpt-tbl th { background:#1565c0; color:#fff; padding:5px 8px; text-align:left; font-weight:600; }
-    .rpt-tbl td { padding:5px 8px; border-bottom:0.5px solid #dde; color:#222; }
-    .rpt-tbl tr:last-child td { border-bottom:none; }
-    .rpt-tbl tr:nth-child(even) td { background:#f5f8ff; }
-    .rpt-footer { margin-top:20px; padding-top:10px; border-top:1px solid #ddd; font-size:10px; color:#aaa; display:flex; justify-content:space-between; }
-    .rpt-badge { display:inline-block; padding:2px 8px; border-radius:99px; font-size:10px; font-weight:600; }
-    .rpt-s-asignado  { background:#E6F1FB; color:#0C447C; }
-    .rpt-s-inspeccion{ background:#FAEEDA; color:#633806; }
-    .rpt-s-informe   { background:#EEEDFE; color:#3C3489; }
-    .rpt-s-cobro     { background:#EAF3DE; color:#27500A; }
-    .rpt-s-cerrado   { background:#F1EFE8; color:#5F5E5A; }
-    @media print { @page { margin: 15mm; } body { padding: 0; } }
-  </style></head><body>${html}
-  <script>window.onload = () => { window.print(); }<\/script>
-  </body></html>`);
+function imprimirReporte(){
+  const id=parseInt(v('r-caso'));
+  if(!id){ toast('Selecciona un expediente primero.'); return; }
+  const s=data.sin.find(x=>x.id===id); if(!s) return;
+  const html=buildReporte(s,secsActivas());
+  const win=window.open('','_blank');
+  win.document.write(`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Reporte ${s.numero_exp}</title>
+  <style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:'Segoe UI',sans-serif;background:#fff;padding:15mm;font-size:12px;line-height:1.6;}
+  .rpt-wrap{color:#111;}.rpt-header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:10px;border-bottom:2px solid #1558b0;margin-bottom:14px;}
+  .rpt-logo{max-height:55px;max-width:150px;object-fit:contain;}.rpt-firm-name{font-size:13px;font-weight:700;color:#1558b0;text-align:right;}.rpt-firm-data{font-size:10px;color:#555;line-height:1.8;text-align:right;}
+  .rpt-title{font-size:15px;font-weight:700;color:#1558b0;margin-bottom:3px;}.rpt-subtitle{font-size:11px;color:#777;margin-bottom:14px;}
+  .rpt-sec{margin-bottom:12px;}.rpt-sec-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#1558b0;border-bottom:1px solid #c5d8f5;padding-bottom:3px;margin-bottom:7px;}
+  .rpt-g2{display:grid;grid-template-columns:1fr 1fr;gap:3px 14px;}.rpt-row{display:flex;justify-content:space-between;padding:2px 0;border-bottom:.5px solid #eee;font-size:11px;}.rpt-lbl{color:#666;}.rpt-val{font-weight:600;text-align:right;}
+  .rpt-nota{font-size:11px;background:#f5f8ff;border-left:3px solid #1558b0;padding:7px 10px;color:#333;margin-bottom:5px;}
+  .rpt-tbl{width:100%;border-collapse:collapse;font-size:10px;margin-top:4px;}.rpt-tbl th{background:#1558b0;color:#fff;padding:4px 7px;text-align:left;}.rpt-tbl td{padding:4px 7px;border-bottom:.5px solid #dde;}.rpt-tbl tr:nth-child(even) td{background:#f5f8ff;}
+  .rpt-footer{margin-top:16px;padding-top:8px;border-top:1px solid #ddd;font-size:9px;color:#aaa;display:flex;justify-content:space-between;}
+  @media print{@page{margin:15mm;}body{padding:0;}}</style></head>
+  <body>${html}<script>window.onload=()=>window.print();<\/script></body></html>`);
   win.document.close();
 }
 
-/* ── INIT: verificar sesión existente ── */
-(async () => {
-  const { data: { session } } = await db.auth.getSession();
-  if (session && ALLOWED.includes(session.user.email)) {
-    mostrarApp(session.user.email);
-  }
+/* ── NAV ── */
+function switchMain(tab,btn){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.topbar-mid .nav-btn').forEach(b=>b.classList.remove('active'));
+  g('panel-'+tab).classList.add('active'); btn.classList.add('active');
+  if(tab==='reportes') poblarSelectores();
+}
+
+/* ── INIT ── */
+(async()=>{
+  const {data:{session}}=await db.auth.getSession();
+  if(session&&ALLOWED.includes(session.user.email)) mostrarApp(session.user.email);
 })();
 </script>
 </body>
