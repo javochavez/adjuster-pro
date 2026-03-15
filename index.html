@@ -2433,10 +2433,10 @@ function imprimirReporte(){
   } else {
     html=buildInterno(s,secs);
   }
-  const win=window.open('','_blank');
-  win.document.write(html);
-  win.document.close();
-  setTimeout(()=>win.print(), 600);
+  const blob=new Blob([html],{type:'text/html;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const win=window.open(url,'_blank');
+  win.addEventListener('load',()=>{ win.print(); URL.revokeObjectURL(url); });
 }
 
 
@@ -3347,7 +3347,7 @@ async function descargarWordGNP(){
 
   // ── ESTIMACIÓN COBERTURAS (tabla 3 cols) ─────────────────────────────
   const bHdr={style:BorderStyle.SINGLE,size:4,color:'1F3864'};
-  const cobW=[CONTENT_W-3200,1600,1600];
+  const cobW=[CONTENT_W-4400,2200,2200];
   const cobHdr=(t,w)=>mkC(t,{w,bold:true,size:17,bg:'1F3864',color:'FFFFFF',align:AlignmentType.CENTER});
   const cobLbl=(t)=>mkC(t,{w:cobW[0],size:17,bg:'E8EDF5',bold:true});
   const cobVal=(t,idx)=>mkC(t,{w:cobW[idx],size:17,align:AlignmentType.RIGHT});
@@ -3635,10 +3635,17 @@ function buildFormalGenerico(s, secs, aseg){
     .firma-cnsf{font-size:9px;color:#555;}
 
     @media print{
-      @page{margin:15mm 12mm 15mm 15mm;}
+      @page{
+        margin:15mm 12mm 15mm 15mm;
+        /* Suppress browser default header/footer (URL, page number) */
+        margin-header:0;
+        margin-footer:0;
+      }
       body{padding:0;}
       .no-break{page-break-inside:avoid;}
     }
+    /* Chrome/Edge: hide browser-injected header/footer */
+    @page { size: auto; margin: 15mm 12mm 15mm 15mm; }
   `;
 
   // ── Helper: fila de portada ────────────────────────────────────────
