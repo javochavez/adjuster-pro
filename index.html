@@ -2853,12 +2853,15 @@ async function descargarWord(){
 
   portRows.push(new TableRow({children:[
     new TableCell({columnSpan:4,borders:allB,shading:{fill:GRAY,type:ShadingType.CLEAR},
-      margins:{top:80,bottom:80,left:120,right:120},
+      margins:{top:100,bottom:100,left:160,right:160},
       children:[
-        para2([txt(aseg.nombre||'',{bold:true,size:20})],{sb:20,sa:10}),
-        para2([txt('Presente',{size:20})],{sb:0,sa:10}),
+        // Aseguradora: 14pt (size:28), negrita
+        para2([txt(aseg.nombre||'',{bold:true,size:28,color:'000000'})],{sb:20,sa:60}),
+        para2([txt('Presente',{size:20})],{sb:0,sa:0}),
+        // Espacio en blanco antes del destinatario
+        para2([txt('')],{sb:0,sa:0}),
         ...(lastInf.destinatario?[
-          para2([txt(lastInf.destinatario,{bold:true,size:20})],{sb:10,sa:0}),
+          para2([txt(lastInf.destinatario,{bold:true,size:20})],{sb:60,sa:0}),
           para2([txt(lastInf.jefe_depto||'Siniestros Daños',{size:20})],{sb:0,sa:20}),
         ]:[]),
       ]})]}));
@@ -2871,10 +2874,116 @@ async function descargarWord(){
   portRows.push(fullRow('DOMICILIO FISCAL',pol.domicilio_legal||''));
   portRows.push(fullRow('GIRO DEL NEGOCIO:',s.giro_asegurado||''));
 
-  portRows.push(new TableRow({children:[lbl('FECHAS',COL[0]),lbl('VIGENCIA',COL[1]),lbl('SINIESTRO',COL[2]),lbl('ASIGNACION.',COL[3])]}));
-  portRows.push(new TableRow({children:[mkCell('',{w:COL[0],borders:noB}),val(fD(pol.vigencia_ini)+' al '+fD(pol.vigencia_fin),COL[1]),val(fD(s.fecha_siniestro),COL[2]),val(fD(s.fecha_asignacion),COL[3])]}));
-  portRows.push(new TableRow({children:[mkCell('',{w:COL[0],borders:noB}),lbl('PRIMER CONTACTO',COL[1]),lbl('PRIMERA INSPECCIÓN',COL[2]),mkCell('',{w:COL[3],borders:noB})]}));
-  portRows.push(new TableRow({children:[mkCell('',{w:COL[0],borders:noB}),val(fD(s.fecha_primer_contacto),COL[1]),val(fD(s.fecha_primera_visita),COL[2]),mkCell('',{w:COL[3],borders:noB})]}));
+  // ── FECHAS: tabla interior 6 columnas (3 pares etiqueta+valor) ──────
+  // Columnas: [lbl vigencia | val vigencia | lbl siniestro | val siniestro | lbl asignacion | val asignacion]
+  const FC=[1280,2220,1280,1280,1280,1504]; // suma = CONTENT_W = 10144 ≈ 10144
+  portRows.push(new TableRow({children:[
+    new TableCell({columnSpan:4,borders:allB,
+      width:{size:CONTENT_W,type:WidthType.DXA},
+      margins:{top:0,bottom:0,left:0,right:0},
+      children:[
+        new Table({
+          width:{size:CONTENT_W-8,type:WidthType.DXA},
+          columnWidths:FC,
+          borders:{top:bNone,bottom:bNone,left:bNone,right:bNone,insideH:bNone,
+                   insideV:{style:BorderStyle.SINGLE,size:4,color:'CCCCCC'}},
+          rows:[
+            // Fila 1: etiquetas
+            new TableRow({children:[
+              new TableCell({width:{size:FC[0],type:WidthType.DXA},
+                shading:{fill:'BDD7EE',type:ShadingType.CLEAR},borders:noB,
+                margins:{top:60,bottom:40,left:120,right:60},
+                children:[new Paragraph({children:[txt('VIGENCIA',{bold:true,size:16,color:'1F3864'})],spacing:{before:0,after:0}})]}),
+              new TableCell({width:{size:FC[1],type:WidthType.DXA},
+                shading:{fill:'BDD7EE',type:ShadingType.CLEAR},borders:noB,
+                margins:{top:60,bottom:40,left:60,right:120},
+                children:[new Paragraph({children:[txt('',{size:16})],spacing:{before:0,after:0}})]}),
+              new TableCell({width:{size:FC[2],type:WidthType.DXA},
+                shading:{fill:'BDD7EE',type:ShadingType.CLEAR},borders:noB,
+                margins:{top:60,bottom:40,left:120,right:60},
+                children:[new Paragraph({children:[txt('SINIESTRO',{bold:true,size:16,color:'1F3864'})],spacing:{before:0,after:0}})]}),
+              new TableCell({width:{size:FC[3],type:WidthType.DXA},
+                shading:{fill:'BDD7EE',type:ShadingType.CLEAR},borders:noB,
+                margins:{top:60,bottom:40,left:60,right:120},
+                children:[new Paragraph({children:[txt('',{size:16})],spacing:{before:0,after:0}})]}),
+              new TableCell({width:{size:FC[4],type:WidthType.DXA},
+                shading:{fill:'BDD7EE',type:ShadingType.CLEAR},borders:noB,
+                margins:{top:60,bottom:40,left:120,right:60},
+                children:[new Paragraph({children:[txt('ASIGNACIÓN',{bold:true,size:16,color:'1F3864'})],spacing:{before:0,after:0}})]}),
+              new TableCell({width:{size:FC[5],type:WidthType.DXA},
+                shading:{fill:'BDD7EE',type:ShadingType.CLEAR},borders:noB,
+                margins:{top:60,bottom:40,left:60,right:120},
+                children:[new Paragraph({children:[txt('',{size:16})],spacing:{before:0,after:0}})]}),
+            ]}),
+            // Fila 2: valores
+            new TableRow({children:[
+              new TableCell({width:{size:FC[0],type:WidthType.DXA},borders:noB,
+                margins:{top:40,bottom:40,left:120,right:60},
+                children:[new Paragraph({children:[txt('Del',{size:18,color:'555555'})],spacing:{before:0,after:0}})]}),
+              new TableCell({width:{size:FC[1],type:WidthType.DXA},borders:noB,
+                margins:{top:40,bottom:40,left:60,right:120},
+                children:[new Paragraph({children:[txt(fD(pol.vigencia_ini)+' al '+fD(pol.vigencia_fin),{size:18,bold:true})],spacing:{before:0,after:0}})]}),
+              new TableCell({width:{size:FC[2],type:WidthType.DXA},borders:noB,
+                margins:{top:40,bottom:40,left:120,right:60},
+                children:[new Paragraph({children:[txt('',{size:18})],spacing:{before:0,after:0}})]}),
+              new TableCell({width:{size:FC[3],type:WidthType.DXA},borders:noB,
+                margins:{top:40,bottom:40,left:60,right:120},
+                children:[new Paragraph({children:[txt(fD(s.fecha_siniestro),{size:18,bold:true})],spacing:{before:0,after:0}})]}),
+              new TableCell({width:{size:FC[4],type:WidthType.DXA},borders:noB,
+                margins:{top:40,bottom:40,left:120,right:60},
+                children:[new Paragraph({children:[txt('',{size:18})],spacing:{before:0,after:0}})]}),
+              new TableCell({width:{size:FC[5],type:WidthType.DXA},borders:noB,
+                margins:{top:40,bottom:40,left:60,right:120},
+                children:[new Paragraph({children:[txt(fD(s.fecha_asignacion),{size:18,bold:true})],spacing:{before:0,after:0}})]}),
+            ]}),
+            // Separador
+            new TableRow({children:[
+              new TableCell({columnSpan:6,borders:{top:{style:BorderStyle.SINGLE,size:2,color:'CCCCCC'},bottom:bNone,left:bNone,right:bNone},
+                width:{size:CONTENT_W-8,type:WidthType.DXA},
+                margins:{top:0,bottom:0,left:0,right:0},
+                children:[new Paragraph({children:[txt('')],spacing:{before:0,after:0}})]}),
+            ]}),
+            // Fila 3: etiquetas fila 2
+            new TableRow({children:[
+              new TableCell({width:{size:FC[0],type:WidthType.DXA},
+                shading:{fill:'BDD7EE',type:ShadingType.CLEAR},borders:noB,
+                margins:{top:40,bottom:40,left:120,right:60},
+                children:[new Paragraph({children:[txt('1er CONTACTO',{bold:true,size:16,color:'1F3864'})],spacing:{before:0,after:0}})]}),
+              new TableCell({width:{size:FC[1],type:WidthType.DXA},
+                shading:{fill:'BDD7EE',type:ShadingType.CLEAR},borders:noB,
+                margins:{top:40,bottom:40,left:60,right:120},
+                children:[new Paragraph({children:[txt('',{size:16})],spacing:{before:0,after:0}})]}),
+              new TableCell({width:{size:FC[2],type:WidthType.DXA},
+                shading:{fill:'BDD7EE',type:ShadingType.CLEAR},borders:noB,
+                margins:{top:40,bottom:40,left:120,right:60},
+                children:[new Paragraph({children:[txt('1a. INSPECCIÓN',{bold:true,size:16,color:'1F3864'})],spacing:{before:0,after:0}})]}),
+              new TableCell({width:{size:FC[3]+FC[4]+FC[5],type:WidthType.DXA},
+                columnSpan:3,shading:{fill:'BDD7EE',type:ShadingType.CLEAR},borders:noB,
+                margins:{top:40,bottom:40,left:60,right:120},
+                children:[new Paragraph({children:[txt('',{size:16})],spacing:{before:0,after:0}})]}),
+            ]}),
+            // Fila 4: valores fila 2
+            new TableRow({children:[
+              new TableCell({width:{size:FC[0],type:WidthType.DXA},borders:noB,
+                margins:{top:40,bottom:60,left:120,right:60},
+                children:[new Paragraph({children:[txt('',{size:18})],spacing:{before:0,after:0}})]}),
+              new TableCell({width:{size:FC[1],type:WidthType.DXA},borders:noB,
+                margins:{top:40,bottom:60,left:60,right:120},
+                children:[new Paragraph({children:[txt(fD(s.fecha_primer_contacto),{size:18,bold:true})],spacing:{before:0,after:0}})]}),
+              new TableCell({width:{size:FC[2],type:WidthType.DXA},borders:noB,
+                margins:{top:40,bottom:60,left:120,right:60},
+                children:[new Paragraph({children:[txt('',{size:18})],spacing:{before:0,after:0}})]}),
+              new TableCell({width:{size:FC[3],type:WidthType.DXA},borders:noB,
+                margins:{top:40,bottom:60,left:60,right:120},
+                children:[new Paragraph({children:[txt(fD(s.fecha_primera_visita),{size:18,bold:true})],spacing:{before:0,after:0}})]}),
+              new TableCell({width:{size:FC[4]+FC[5],type:WidthType.DXA},columnSpan:2,borders:noB,
+                margins:{top:40,bottom:60,left:120,right:120},
+                children:[new Paragraph({children:[txt('')],spacing:{before:0,after:0}})]}),
+            ]}),
+          ],
+        }),
+      ]}),
+  ]}));
 
   portRows.push(fullRow('LUGAR DEL EVENTO:',s.lugar_siniestro||pol.ubicacion_riesgo||''));
   portRows.push(fullRow('BREVE NARRACION DE LOS HECHOS:',s.descripcion||''));
