@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sistema de Gestión de Ajuste de Siniestros</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js"></script>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
@@ -358,7 +359,8 @@ td { padding:9px 10px; vertical-align:middle; }
               <input type="file" id="r-logo" accept="image/*" onchange="cargarLogo(this)" style="font-size:11px;padding:4px 6px;"></div>
             <div style="display:flex;flex-direction:column;gap:6px;">
               <button class="btn btn-primary" onclick="imprimirReporte()" style="width:100%;">Imprimir / Guardar PDF</button>
-              <div style="font-size:10px;color:var(--text-ter);text-align:center;">Selecciona "Guardar como PDF"<br>en el diálogo de impresión</div>
+              <button class="btn" onclick="descargarWord()" style="width:100%;font-size:12px;">Descargar Word (.docx)</button>
+              <div style="font-size:10px;color:var(--text-ter);text-align:center;">PDF: selecciona "Guardar como PDF"<br>en el diálogo de impresión</div>
             </div>
           </div>
           <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:1.1rem;overflow:auto;">
@@ -1891,7 +1893,288 @@ function buildFormalGenerico(s, secs, aseg){
   return h;
 }
 
-/* ── NAV ── */
+/* ── WORD (.docx) ── */
+async function descargarWord(){
+  const id=parseInt(v('r-caso'));
+  if(!id){ toast('Selecciona un expediente primero.'); return; }
+  const s=data.sin.find(x=>x.id===id); if(!s) return;
+  toast('Generando archivo Word…');
+
+  const { Document, Packer, Paragraph, Table, TableRow, TableCell, TextRun, HeadingLevel,
+          AlignmentType, WidthType, BorderStyle, ShadingType, Header, Footer,
+          TabStopPosition, TabStopType } = docx;
+
+  const pol=data.pol.find(p=>p.id===s.id_poliza)||{};
+  const asdo=data.asdo.find(a=>a.id===pol.id_asegurado)||{};
+  const aseg=data.aseg.find(a=>a.id===pol.id_aseguradora)||{};
+  const now=new Date().toLocaleDateString('es-MX',{day:'2-digit',month:'long',year:'numeric'});
+  const secs=secsActivas();
+  const gnp=esGNP(s);
+  const lastInf=data.inf.filter(i=>i.id_siniestro===s.id).sort((a,b)=>b.id-a.id)[0]||{};
+  const INF_T={preliminar:'INFORME PRELIMINAR',actualizacion:'INFORME DE ACTUALIZACIÓN',final:'INFORME FINAL',nota_tecnica:'NOTA TÉCNICA'};
+  const tipoTitulo=(tipoReporte==='interno'?'RESUMEN INTERNO DE EXPEDIENTE':INF_T[lastInf.tipo||'preliminar'])||'INFORME PRELIMINAR';
+
+  // Calculos financieros
+  const resRows=data.res.filter(r=>r.id_siniestro===s.id);
+  const resVig={};
+  resRows.forEach(r=>{if(!resVig[r.concepto]||r.id>resVig[r.concepto].id)resVig[r.concepto]=r;});
+  const reservaBruta=Object.values(resVig).reduce((a,r)=>a+(r.monto||0),0);
+  const perdidaEst=Object.values(resVig).reduce((a,r)=>a+(r.monto_perdida_estimada||r.monto||0),0);
+  const deducible=Object.values(resVig).reduce((a,r)=>a+(r.deducible||0),0);
+  const deps=Object.values(resVig);
+  const depPct=deps.length?(deps.reduce((a,r)=>a+(r.depreciacion_pct||0),0)/deps.length).toFixed(2):'0.00';
+  const rv=reservaVigente(s.id);
+  const pagsTotal=data.pag.filter(p=>p.id_siniestro===s.id).reduce((a,p)=>a+toMXN(p.monto,p.moneda,p.tipo_cambio_mxn),0);
+  const honsTotal=data.hon.filter(h=>h.id_siniestro===s.id).reduce((a,h)=>a+toMXN(h.monto,h.moneda,h.tipo_cambio_mxn),0);
+  const viatsTotal=data.viat.filter(v2=>v2.id_siniestro===s.id).reduce((a,v2)=>a+toMXN(v2.monto,v2.moneda,v2.tipo_cambio_mxn),0);
+  const honAjust=data.hon.filter(h=>h.id_siniestro===s.id).reduce((a,h)=>a+(h.monto||0),0);
+  const honPeritos=data.pag.filter(p=>p.id_siniestro===s.id&&p.tipo==='honorarios_peritos').reduce((a,p)=>a+(p.monto||0),0);
+  const gasAjuste=data.pag.filter(p=>p.id_siniestro===s.id&&p.tipo==='viaticos').reduce((a,p)=>a+(p.monto||0),0);
+  const bases=Object.values(resVig).map(r=>r.bases_determinacion).filter(Boolean).join(' ');
+
+  // Helpers
+  const px=(txt,opts={})=>new Paragraph({children:[new TextRun({text:String(txt||''),size:20,...opts})], spacing:{after:80}});
+  const ph=(txt,level=2)=>new Paragraph({text:String(txt||''),heading:HeadingLevel['HEADING_'+level],spacing:{before:160,after:80}});
+  const bold=(txt)=>new TextRun({text:String(txt||''),bold:true,size:20});
+  const norm=(txt)=>new TextRun({text:String(txt||''),size:20});
+  const BLUE='1558B0';
+  const LGRAY='F0F0F0';
+
+  const cellLbl=(txt,w=25)=>new TableCell({width:{size:w,type:WidthType.PERCENTAGE},shading:{type:ShadingType.SOLID,color:LGRAY},children:[new Paragraph({children:[bold(txt)],spacing:{after:0}})]});
+  const cellVal=(txt,w=25,span=1)=>new TableCell({width:{size:w,type:WidthType.PERCENTAGE},columnSpan:span,children:[new Paragraph({children:[norm(txt)],spacing:{after:0}})]});
+  const cellHdr=(txt,w=25)=>new TableCell({width:{size:w,type:WidthType.PERCENTAGE},shading:{type:ShadingType.SOLID,color:BLUE},children:[new Paragraph({children:[new TextRun({text:String(txt||''),bold:true,size:18,color:'FFFFFF'})],alignment:AlignmentType.CENTER,spacing:{after:0}})]});
+  const cellNum=(txt,w=25)=>new TableCell({width:{size:w,type:WidthType.PERCENTAGE},children:[new Paragraph({children:[norm(String(txt||''))],alignment:AlignmentType.RIGHT,spacing:{after:0}})]});
+  const cellNumBold=(txt,w=25,bg=null)=>{
+    const cell=new TableCell({width:{size:w,type:WidthType.PERCENTAGE},children:[new Paragraph({children:[bold(String(txt||''))],alignment:AlignmentType.RIGHT,spacing:{after:0}})]});
+    return cell;
+  };
+
+  const idRow=(lbl1,val1,lbl2,val2)=>new TableRow({children:[cellLbl(lbl1,20),cellVal(val1,30),cellLbl(lbl2,20),cellVal(val2,30)]});
+
+  const children=[];
+
+  // ENCABEZADO
+  children.push(new Paragraph({children:[new TextRun({text:'ALMARAZ AJUSTADORES, S.A.',bold:true,size:28,color:BLUE})],spacing:{after:40}}));
+  children.push(new Paragraph({children:[new TextRun({text:'Calle Miguel Hidalgo 61, Oficina 3 | Col. San Jerónimo Lídice | C.P. 10200 CDMX | PBX +52 55 5593-8823 | aasa.mexico@aasa.com.mx',size:16,color:'555555'})],spacing:{after:40}}));
+  children.push(new Paragraph({children:[new TextRun({text:'',size:4})],border:{bottom:{style:BorderStyle.SINGLE,size:8,color:BLUE}},spacing:{after:160}}));
+  children.push(new Paragraph({children:[new TextRun({text:tipoTitulo,bold:true,size:32,color:BLUE})],alignment:AlignmentType.RIGHT,spacing:{after:80}}));
+  children.push(new Paragraph({children:[new TextRun({text:now,size:20,color:'555555'})],alignment:AlignmentType.RIGHT,spacing:{after:240}}));
+
+  if(tipoReporte!=='interno'){
+    // DESTINATARIO
+    children.push(px(`AT´N: ${lastInf.destinatario||'_______________________'}`));
+    if(lastInf.jefe_depto) children.push(px(`          ${lastInf.jefe_depto}`));
+    children.push(px('          PRESENTE'));
+    children.push(new Paragraph({spacing:{after:160}}));
+  }
+
+  // SECCIÓN IDENTIFICACIÓN
+  if(secs.includes('identificacion')){
+    if(tipoReporte==='interno'){
+      children.push(ph('DATOS DEL EXPEDIENTE'));
+      children.push(new Table({width:{size:100,type:WidthType.PERCENTAGE},rows:[
+        idRow('No. Expediente',s.numero_exp,'No. Siniestro',s.numero_siniestro||''),
+        idRow('Aseguradora',aseg.nombre||'','Póliza',pol.numero||''),
+        idRow('Ramo',RAMOS[pol.ramo]||pol.ramo||'','Subramo',pol.subramo||s.subramo||''),
+        idRow('Asegurado',asdo.nombre||'','Estatus',EST[s.estatus]?.label||s.estatus),
+        idRow('Trámite / OT',s.tramite_gnp||s.ot||'','Ref. ajustadora',s.referencia_ajustadora||''),
+        idRow('Causa',s.causa||'','Riesgo afectado',s.riesgo_afectado||''),
+      ]}));
+    } else if(gnp){
+      children.push(new Table({width:{size:100,type:WidthType.PERCENTAGE},rows:[
+        idRow('No. Siniestro',s.numero_siniestro||'','Jefe Depto',lastInf.jefe_depto||''),
+        new TableRow({children:[cellLbl('No. Trámite',15),cellVal(s.tramite_gnp||'',20),cellLbl('Oficina',15),cellVal(pol.oficina||lastInf.oficina_cia||'',15),cellLbl('Póliza',10),cellVal(pol.numero||'',25)]}),
+        new TableRow({children:[cellLbl('Ramo',15),cellVal(RAMOS[pol.ramo]||pol.ramo||'',20),cellLbl('Subramo',15),cellVal(pol.subramo||s.subramo||'',15),cellLbl('Vigencia',10),cellVal(`Del ${fmtD(pol.vigencia_ini)} Al ${fmtD(pol.vigencia_fin)}`,25)]}),
+        idRow('Fecha de siniestro',fmtD(s.fecha_siniestro),'Agente',pol.agente||''),
+        new TableRow({children:[cellLbl('Asegurado',15),cellVal(asdo.nombre||'',50,3),cellLbl('Ref. Asegurado',15),cellVal(s.referencia_asegurado||'',20)]}),
+        new TableRow({children:[cellLbl('Importe reclamado',15),cellVal(perdidaEst?fmtMXN(perdidaEst):'Pendiente',20),cellLbl('Moneda',15),cellVal(pol.moneda||'MXN',15),cellLbl('Clave ajust.',10),cellVal(s.clave_ajustador_cia||'',25)]}),
+        idRow('Ref. ajustadora',s.referencia_ajustadora||'','Giro del asegurado',s.giro_asegurado||''),
+        new TableRow({children:[cellLbl('Causa del siniestro',15),cellVal(s.causa||'',35),cellLbl('Comentario',15),cellVal(s.causa_comentario||'',35)]}),
+        idRow('Clave evento (cat.)',s.clave_evento_catastrofico||'','Riesgo afectado',s.riesgo_afectado||''),
+      ]}));
+    } else {
+      children.push(new Table({width:{size:100,type:WidthType.PERCENTAGE},rows:[
+        idRow('No. Expediente',s.numero_exp,'No. Siniestro',s.numero_siniestro||''),
+        idRow('Aseguradora',aseg.nombre||'','Póliza',pol.numero||''),
+        idRow('Ramo',RAMOS[pol.ramo]||pol.ramo||'','Subramo',pol.subramo||s.subramo||''),
+        idRow('Vigencia',`Del ${fmtD(pol.vigencia_ini)} Al ${fmtD(pol.vigencia_fin)}`,'Agente',pol.agente||''),
+        new TableRow({children:[cellLbl('Asegurado',20),cellVal(asdo.nombre||'',80,3)]}),
+        idRow('Fecha de siniestro',fmtD(s.fecha_siniestro),'Giro del asegurado',s.giro_asegurado||''),
+        new TableRow({children:[cellLbl('Causa del siniestro',20),cellVal((s.causa||'')+(s.causa_comentario?' — '+s.causa_comentario:''),80,3)]}),
+      ]}));
+    }
+    children.push(new Paragraph({spacing:{after:160}}));
+  }
+
+  // SECCIÓN FINANCIERA / ESTIMACIÓN
+  if(secs.includes('estimacion')||secs.includes('financiero')){
+    if(tipoReporte==='interno'){
+      children.push(ph('RESUMEN FINANCIERO'));
+      children.push(new Table({width:{size:100,type:WidthType.PERCENTAGE},rows:[
+        new TableRow({children:[cellHdr('Concepto',50),cellHdr('Importe MXN',50)]}),
+        new TableRow({children:[cellLbl('Reserva vigente',50),cellNum(fmtMXN(rv),50)]}),
+        new TableRow({children:[cellLbl('Pagos acumulados',50),cellNum(fmtMXN(pagsTotal),50)]}),
+        new TableRow({children:[cellLbl('Saldo técnico',50),cellNum(fmtMXN(rv-pagsTotal),50)]}),
+        new TableRow({children:[cellLbl('Honorarios acumulados',50),cellNum(fmtMXN(honsTotal),50)]}),
+        new TableRow({children:[cellLbl('Viáticos acumulados',50),cellNum(fmtMXN(viatsTotal),50)]}),
+        new TableRow({children:[cellLbl('Exposición total',50),cellNumBold(fmtMXN(rv+honsTotal+viatsTotal),50)]}),
+      ]}));
+    } else {
+      children.push(ph(gnp?'1  ESTIMACIÓN POR COBERTURAS Y SECCIONES':'ESTIMACIÓN FINANCIERA'));
+      children.push(new Table({width:{size:100,type:WidthType.PERCENTAGE},rows:[
+        new TableRow({children:[cellHdr('Coberturas o secciones',40),cellHdr(pol.subramo||s.subramo||'Cobertura 1',30),cellHdr(`Estimación total – ${pol.moneda||'MXN'}`,30)]}),
+        new TableRow({children:[cellLbl('Reserva bruta',40),cellNum(fmtMXN(reservaBruta),30),cellNum(fmtMXN(reservaBruta),30)]}),
+        new TableRow({children:[new TableCell({columnSpan:3,children:[new Paragraph({children:[new TextRun({text:`Depreciación ${depPct}% promedio`,size:18,italics:true,color:'555555'})],spacing:{after:0}})]})]},),
+        new TableRow({children:[cellLbl('Monto Pérdida Estimada',40),cellNumBold(fmtMXN(perdidaEst),30),cellNumBold(fmtMXN(perdidaEst),30)]}),
+        new TableRow({children:[cellLbl('Deducible',40),cellNum(fmtMXN(deducible),30),cellNum(fmtMXN(deducible),30)]}),
+        new TableRow({children:[new TableCell({shading:{type:ShadingType.SOLID,color:'E8F0FE'},children:[new Paragraph({children:[bold('Reserva Neta')],spacing:{after:0}})],...{width:{size:40,type:WidthType.PERCENTAGE}}}),new TableCell({shading:{type:ShadingType.SOLID,color:'E8F0FE'},children:[new Paragraph({children:[bold(fmtMXN(perdidaEst-deducible))],alignment:AlignmentType.RIGHT,spacing:{after:0}})],width:{size:30,type:WidthType.PERCENTAGE}}),new TableCell({shading:{type:ShadingType.SOLID,color:'E8F0FE'},children:[new Paragraph({children:[bold(fmtMXN(perdidaEst-deducible))],alignment:AlignmentType.RIGHT,spacing:{after:0}})],width:{size:30,type:WidthType.PERCENTAGE}})]}),
+      ]}));
+      if(bases){
+        children.push(new Paragraph({spacing:{after:60}}));
+        children.push(new Table({width:{size:100,type:WidthType.PERCENTAGE},rows:[
+          new TableRow({children:[new TableCell({shading:{type:ShadingType.SOLID,color:'F5F8FF'},children:[
+            new Paragraph({children:[bold('Especificar las bases que se tomaron para determinar la reserva')],spacing:{after:60}}),
+            new Paragraph({children:[norm(bases)],spacing:{after:0}})
+          ]})]}),
+        ]}));
+      }
+      if(gnp){
+        children.push(new Paragraph({spacing:{after:80}}));
+        children.push(new Table({width:{size:100,type:WidthType.PERCENTAGE},rows:[
+          new TableRow({children:[cellLbl('Honorarios ajustadores',50),cellNum(`$${fmtMXN(honAjust)} M.N.`,50)]}),
+          new TableRow({children:[cellLbl('Honorarios peritos y/o asesor',50),cellNum(`$${fmtMXN(honPeritos)} M.N.`,50)]}),
+          new TableRow({children:[cellLbl('Gastos ajuste',50),cellNum(`$${fmtMXN(gasAjuste)} M.N.`,50)]}),
+          new TableRow({children:[cellLbl('Gastos peritos y/o asesor',50),cellNum('$0.00 M.N.',50)]}),
+        ]}));
+      }
+    }
+    children.push(new Paragraph({spacing:{after:160}}));
+  }
+
+  // COASEGURO
+  if(secs.includes('coaseguro')&&tipoReporte!=='interno'){
+    children.push(ph(gnp?'2  COASEGURO':'COASEGURO'));
+    children.push(px(s.coaseguro?(s.coaseguro_detalle||'Sí existe coaseguro.'):'No se indica ninguno en la Póliza.'));
+  }
+
+  // REASEGURO
+  if(secs.includes('reaseguro')&&tipoReporte!=='interno'){
+    children.push(ph(gnp?'3  REASEGURO':'REASEGURO'));
+    children.push(px(`Existe cláusula de control o cooperación de reclamos   SI ( ${s.reaseguro_clausula_control?'X':' '} )   NO ( ${!s.reaseguro_clausula_control?'X':' '} )`));
+    children.push(px(`Corredor de Reaseguro: ${s.reaseguro_corredor||''}`));
+  }
+
+  // INSPECCIÓN
+  if(secs.includes('inspeccion')){
+    children.push(ph(gnp?'4  RESULTADO DE LA INSPECCIÓN':(tipoReporte==='interno'?'INSPECCIÓN':'RESULTADO DE LA INSPECCIÓN')));
+    children.push(new Table({width:{size:100,type:WidthType.PERCENTAGE},rows:[
+      idRow('Fecha y hora de inspección',`${fmtD(s.fecha_inspeccion)}${s.hora_primera_visita?' a las '+s.hora_primera_visita.slice(0,5):''}`.trim(),'Persona entrevistada',s.inspeccion_persona||''),
+      idRow('Cargo',s.inspeccion_cargo||'','Teléfono',s.inspeccion_telefono||''),
+      new TableRow({children:[cellLbl('Domicilio asegurado',20),cellVal(s.inspeccion_domicilio||'',80,3)]}),
+      new TableRow({children:[cellLbl('Bienes dañados',20),cellVal(s.bienes_danados||'',80,3)]}),
+      idRow('Intervención de autoridades',s.intervencion_autoridades?'Sí':'No','Salvamento',{si:'Sí',no:'No',por_determinar:'Por determinar'}[s.salvamento||'por_determinar']),
+    ]}));
+    children.push(new Paragraph({spacing:{after:160}}));
+  }
+
+  // DESARROLLO DEL SINIESTRO
+  if(secs.includes('desarrollo')){
+    children.push(ph(gnp?'5  DESARROLLO DETALLADO DEL SINIESTRO':'DESARROLLO DEL SINIESTRO'));
+    const texto=lastInf.desarrollo_siniestro||s.descripcion||'Pendiente de redactar.';
+    texto.split('\n').forEach(linea=>children.push(px(linea)));
+    children.push(new Paragraph({spacing:{after:160}}));
+  }
+
+  // SALVAMENTO Y RECUPERACIÓN
+  if(secs.includes('salvamento')&&tipoReporte!=='interno'){
+    const salvTxt={si:'SI ( X )  NO ( )  POR DETERMINAR ( )',no:'SI ( )  NO ( X )  POR DETERMINAR ( )',por_determinar:'SI ( )  NO ( )  POR DETERMINAR ( X )'}[s.salvamento||'por_determinar'];
+    children.push(ph(gnp?'6  SALVAMENTO':'SALVAMENTO'));
+    children.push(px(salvTxt));
+    if(s.salvamento_detalle) children.push(px(s.salvamento_detalle));
+    children.push(ph(gnp?'7  RECUPERACIÓN':'RECUPERACIÓN'));
+    children.push(px(s.recuperacion?'SI ( X )  NO ( )':'SI ( )  NO ( X )'));
+    if(s.recuperacion_terceros) children.push(px(`Terceros responsables: ${s.recuperacion_terceros}`));
+    children.push(new Paragraph({spacing:{after:160}}));
+  }
+
+  // ESTRATEGIAS
+  if(secs.includes('estrategias')){
+    const estrat=lastInf.estrategias||s.estrategias_observaciones||'';
+    if(estrat){
+      children.push(ph(gnp?'9  ESTRATEGIAS Y OBSERVACIONES':'ESTRATEGIAS Y OBSERVACIONES'));
+      estrat.split('\n').forEach(linea=>children.push(px(linea)));
+      children.push(new Paragraph({spacing:{after:160}}));
+    }
+  }
+
+  // BITÁCORA (interno)
+  if(secs.includes('bitacora')){
+    const brows=data.bit.filter(b=>b.id_siniestro===s.id).sort((a,b)=>a.id-b.id);
+    if(brows.length){
+      children.push(ph('BITÁCORA DEL AJUSTADOR'));
+      children.push(new Table({width:{size:100,type:WidthType.PERCENTAGE},rows:[
+        new TableRow({children:[cellHdr('Fecha',15),cellHdr('Hora',10),cellHdr('Tiempo',15),cellHdr('Nota de actividad',60)]}),
+        ...brows.map(b=>new TableRow({children:[
+          cellVal(fmtD(b.fecha),15),
+          cellVal(b.hora?b.hora.slice(0,5):'',10),
+          cellVal(`${b.horas||0}h ${b.minutos||0}min`,15),
+          cellVal(b.nota||'',60),
+        ]})),
+      ]}));
+      children.push(new Paragraph({spacing:{after:160}}));
+    }
+  }
+
+  // CRONOLOGÍA
+  if(secs.includes('cronologia')){
+    children.push(ph(gnp?'11  CRONOLOGÍA PRELIMINAR':'CRONOLOGÍA'));
+    children.push(new Table({width:{size:100,type:WidthType.PERCENTAGE},rows:[
+      new TableRow({children:[cellHdr('Fecha ocurrencia',25),cellHdr('Fecha asignación',25),cellHdr('Fecha 1er. contacto',25),cellHdr('Fecha 1ª visita',25)]}),
+      new TableRow({children:[cellVal(fmtD(s.fecha_siniestro),25),cellVal(fmtD(s.fecha_asignacion),25),cellVal(fmtD(s.fecha_primer_contacto),25),cellVal(fmtD(s.fecha_primera_visita),25)]}),
+      new TableRow({children:[cellHdr('Hora ocurrencia',25),cellHdr('Hora asignación',25),cellHdr('Hora 1er. contacto',25),cellHdr('Hora 1ª visita',25)]}),
+      new TableRow({children:[cellVal(s.hora_ocurrencia?s.hora_ocurrencia.slice(0,5):'',25),cellVal(s.hora_asignacion?s.hora_asignacion.slice(0,5):'',25),cellVal(s.hora_primer_contacto?s.hora_primer_contacto.slice(0,5):'',25),cellVal(s.hora_primera_visita?s.hora_primera_visita.slice(0,5):'',25)]}),
+    ]}));
+    if(tipoReporte!=='interno'){
+      children.push(new Paragraph({spacing:{after:400}}));
+      children.push(new Table({width:{size:100,type:WidthType.PERCENTAGE},rows:[
+        new TableRow({children:[
+          new TableCell({width:{size:50,type:WidthType.PERCENTAGE},children:[
+            new Paragraph({children:[new TextRun({text:'',size:20})],border:{bottom:{style:BorderStyle.SINGLE,size:4,color:'333333'}},spacing:{before:400,after:60}}),
+            new Paragraph({children:[bold('Ing. Ernesto Almaraz Llanos')],spacing:{after:0}}),
+            new Paragraph({children:[norm('Director General')],spacing:{after:0}}),
+            new Paragraph({children:[norm('CNSF: C15979')],spacing:{after:0}}),
+          ]}),
+          new TableCell({width:{size:50,type:WidthType.PERCENTAGE},children:[
+            new Paragraph({children:[new TextRun({text:'',size:20})],border:{bottom:{style:BorderStyle.SINGLE,size:4,color:'333333'}},spacing:{before:400,after:60}}),
+            new Paragraph({children:[bold('Javier Chávez Á.')],spacing:{after:0}}),
+            new Paragraph({children:[norm('Ajustador')],spacing:{after:0}}),
+            new Paragraph({children:[norm('CNSF: 34388')],spacing:{after:0}}),
+          ]}),
+        ]}),
+      ]}));
+    }
+  }
+
+  // PIE
+  children.push(new Paragraph({spacing:{after:160}}));
+  children.push(new Paragraph({children:[new TextRun({text:`Almaraz Ajustadores, S.A. — Javier Chávez Á. — CNSF: 34388 — ${s.numero_exp} — ${now}`,size:16,color:'AAAAAA'})],border:{top:{style:BorderStyle.SINGLE,size:4,color:'DDDDDD'}},spacing:{before:160,after:0}}));
+
+  const doc=new Document({
+    creator:'Almaraz Ajustadores, S.A.',
+    title:`${tipoTitulo} — ${s.numero_exp}`,
+    description:`Expediente ${s.numero_exp} — ${asdo.nombre||''}`,
+    styles:{paragraphStyles:[{id:'Normal',name:'Normal',run:{font:'Calibri',size:20,color:'111111'}}]},
+    sections:[{properties:{page:{margin:{top:720,right:720,bottom:720,left:720}}},children}]
+  });
+
+  const blob=await Packer.toBlob(doc);
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download=`${s.numero_exp}_${tipoTitulo.replace(/\s+/g,'_')}.docx`;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
+  toast('Archivo Word descargado.');
+}
 function switchMain(tab,btn){
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.topbar-mid .nav-btn').forEach(b=>b.classList.remove('active'));
