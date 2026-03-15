@@ -2662,7 +2662,7 @@ async function descargarWord(){
 
   const { Document, Packer, Paragraph, Table, TableRow, TableCell, TextRun, ImageRun,
           AlignmentType, WidthType, BorderStyle, ShadingType, VerticalAlign,
-          Header, Footer, LevelFormat, PageBreak } = docx;
+          Header, Footer, LevelFormat, PageBreak, PageNumber } = docx;
 
   // ── Data assembly ──────────────────────────────────────────────────
   const pol     = data.pol.find(p=>p.id===s.id_poliza)||{};
@@ -2759,19 +2759,19 @@ async function descargarWord(){
   const makeFirstHeader=()=>new Header({children:[
     new Table({
       width:{size:CONTENT_W,type:WidthType.DXA},
-      columnWidths:[CONTENT_W-2800, 2800],
+      columnWidths:[CONTENT_W-3400, 3400],
       borders:{top:bNone,bottom:bNone,left:bNone,right:bNone,insideH:bNone,insideV:bNone},
       rows:[new TableRow({children:[
-        new TableCell({width:{size:CONTENT_W-2800,type:WidthType.DXA},borders:noB,
+        new TableCell({width:{size:CONTENT_W-3400,type:WidthType.DXA},borders:noB,
           margins:{top:0,bottom:0,left:0,right:0},
           children:[para2([txt('')],{sb:0,sa:0})]}),
-        new TableCell({width:{size:2800,type:WidthType.DXA},borders:noB,
+        new TableCell({width:{size:3400,type:WidthType.DXA},borders:noB,
           margins:{top:0,bottom:0,left:120,right:0},
           verticalAlign:VerticalAlign.TOP,
           children:[
             new Paragraph({children:logoImgRun2?[logoImgRun2]:[txt('AASA',{bold:true,size:36,color:BLUE})],
               alignment:AlignmentType.RIGHT,spacing:{before:0,after:80}}),
-            new Paragraph({children:[txt('INFORME PRELIMINAR',{bold:true,size:28,color:'2E5090'})],
+            new Paragraph({children:[txt('INFORME PRELIMINAR',{bold:true,size:28,color:'2E5090',font:'Arial'})],
               alignment:AlignmentType.RIGHT,spacing:{before:0,after:0}}),
           ]}),
       ]})]
@@ -2808,8 +2808,41 @@ async function descargarWord(){
     }),
   ]});
 
-  // Footer vacío páginas 2+
-  const makeDefaultFooter=()=>new Footer({children:[new Paragraph({children:[txt('')],spacing:{before:0,after:0}})]});
+  // ── FOOTER páginas 2+: izq asegurado+siniestro, der Página n de N ─
+  const LBLUE_SOFT='4472C4';
+  const makeDefaultFooter=()=>new Footer({children:[
+    new Table({
+      width:{size:CONTENT_W,type:WidthType.DXA},
+      columnWidths:[CONTENT_W-2200, 2200],
+      borders:{top:{style:BorderStyle.SINGLE,size:2,color:'C5D9F1',space:2},
+               bottom:bNone,left:bNone,right:bNone,insideH:bNone,insideV:bNone},
+      rows:[new TableRow({children:[
+        // Izquierda: nombre asegurado + no. siniestro tamaño 8pt azul tenue
+        new TableCell({width:{size:CONTENT_W-2200,type:WidthType.DXA},borders:noB,
+          margins:{top:60,bottom:0,left:0,right:120},
+          children:[
+            new Paragraph({children:[txt(asdo.nombre||'',{size:16,color:LBLUE_SOFT})],spacing:{before:0,after:16}}),
+            new Paragraph({children:[txt(s.numero_siniestro?'No. Siniestro: '+s.numero_siniestro:(s.referencia_ajustadora||''),{size:16,color:LBLUE_SOFT})],spacing:{before:0,after:0}}),
+          ]}),
+        // Derecha: Página n de N — tamaño 8pt azul tenue, alineado derecha
+        new TableCell({width:{size:2200,type:WidthType.DXA},borders:noB,
+          margins:{top:60,bottom:0,left:120,right:0},
+          verticalAlign:VerticalAlign.CENTER,
+          children:[
+            new Paragraph({
+              children:[
+                new TextRun({text:'Página ',size:16,color:LBLUE_SOFT,font:'Arial'}),
+                new TextRun({children:[PageNumber.CURRENT],size:16,color:LBLUE_SOFT,font:'Arial'}),
+                new TextRun({text:' de ',size:16,color:LBLUE_SOFT,font:'Arial'}),
+                new TextRun({children:[PageNumber.TOTAL_PAGES],size:16,color:LBLUE_SOFT,font:'Arial'}),
+              ],
+              alignment:AlignmentType.RIGHT,
+              spacing:{before:0,after:0},
+            }),
+          ]}),
+      ]})]
+    }),
+  ]});
 
   // ── PORTADA TABLE ──────────────────────────────────────────────────
   const portRows=[];
