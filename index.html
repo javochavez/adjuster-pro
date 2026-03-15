@@ -421,7 +421,7 @@ td { padding:9px 10px; vertical-align:middle; }
           </div>
           <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:1.1rem;overflow:auto;">
             <div class="section-title">Vista previa</div>
-            <div id="r-preview"><div class="loading">Selecciona un expediente para previsualizar.</div></div>
+            <iframe id="r-preview-frame" style="width:100%;min-height:600px;border:none;border-radius:4px;background:#fff;" srcdoc="<div style='padding:20px;font-family:sans-serif;color:#888;font-size:13px;'>Selecciona un expediente para previsualizar.</div>"></iframe>
           </div>
         </div>
       </div>
@@ -2391,8 +2391,11 @@ function esGNP(s){
 
 function previsualizarReporte(){
   const id=parseInt(v('r-caso'));
-  const prev=g('r-preview');
-  if(!id){prev.innerHTML='<div class="loading">Selecciona un expediente para previsualizar.</div>';return;}
+  const frame=g('r-preview-frame');
+  if(!id){
+    frame.srcdoc="<div style='padding:20px;font-family:sans-serif;color:#888;font-size:13px;'>Selecciona un expediente para previsualizar.</div>";
+    return;
+  }
   const s=data.sin.find(x=>x.id===id);if(!s)return;
   const secs=secsActivas();
   const esGnp=esGNP(s);
@@ -2413,7 +2416,15 @@ function previsualizarReporte(){
   } else {
     html=buildInterno(s,secs);
   }
-  prev.innerHTML=`<div style="background:#fff;border-radius:6px;border:1px solid rgba(100,160,255,.15);">${html}</div>`;
+  // Inyectar en iframe aislado para evitar contaminación de estilos en la app
+  frame.srcdoc=html;
+  // Ajustar altura del iframe al contenido una vez cargado
+  frame.onload=()=>{
+    try{
+      const h=frame.contentDocument.body.scrollHeight;
+      if(h>200) frame.style.minHeight=Math.min(h+40,1200)+'px';
+    }catch(e){}
+  };
 }
 
 function imprimirReporte(){
