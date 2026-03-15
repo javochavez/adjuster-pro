@@ -3242,14 +3242,20 @@ async function descargarWordGNP(){
   try{
     const b64str = GNP_BANNER_B64.split(',')[1];
     const byteArr= Uint8Array.from(atob(b64str),c=>c.charCodeAt(0));
-    bannerRun = new ImageRun({data:byteArr,transformation:{width:504,height:53},type:'jpg'});
+    // Ancho de página completo (816px) para que el banner se extienda de margen a margen
+    bannerRun = new ImageRun({data:byteArr,transformation:{width:816,height:82},type:'jpg'});
   }catch(e){ bannerRun=null; }
 
-  // ── HEADER ───────────────────────────────────────────────────────────
+  // El banner ocupa el ancho total de página extendiendo el párrafo
+  // con indent negativo izquierdo igual al margen izquierdo (1701 twips)
   const makeHeader=()=>new Header({children:[
     bannerRun
-      ? new Paragraph({children:[bannerRun],spacing:{before:0,after:0}})
-      : pr([tx('GNP / ALMARAZ AJUSTADORES, S.A.',{bold:true,size:20,color:BLUE})],{sb:0,sa:0}),
+      ? new Paragraph({
+          children:[bannerRun],
+          spacing:{before:0,after:0},
+          indent:{left:-1701, right:-900},
+        })
+      : new Paragraph({children:[new TextRun({text:'GNP / ALMARAZ AJUSTADORES, S.A.',bold:true,size:20,color:BLUE,font:'Arial'})],spacing:{before:0,after:0}}),
   ]});
   const makeFooter=()=>new Footer({children:[
     new Table({
