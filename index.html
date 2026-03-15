@@ -2542,9 +2542,14 @@ function buildGNP(s, secs){
   const vigStr = pol.vigencia_ini
     ? fD(pol.vigencia_ini)+' al '+fD(pol.vigencia_fin) : '';
   h += `<table class="id-tbl">
+    <colgroup>
+      <col style="width:15%"><col style="width:22%">
+      <col style="width:14%"><col style="width:17%">
+      <col style="width:11%"><col style="width:21%">
+    </colgroup>
     <tr>
       <td class="lbl">No. Siniestro</td><td class="val">${s.numero_siniestro||''}</td>
-      <td class="lbl">Jefe Depto</td><td class="val">${s.gnp_jefe_depto||''}</td>
+      <td class="lbl">Jefe Depto</td><td class="val" colspan="3">${s.gnp_jefe_depto||''}</td>
     </tr>
     <tr>
       <td class="lbl">No. Trámite</td><td class="val">${s.tramite_gnp||''}</td>
@@ -2558,32 +2563,31 @@ function buildGNP(s, secs){
     </tr>
     <tr>
       <td class="lbl">Fecha de siniestro</td><td class="val">${fD(s.fecha_siniestro)}</td>
-      <td class="lbl">Agente</td><td class="val" colspan="2">${pol.agente||''}</td>
+      <td class="lbl">Agente</td><td class="val" colspan="3">${pol.agente||''}</td>
     </tr>
     <tr>
-      <td class="lbl">Asegurado</td><td class="val">${asdo.nombre||''}</td>
+      <td class="lbl">Asegurado</td><td class="val" colspan="2">${asdo.nombre||''}</td>
       <td class="lbl">Referencia Asegurado</td><td class="val" colspan="2">${s.referencia_asegurado||''}</td>
     </tr>
     <tr>
       <td class="lbl">Importe reclamado</td><td class="val">${fM(p_ajustada)}</td>
       <td class="lbl">Moneda</td>
-      <td class="val">MXN ${monedaStr==='MXN'?'( X )':'( )'}&nbsp;&nbsp;&nbsp;USD ${monedaStr==='USD'?'( X )':'( )'}</td>
-      <td></td>
+      <td class="val" colspan="3">MXN ${monedaStr==='MXN'?'( X )':'( )'}&nbsp;&nbsp;&nbsp;USD ${monedaStr==='USD'?'( X )':'( )'}</td>
     </tr>
     <tr>
       <td class="lbl">Clave ajustador GNP</td><td class="val">${s.gnp_clave_ajustador||''}</td>
-      <td class="lbl">Referencia ajustador</td><td class="val" colspan="2">${s.referencia_ajustadora||''}</td>
+      <td class="lbl">Referencia ajustador</td><td class="val" colspan="3">${s.referencia_ajustadora||''}</td>
     </tr>
     <tr>
-      <td class="lbl">Giro del asegurado</td><td class="val" colspan="4">${s.giro_asegurado||''}</td>
+      <td class="lbl">Giro del asegurado</td><td class="val" colspan="5">${s.giro_asegurado||''}</td>
     </tr>
     <tr>
       <td class="lbl">Causa del siniestro</td><td class="val">${s.causa||''}</td>
-      <td class="lbl">Comentario de la causa</td><td class="val" colspan="2">${s.causa_comentario||''}</td>
+      <td class="lbl">Comentario de la causa</td><td class="val" colspan="3">${s.causa_comentario||''}</td>
     </tr>
     <tr>
       <td class="lbl">Clave evento (catastrófico)</td><td class="val">${s.clave_evento_catastrofico||''}</td>
-      <td class="lbl">Riesgo afectado</td><td class="val" colspan="2">${s.riesgo_afectado||''}</td>
+      <td class="lbl">Riesgo afectado</td><td class="val" colspan="3">${s.riesgo_afectado||''}</td>
     </tr>
   </table>`;
 
@@ -3273,19 +3277,69 @@ async function descargarWordGNP(){
   const vigStr = pol.vigencia_ini
     ? fD(pol.vigencia_ini)+' al '+fD(pol.vigencia_fin) : '';
 
-  const W2=Math.floor(CONTENT_W/2), W3=Math.floor(CONTENT_W/3), W4=Math.floor(CONTENT_W/4);
+  // 6 columnas calibradas al contenido real (suma = CONTENT_W = 9639)
+  // C1=lbl  C2=val  C3=lbl  C4=val  C5=lbl  C6=val
+  const C1=1480, C2=2200, C3=1380, C4=1600, C5=1100;
+  const C6=CONTENT_W-C1-C2-C3-C4-C5; // 1879
+  const COLS=[C1,C2,C3,C4,C5,C6];
+
+  // helpers con ancho explícito
+  const id6lbl=(t,w,sp)=>mkC(t,{w,bold:true,size:17,bg:'F0F0F0',span:sp});
+  const id6val=(t,w,sp)=>mkC(t,{w,size:17,span:sp});
 
   const idRows=[
-    new TableRow({children:[lbl('No. Siniestro',W3),val(s.numero_siniestro||'',W3),lbl('Jefe Depto',W3-100),val(s.gnp_jefe_depto||'',100+CONTENT_W-W3*3)]}),
-    new TableRow({children:[lbl('No. Trámite',W3),val(s.tramite_gnp||'',W3),lbl('Oficina',W4-100),val(s.gnp_oficina||'',100),lbl('Póliza',W3-W4),val(pol.numero||'',CONTENT_W-W3*2-W4+100)]}),
-    new TableRow({children:[lbl('Ramo',W3),val(pol.ramo||'',W3-100),lbl('Subramo',100),val(pol.subramo||s.subramo||'',W3-100),lbl('Vigencia',100),val(vigStr,CONTENT_W-W3*2+100)]}),
-    new TableRow({children:[lbl('Fecha de siniestro',W3),val(fD(s.fecha_siniestro),W3),lbl('Agente',W3-100),val(pol.agente||'',CONTENT_W-W3*2+100)]}),
-    new TableRow({children:[lbl('Asegurado',W3),val(asdo.nombre||'',W3),lbl('Referencia Asegurado',W3-100),val(s.referencia_asegurado||'',CONTENT_W-W3*2+100)]}),
-    new TableRow({children:[lbl('Importe reclamado',W3),val(fM(p_ajustada),W3),lbl('Moneda',W4-100),val('MXN '+(monedaStr==='MXN'?'(X)':'( )')+'   USD '+(monedaStr==='USD'?'(X)':'( )'),CONTENT_W-W3*2-W4+100)]}),
-    new TableRow({children:[lbl('Clave ajustador GNP',W3),val(s.gnp_clave_ajustador||'',W3),lbl('Referencia ajustador',W3-100),val(s.referencia_ajustadora||'',CONTENT_W-W3*2+100)]}),
-    new TableRow({children:[lbl('Giro del asegurado',W3),val(s.giro_asegurado||'',CONTENT_W-W3,3)]}),
-    new TableRow({children:[lbl('Causa del siniestro',W3),val(s.causa||'',W3),lbl('Comentario de la causa',W3-100),val(s.causa_comentario||'',CONTENT_W-W3*2+100)]}),
-    new TableRow({children:[lbl('Clave evento (catastrófico)',W3),val(s.clave_evento_catastrofico||'',W3),lbl('Riesgo afectado',W3-100),val(s.riesgo_afectado||'',CONTENT_W-W3*2+100)]}),
+    // Fila 1: No.Siniestro | val | Jefe Depto | val(span 3)
+    new TableRow({children:[
+      id6lbl('No. Siniestro',C1), id6val(s.numero_siniestro||'',C2),
+      id6lbl('Jefe Depto',C3),    id6val(s.gnp_jefe_depto||'',C4+C5+C6,3),
+    ]}),
+    // Fila 2: No.Trámite | val | Oficina | val | Póliza | val
+    new TableRow({children:[
+      id6lbl('No. Trámite',C1), id6val(s.tramite_gnp||'',C2),
+      id6lbl('Oficina',C3),     id6val(s.gnp_oficina||'',C4),
+      id6lbl('Póliza',C5),      id6val(pol.numero||'',C6),
+    ]}),
+    // Fila 3: Ramo | val | Subramo | val | Vigencia | val
+    new TableRow({children:[
+      id6lbl('Ramo',C1),      id6val(pol.ramo||'',C2),
+      id6lbl('Subramo',C3),   id6val(pol.subramo||s.subramo||'',C4),
+      id6lbl('Vigencia',C5),  id6val(vigStr,C6),
+    ]}),
+    // Fila 4: Fecha siniestro | val | Agente | val(span 3)
+    new TableRow({children:[
+      id6lbl('Fecha de siniestro',C1), id6val(fD(s.fecha_siniestro),C2),
+      id6lbl('Agente',C3),             id6val(pol.agente||'',C4+C5+C6,3),
+    ]}),
+    // Fila 5: Asegurado | val(span 2) | Referencia Asegurado | val(span 2)
+    new TableRow({children:[
+      id6lbl('Asegurado',C1),              id6val(asdo.nombre||'',C2+C3,2),
+      id6lbl('Referencia Asegurado',C4),   id6val(s.referencia_asegurado||'',C5+C6,2),
+    ]}),
+    // Fila 6: Importe reclamado | val | Moneda | val(span 3)
+    new TableRow({children:[
+      id6lbl('Importe reclamado',C1), id6val(fM(p_ajustada),C2),
+      id6lbl('Moneda',C3),
+      id6val('MXN '+(monedaStr==='MXN'?'(X)':'( )')+'   USD '+(monedaStr==='USD'?'(X)':'( )'),C4+C5+C6,3),
+    ]}),
+    // Fila 7: Clave ajustador | val | Referencia ajustador | val(span 3)
+    new TableRow({children:[
+      id6lbl('Clave ajustador GNP',C1), id6val(s.gnp_clave_ajustador||'',C2),
+      id6lbl('Referencia ajustador',C3), id6val(s.referencia_ajustadora||'',C4+C5+C6,3),
+    ]}),
+    // Fila 8: Giro — ancho completo (span 5)
+    new TableRow({children:[
+      id6lbl('Giro del asegurado',C1), id6val(s.giro_asegurado||'',C2+C3+C4+C5+C6,5),
+    ]}),
+    // Fila 9: Causa | val | Comentario causa | val(span 3)
+    new TableRow({children:[
+      id6lbl('Causa del siniestro',C1), id6val(s.causa||'',C2),
+      id6lbl('Comentario de la causa',C3), id6val(s.causa_comentario||'',C4+C5+C6,3),
+    ]}),
+    // Fila 10: Clave evento | val | Riesgo afectado | val(span 3)
+    new TableRow({children:[
+      id6lbl('Clave evento (catastrófico)',C1), id6val(s.clave_evento_catastrofico||'',C2),
+      id6lbl('Riesgo afectado',C3), id6val(s.riesgo_afectado||'',C4+C5+C6,3),
+    ]}),
   ];
 
   // ── ESTIMACIÓN COBERTURAS (tabla 3 cols) ─────────────────────────────
@@ -3347,7 +3401,7 @@ async function descargarWordGNP(){
     pr([tx('INFORME PRELIMINAR',{size:24,bold:true})],{sb:0,sa:40}),
     pr([tx('AT´N.: '+(lastInf.destinatario||''),{size:19,bold:true})],{sb:0,sa:20}),
     pr([tx('PRESENTE',{size:19,bold:true})],{sb:0,sa:120}),
-    new Table({width:{size:CONTENT_W,type:WidthType.DXA},columnWidths:[W3,W3,W3-100,CONTENT_W-W3*3+100],rows:idRows}),
+    new Table({width:{size:CONTENT_W,type:WidthType.DXA},columnWidths:COLS,rows:idRows}),
     ep(),
     secTitle('1','Estimación por coberturas y secciones'),
     new Table({width:{size:CONTENT_W,type:WidthType.DXA},columnWidths:cobW,rows:cobRows}),
