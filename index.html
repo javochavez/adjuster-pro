@@ -674,6 +674,7 @@ td { padding:9px 10px; vertical-align:middle; }
     <div class="fg full"><label>Detalle recuperación</label><input type="text" id="s-rec-det"></div>
   </div>
 
+  <div id="seccion-no-gnp">
   <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin:12px 0 8px;">Coaseguro y Reaseguro</div>
   <div class="form-grid">
     <div class="fg"><label>Coaseguro</label>
@@ -684,13 +685,10 @@ td { padding:9px 10px; vertical-align:middle; }
     <div class="fg"><label>Corredor reaseguro</label><input type="text" id="s-reas-corredor"></div>
   </div>
 
-  <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin:12px 0 8px;">Narrativa</div>
+  <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin:12px 0 8px;">Narrativa (Informe genérico)</div>
   <div class="form-grid">
     <div class="fg full"><label>Descripción general del riesgo asegurado</label><textarea id="s-desc-riesgo" style="min-height:70px;" placeholder="Descripción física del bien o instalación asegurada, características generales, uso y ocupación..."></textarea></div>
-    <div class="fg full" id="s-introduccion-wrap"><label>Introducción del informe <span style="font-size:10px;color:var(--text-ter);font-weight:400;">(no aplica GNP)</span></label><textarea id="s-introduccion" style="min-height:70px;" placeholder="Texto de apertura del informe: contexto, alcance del ajuste, propósito del documento..."></textarea></div>
-    <div class="fg full"><label>Narración de los hechos</label><textarea id="s-desc" style="min-height:70px;" placeholder="Cómo ocurrió el siniestro, circunstancias, descripción del evento..."></textarea></div>
-    <div class="fg full"><label>Estrategias, observaciones y actividades a realizar</label><textarea id="s-estrategias" style="min-height:120px;" placeholder="Documentos solicitados, observaciones técnicas, estrategia de ajuste, actividades pendientes, comentarios finales del informe..."></textarea></div>
-    <div class="fg full"><label>Notas internas</label><textarea id="s-notas" style="min-height:50px;"></textarea></div>
+    <div class="fg full" id="s-introduccion-wrap"><label>Introducción del informe</label><textarea id="s-introduccion" style="min-height:70px;" placeholder="Texto de apertura del informe: contexto, alcance del ajuste, propósito del documento..."></textarea></div>
     <div class="fg"><label>Procedencia del reclamo</label>
       <select id="s-procedencia">
         <option value="procedente">Procedente</option>
@@ -698,11 +696,18 @@ td { padding:9px 10px; vertical-align:middle; }
         <option value="improcedente">Improcedente</option>
       </select></div>
     <div class="fg"></div>
-
     <div class="fg full"><label>Situación actual de los bienes</label><textarea id="s-situacion-actual" style="min-height:55px;" placeholder="ej. En estado de daños sujetos a reparación mediante cambio de tarjetas y circuitos."></textarea></div>
     <div class="fg full"><label>Fundamento de procedencia</label><textarea id="s-fundamento" style="min-height:55px;" placeholder="ej. La póliza ampara el equipo afectado contra el riesgo acaecido."></textarea></div>
     <div class="fg"><label>Subrogación</label><input type="text" id="s-subrogacion" placeholder="N/A o descripción de tercero responsable"></div>
     <div class="fg"><label>Asesores / Peritos externos</label><input type="text" id="s-asesores" placeholder="No aplican"></div>
+  </div>
+  </div><!-- /seccion-no-gnp -->
+
+  <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin:12px 0 8px;">Narrativa</div>
+  <div class="form-grid">
+    <div class="fg full"><label>Narración de los hechos</label><textarea id="s-desc" style="min-height:70px;" placeholder="Cómo ocurrió el siniestro, circunstancias, descripción del evento..."></textarea></div>
+    <div class="fg full"><label>Estrategias, observaciones y actividades a realizar</label><textarea id="s-estrategias" style="min-height:120px;" placeholder="Documentos solicitados, observaciones técnicas, estrategia de ajuste, actividades pendientes, comentarios finales del informe..."></textarea></div>
+    <div class="fg full"><label>Notas internas</label><textarea id="s-notas" style="min-height:50px;"></textarea></div>
   </div>
   </div><!-- /seccion-institucional -->
 
@@ -1475,17 +1480,19 @@ function seleccionarPolizaSin(polId, numero, asegId){
   g('sin-pol-sel-label').textContent = numero + (aseg.nombre ? ' — '+aseg.nombre : '');
   g('sin-pol-sel-display').style.display = 'flex';
   g('sin-pol-form').style.display = 'none';
-  // Sync hidden selects for compatibility
-  g('s-poliza').innerHTML = `<option value="${polId}" selected>${numero}</option>`;
-  g('s-poliza').value = polId;
+  // Sync hidden aseguradora select and trigger field visibility
   if(asegId){
-    // Ensure aseguradora option exists in hidden select
     if(!g('s-aseg-direct').querySelector(`option[value="${asegId}"]`)){
       g('s-aseg-direct').innerHTML += `<option value="${asegId}">${aseg.nombre||''}</option>`;
     }
     g('s-aseg-direct').value = asegId;
-    actualizarCamposAseg();
+    actualizarCamposAseg(); // this rebuilds s-poliza — so set value AFTER
   }
+  // Ensure polId option exists and is selected (actualizarCamposAseg may have rebuilt the list)
+  if(!g('s-poliza').querySelector(`option[value="${polId}"]`)){
+    g('s-poliza').innerHTML += `<option value="${polId}">${numero}</option>`;
+  }
+  g('s-poliza').value = polId;
 }
 
 function limpiarPolizaSin(){
@@ -2278,6 +2285,9 @@ function actualizarCamposAseg(){
   // Mostrar/ocultar secciones específicas
   g('seccion-gnp').style.display   = cod==='GNP'   ? 'block' : 'none';
   g('seccion-atlas').style.display = cod==='ATLAS'  ? 'block' : 'none';
+  // Campos exclusivos de informes genéricos — no aplican a GNP
+  const noGnpSec = g('seccion-no-gnp');
+  if(noGnpSec) noGnpSec.style.display = cod==='GNP' ? 'none' : 'block';
   // Introducción no aplica a GNP
   const introWrap = g('s-introduccion-wrap');
   if(introWrap) introWrap.style.display = cod==='GNP' ? 'none' : 'block';
