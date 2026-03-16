@@ -592,7 +592,9 @@ td { padding:9px 10px; vertical-align:middle; }
 
   <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin:12px 0 8px;">Narrativa</div>
   <div class="form-grid">
-    <div class="fg full"><label>Descripción general</label><textarea id="s-desc" style="min-height:70px;"></textarea></div>
+    <div class="fg full"><label>Descripción general del riesgo asegurado</label><textarea id="s-desc-riesgo" style="min-height:70px;" placeholder="Descripción física del bien o instalación asegurada, características generales, uso y ocupación..."></textarea></div>
+    <div class="fg full" id="s-introduccion-wrap"><label>Introducción del informe <span style="font-size:10px;color:var(--text-ter);font-weight:400;">(no aplica GNP)</span></label><textarea id="s-introduccion" style="min-height:70px;" placeholder="Texto de apertura del informe: contexto, alcance del ajuste, propósito del documento..."></textarea></div>
+    <div class="fg full"><label>Narración de los hechos</label><textarea id="s-desc" style="min-height:70px;" placeholder="Cómo ocurrió el siniestro, circunstancias, descripción del evento..."></textarea></div>
     <div class="fg full"><label>Estrategias, observaciones y actividades a realizar</label><textarea id="s-estrategias" style="min-height:120px;" placeholder="Documentos solicitados, observaciones técnicas, estrategia de ajuste, actividades pendientes, comentarios finales del informe..."></textarea></div>
     <div class="fg full"><label>Notas internas</label><textarea id="s-notas" style="min-height:50px;"></textarea></div>
     <div class="fg"><label>Procedencia del reclamo</label>
@@ -1015,7 +1017,7 @@ td { padding:9px 10px; vertical-align:middle; }
     <div class="fg"><label>Jefe de Depto. (compañía)</label><input type="text" id="inf-jefe" placeholder="ej. Rocío Rodríguez Nava"></div>
     <div class="fg"><label>Oficina (compañía)</label><input type="text" id="inf-oficina" placeholder="ej. Veracruz"></div>
     <div class="fg full"><label>Asunto</label><input type="text" id="inf-asunto" placeholder="Asunto del correo o documento"></div>
-    <div class="fg full"><label>Desarrollo del siniestro / Introducción</label><textarea id="inf-desarrollo" style="min-height:80px;" placeholder="Narrativa detallada del evento según inspección..."></textarea></div>
+    <div class="fg full"><label>Narración del siniestro / Desarrollo</label><textarea id="inf-desarrollo" style="min-height:80px;" placeholder="Narrativa detallada del evento según inspección..."></textarea></div>
     <div class="fg full"><label>Estrategias, observaciones y actividades a realizar</label><textarea id="inf-estrategias" style="min-height:70px;" placeholder="Lista de documentos solicitados y observaciones técnicas..."></textarea></div>
     <div class="fg full"><label>Notas internas</label><textarea id="inf-notas" style="min-height:40px;"></textarea></div>
   </div>
@@ -1990,6 +1992,9 @@ function actualizarCamposAseg(){
   // Mostrar/ocultar secciones específicas
   g('seccion-gnp').style.display   = cod==='GNP'   ? 'block' : 'none';
   g('seccion-atlas').style.display = cod==='ATLAS'  ? 'block' : 'none';
+  // Introducción no aplica a GNP
+  const introWrap = g('s-introduccion-wrap');
+  if(introWrap) introWrap.style.display = cod==='GNP' ? 'none' : 'block';
 
   // Limpiar campos de la sección oculta
   if(cod!=='GNP'){ ['s-tramite-gnp','s-gnp-clave-ajust','s-gnp-jefe','s-gnp-oficina'].forEach(f=>{ if(g(f)) g(f).value=''; }); }
@@ -2111,7 +2116,7 @@ function abrirModal(id){
     g('sin-modal-title').textContent='Nuevo expediente';
     g('s-id').value='';
     ['s-exp','s-numsin','s-tipo','s-subramo','s-causa','s-causa-com','s-riesgo','s-clave-cat',
-     's-ref-ajust','s-clave-ajust','s-ref-aseg','s-giro','s-desc','s-notas','s-estrategias',
+     's-ref-ajust','s-clave-ajust','s-ref-aseg','s-giro','s-desc','s-desc-riesgo','s-introduccion','s-notas','s-estrategias',
      's-tramite-gnp','s-ot','s-fsin','s-hora-ocurr','s-finsp','s-finf',
      's-hora-asig','s-f1cont','s-h1cont','s-f1vis','s-h1vis',
      's-insp-persona','s-insp-cargo','s-insp-tel','s-insp-dom','s-bienes',
@@ -2197,7 +2202,7 @@ function abrirModal(id){
     if(g('inf-act-section')) g('inf-act-section').style.display='none';
     // Pre-load current expediente values
     if(currentSin){
-      if(g('inf-desarrollo'))       g('inf-desarrollo').value       = currentSin.descripcion||'';
+      if(g('inf-desarrollo'))       g('inf-desarrollo').value       = currentSin.descripcion||'';  // narración de hechos
       if(g('inf-estrategias'))      g('inf-estrategias').value      = currentSin.estrategias_observaciones||'';
       if(g('inf-situacion-actual')) g('inf-situacion-actual').value = currentSin.situacion_actual||'';
       if(g('inf-fundamento'))       g('inf-fundamento').value       = currentSin.fundamento||'';
@@ -2233,7 +2238,7 @@ async function guardarSiniestro(){
     riesgo_afectado:v('s-riesgo')||null, clave_evento_catastrofico:v('s-clave-cat')||null,
     referencia_ajustadora:v('s-ref-ajust')||null, clave_ajustador_cia:v('s-clave-ajust')||null,
     referencia_asegurado:v('s-ref-aseg')||null, giro_asegurado:v('s-giro')||null,
-    descripcion:v('s-desc'), notas:v('s-notas'),
+    descripcion:v('s-desc'), descripcion_riesgo:v('s-desc-riesgo')||null, introduccion:v('s-introduccion')||null, notas:v('s-notas'),
     estatus:v('s-est'),
     fecha_siniestro:v('s-fsin')||null, hora_ocurrencia:v('s-hora-ocurr')||null,
     fecha_asignacion:v('s-fasig')||null, hora_asignacion:v('s-hora-asig')||null,
@@ -2301,7 +2306,7 @@ function editarSiniestro(id){
   g('s-riesgo').value=s.riesgo_afectado||''; g('s-clave-cat').value=s.clave_evento_catastrofico||'';
   g('s-ref-ajust').value=s.referencia_ajustadora||''; g('s-clave-ajust').value=s.clave_ajustador_cia||'';
   g('s-ref-aseg').value=s.referencia_asegurado||''; g('s-giro').value=s.giro_asegurado||'';
-  g('s-desc').value=s.descripcion||''; g('s-notas').value=s.notas||'';
+  g('s-desc').value=s.descripcion||''; g('s-desc-riesgo').value=s.descripcion_riesgo||''; if(g('s-introduccion'))g('s-introduccion').value=s.introduccion||''; g('s-notas').value=s.notas||'';
   g('s-estrategias').value=(()=>{
     const parts=[s.estrategias_observaciones,s.actividades_realizar,s.comentarios].filter(Boolean);
     return parts.join('\n\n');
@@ -2888,7 +2893,7 @@ function buildFormal(s, secs){
   }
 
   if(secs.includes('desarrollo')){
-    const desarrollo=lastInf.desarrollo_siniestro||s.descripcion||'';
+    const desarrollo=campoDesdInf(lastInf,'desarrollo_siniestro',s,'descripcion');
     h+=`<div class="sec"><div class="sec-title">5&nbsp;&nbsp;Desarrollo detallado del siniestro</div><div class="narrative">${desarrollo||'Pendiente de redactar.'}</div></div>`;
   }
 
@@ -3314,7 +3319,7 @@ function buildGNP(s, secs){
   // §5 DESARROLLO DETALLADO DEL SINIESTRO
   if(secs.includes('desarrollo')){
     h += `<div class="sec-num">5. Desarrollo detallado del siniestro</div>
-    <div class="narrative">${lastInf.desarrollo_siniestro||s.descripcion||''}</div>`;
+    <div class="narrative">${campoDesdInf(lastInf,'desarrollo_siniestro',s,'descripcion')}</div>`;
   }
 
   // §6 SALVAMENTO
@@ -3712,10 +3717,10 @@ async function descargarWord(){
     para2([txt('INFORMACIÓN COMPLEMENTARIA',{bold:true,size:20,color:BLUE})],{sb:80,sa:40}),
     para2([new PageBreak()],{sb:0,sa:0}),
     secTitle('1','Introducción'),
-    body2(lastInf.desarrollo_siniestro||s.descripcion||''),ep(),
+    body2(campoDesdInf(lastInf,'introduccion',s,'introduccion')||campoDesdInf(lastInf,'desarrollo_siniestro',s,'descripcion')),ep(),
     secTitle('2','Asegurado'),
     para2([txt('2.1  DESCRIPCIÓN GENERAL DEL RIESGO ASEGURADO',{bold:true,size:20,color:BLUE})],{sb:120,sa:60}),
-    body2(s.descripcion||''),
+    body2(s.descripcion_riesgo||s.descripcion||''),
     para2([txt('2.2  GIRO DEL ASEGURADO',{bold:true,size:20,color:BLUE})],{sb:120,sa:60}),
     body2(s.giro_asegurado||''),
     para2([txt('2.3  UBICACIÓN DONDE OCURRIÓ EL SINIESTRO',{bold:true,size:20,color:BLUE})],{sb:120,sa:60}),
@@ -3723,7 +3728,7 @@ async function descargarWord(){
     secTitle('3','Inspección del siniestro'),
     body2('El '+fD(s.fecha_primera_visita)+(s.hora_primera_visita?', a las '+s.hora_primera_visita.slice(0,5)+' hrs.,':'')+' nos presentamos en las instalaciones del Asegurado, siendo atendidos por '+(s.inspeccion_persona||'')+(s.inspeccion_cargo?', '+s.inspeccion_cargo:'')+'.'),ep(),
     secTitle('4','Cómo ocurrió el siniestro'),
-    body2(lastInf.desarrollo_siniestro||s.descripcion||''),ep(),
+    body2(campoDesdInf(lastInf,'desarrollo_siniestro',s,'descripcion')),ep(),
     secTitle('5','Causa del siniestro'),
     body2(s.causa||''),ep(),
     secTitle('6','Bienes afectados'),
@@ -4060,7 +4065,7 @@ async function descargarWordGNP(){
     ]}),
     ep(),
     secTitle('5','Desarrollo detallado del siniestro'),
-    pr([tx(lastInf.desarrollo_siniestro||s.descripcion||'',{size:18})],{sb:60,sa:60}),
+    pr([tx(campoDesdInf(lastInf,'desarrollo_siniestro',s,'descripcion'),{size:18})],{sb:60,sa:60}),
     ep(),
     secTitle('6','Salvamento'),
     new Table({width:{size:CONTENT_W,type:WidthType.DXA},columnWidths:[W2,W2],rows:[
@@ -4518,11 +4523,11 @@ function buildFormalGenerico(s, secs, aseg){
     h += `<div style="page-break-before:always;"></div>`;
 
     h += `<div class="sec-title">1 &nbsp; Introducción</div>
-    <div class="narrative">${lastInf.desarrollo_siniestro||s.descripcion||''}</div>`;
+    <div class="narrative">${campoDesdInf(lastInf,'introduccion',s,'introduccion')||campoDesdInf(lastInf,'desarrollo_siniestro',s,'descripcion')}</div>`;
 
     h += `<div class="sec-title">2 &nbsp; Asegurado</div>
     <div class="sec-sub">2.1 &nbsp; Descripción general del riesgo asegurado</div>
-    <div class="narrative">${s.descripcion||''}</div>
+    <div class="narrative">${s.descripcion_riesgo||s.descripcion||''}</div>
     <div class="sec-sub">2.2 &nbsp; Giro del asegurado</div>
     <div class="narrative">${s.giro_asegurado||''}</div>
     <div class="sec-sub">2.3 &nbsp; Ubicación donde ocurrió el siniestro</div>
@@ -4536,7 +4541,7 @@ function buildFormalGenerico(s, secs, aseg){
 
   if(secs.includes('desarrollo')){
     h += `<div class="sec-title">4 &nbsp; Cómo ocurrió el siniestro</div>
-    <div class="narrative">${lastInf.desarrollo_siniestro||s.descripcion||''}</div>`;
+    <div class="narrative">${campoDesdInf(lastInf,'desarrollo_siniestro',s,'descripcion')}</div>`;
 
     h += `<div class="sec-title">5 &nbsp; Causa del siniestro</div>
     <div class="narrative">${s.causa||''}</div>`;
