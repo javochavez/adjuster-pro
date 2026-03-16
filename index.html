@@ -2203,13 +2203,13 @@ function renderDetalle(){
     <button class="tab-btn" onclick="switchTab2('t-doc',this)">Documentos</button>
   </div>
 
-  <div id="t-res" class="tab-pane active">
+  <div id="t-res" class="tab-pane active" style="overflow-y:auto;max-height:calc(100vh - 420px);">
     <div class="toolbar" style="align-items:center;gap:10px;">
       <button class="btn btn-primary" onclick="abrirModal('modal-res')">+ Nueva cobertura</button>
       <span style="font-size:11px;color:var(--text-ter);">Hasta 4 coberturas por siniestro</span>
     </div>
     <!-- Cuadrícula de coberturas -->
-    <div id="res-grid-wrap" style="overflow:auto;width:100%;max-height:calc(100vh - 320px);"></div>
+    <div id="res-grid-wrap" style="overflow-x:auto;width:100%;"></div>
     <!-- Tabla detalle clásica (oculta por defecto cuando hay grid) -->
     <div id="res-table-wrap" style="margin-top:12px;">
       <div class="tbl-wrap"><table><thead><tr><th>Cobertura</th><th>Reserva bruta</th><th>Pérdida estimada</th><th>Deducible</th><th>Coaseguro %</th><th>Reserva neta</th><th>Moneda</th><th>Fecha</th><th></th></tr></thead>
