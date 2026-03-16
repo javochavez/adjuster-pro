@@ -1739,18 +1739,22 @@ function renderBitacoraRows(rows){
 
 const INF_TIPOS = {preliminar:'Preliminar',actualizacion:'Actualización',final:'Final',nota_tecnica:'Nota Técnica'};
 
-const CONCEPTO_LABEL={"edificio": "Edificio / Estructura", "contenidos": "Contenidos / Inventario", "maquinaria": "Maquinaria y Equipo", "perdida_utilidades": "Pérdida de Utilidades", "rc": "Responsabilidad Civil", "transporte": "Transporte de Mercancías", "equipo_electronico": "Equipo Electrónico", "rotura_maquinaria": "Rotura de Maquinaria", "otro": "Cobertura Adicional"};
+const CONCEPTO_LABEL={"edificio":"Edificio / Estructura","contenidos":"Contenidos / Inventario","maquinaria":"Maquinaria y Equipo","perdida_utilidades":"Pérdida de Utilidades","rc":"Responsabilidad Civil","transporte":"Transporte de Mercancías","equipo_electronico":"Equipo Electrónico","rotura_maquinaria":"Rotura de Maquinaria","otro":"Cobertura Adicional"};
+function normConcepto(c){ return CONCEPTO_LABEL[c]||c||'Cobertura'; }
+
 function renderReservaGrid(allRows){
-  // Normalize legacy concepto keys to display labels
-  allRows = allRows.map(r=>({
-    ...r,
-    concepto: CONCEPTO_LABEL[r.concepto] || r.concepto || 'Cobertura'
-  }));
+  const wrap    = g('res-grid-wrap');
   const tblWrap = g('res-table-wrap');
   if(!wrap) return;
+
+  // De-duplicate: most recent row per concepto key (before label translation)
+  const vigMap={};
+  allRows.forEach(r=>{ if(!vigMap[r.concepto]||r.id>vigMap[r.concepto].id) vigMap[r.concepto]=r; });
+  const rows = Object.values(vigMap);
+
   if(!rows.length){
     wrap.innerHTML='';
-    if(tblWrap) tblWrap.querySelector('tbody').innerHTML=`<tr><td colspan="9" class="empty">Sin coberturas registradas.</td></tr>`;
+    if(tblWrap) tblWrap.style.display='block';
     return;
   }
 
@@ -1801,7 +1805,7 @@ function renderReservaGrid(allRows){
 
   calc.forEach((item,i)=>{
     html += `<th style="background:#1F3864;color:#fff;padding:6px 10px;text-align:center;font-weight:600;min-width:${colW}px;border:1px solid #1F3864;">
-      ${item.r.concepto||('Cobertura '+(i+1))}
+      ${normConcepto(item.r.concepto)}
     </th>`;
   });
   if(showTotal) html += `<th style="background:#0F2744;color:#fff;padding:6px 10px;text-align:center;font-weight:700;min-width:${colW}px;border:1px solid #0F2744;">ESTIMACIÓN TOTAL</th>`;
