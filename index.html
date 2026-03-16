@@ -430,9 +430,18 @@ td { padding:9px 10px; vertical-align:middle; }
               <select id="r-caso" onchange="previsualizarReporte()"><option value="">— Selecciona —</option></select></div>
 
             <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">Tipo de reporte</div>
-            <div style="display:flex;gap:6px;margin-bottom:6px;">
-              <button id="btn-tipo-formal" class="btn btn-primary" style="flex:1;font-size:11px;" onclick="setTipoReporte('formal',this)">Inf. Preliminar</button>
-              <button id="btn-tipo-interno" class="btn" style="flex:1;font-size:11px;" onclick="setTipoReporte('interno',this)">Interno resumido</button>
+            <div style="display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap;">
+              <button id="btn-tipo-formal" class="btn btn-primary" style="flex:1;font-size:11px;white-space:nowrap;" onclick="setTipoReporte('formal',this)">Inf. Preliminar</button>
+              <button id="btn-tipo-actualizacion" class="btn" style="flex:1;font-size:11px;white-space:nowrap;" onclick="setTipoReporte('actualizacion',this)">Inf. Actualización</button>
+              <button id="btn-tipo-interno" class="btn" style="flex:1;font-size:11px;white-space:nowrap;" onclick="setTipoReporte('interno',this)">Interno resumido</button>
+            </div>
+
+            <!-- Selector de informe específico — visible para Actualización -->
+            <div id="r-inf-selector-wrap" style="display:none;margin-bottom:8px;">
+              <label style="font-size:11px;color:var(--text-sec);display:block;margin-bottom:4px;">Selecciona el informe de actualización</label>
+              <select id="r-inf-selector" onchange="onRptInfSelectorChange()" style="width:100%;padding:6px 8px;font-size:12px;border:1px solid var(--border-md);border-radius:var(--r);background:var(--bg2);color:var(--text);font-family:inherit;">
+                <option value="">— Último registrado —</option>
+              </select>
             </div>
             <div id="r-aviso-gnp" style="display:none;font-size:10px;color:#ffcc80;background:rgba(186,117,23,.15);border:1px solid rgba(186,117,23,.3);border-radius:6px;padding:5px 8px;margin-bottom:10px;">
               El formato GNP no aplica para esta aseguradora. Se genera reporte formal genérico.
@@ -3366,8 +3375,52 @@ let tipoReporte = 'formal';
 
 function setTipoReporte(tipo, btn){
   tipoReporte = tipo;
-  document.querySelectorAll('#panel-reportes .btn').forEach(b=>b.classList.remove('btn-primary'));
+  // Only remove btn-primary from the three type buttons, not all buttons in panel
+  ['btn-tipo-formal','btn-tipo-actualizacion','btn-tipo-interno'].forEach(id=>{
+    const b=g(id); if(b) b.classList.remove('btn-primary');
+  });
   btn.classList.add('btn-primary');
+
+  // Show/hide informe selector for actualizacion
+  const wrap = g('r-inf-selector-wrap');
+  if(wrap) wrap.style.display = tipo==='actualizacion' ? 'block' : 'none';
+
+  // Update Word button labels
+  const btnGenerico = g('btn-word-generico');
+  const btnGnp      = g('btn-word-gnp');
+  const labelSuffix = tipo==='actualizacion' ? '(.docx)' : '(.docx)';
+  if(btnGenerico) btnGenerico.textContent = tipo==='actualizacion'
+    ? 'Descargar Inf. Actualización (.docx)'
+    : 'Descargar Informe Preliminar (.docx)';
+  if(btnGnp) btnGnp.textContent = tipo==='actualizacion'
+    ? 'Descargar Act. GNP (.docx)'
+    : 'Descargar Informe GNP (.docx)';
+
+  // Repopulate informe selector when switching to actualizacion
+  if(tipo==='actualizacion') poblarSelectorInforme();
+
+  previsualizarReporte();
+}
+
+function poblarSelectorInforme(){
+  const sel = g('r-inf-selector');
+  if(!sel) return;
+  const sinId = parseInt(v('r-caso'))||0;
+  const infs = sinId
+    ? data.inf.filter(i=>i.id_siniestro===sinId && i.tipo==='actualizacion')
+              .sort((a,b)=>b.id-a.id)
+    : [];
+  sel.innerHTML = '<option value="">— Último registrado —</option>' +
+    infs.map(i=>`<option value="${i.id}">Actualización v${i.numero_version} — ${fmtD(i.fecha_envio)}</option>`).join('');
+}
+
+function onRptInfSelectorChange(){
+  const sel = g('r-inf-selector');
+  const rCaso = g('r-caso');
+  if(sel && rCaso){
+    const infId = parseInt(sel.value)||0;
+    rCaso.dataset.infId = infId || '';
+  }
   previsualizarReporte();
 }
 
@@ -3598,6 +3651,10 @@ function previsualizarReporte(){
     return;
   }
   const s=data.sin.find(x=>x.id===id);if(!s)return;
+
+  // Repopulate informe selector when case changes
+  if(tipoReporte==='actualizacion') poblarSelectorInforme();
+
   const secs=secsActivas();
   const esGnp=esGNP(s);
   // Mostrar/ocultar botones Word según aseguradora
@@ -3606,7 +3663,7 @@ function previsualizarReporte(){
   const aviso=g('r-aviso-gnp');
   if(aviso) aviso.style.display='none';
   let html;
-  if(tipoReporte==='formal'){
+  if(tipoReporte==='formal' || tipoReporte==='actualizacion'){
     if(esGnp){
       html=buildGNP(s,secs);
     } else {
@@ -3634,7 +3691,7 @@ function imprimirReporte(){
   const s=data.sin.find(x=>x.id===id);if(!s)return;
   const secs=secsActivas();
   let html;
-  if(tipoReporte==='formal'){
+  if(tipoReporte==='formal' || tipoReporte==='actualizacion'){
     if(esGNP(s)){
       html=buildGNP(s,secs);
     } else {
@@ -4761,16 +4818,29 @@ function infTitulo(lastInf){
   return 'INFORME PRELIMINAR';
 }
 
-// Informe a usar para generación: respeta override de infId si viene del tab Informes
+// Informe a usar para generación: respeta override de infId si viene del tab Informes o del selector de Reportes
 function lastInfParaReporte(sinId){
   const sel = g('r-caso');
+  // Check explicit infId override (from tab Informes "Generar" button)
   const overrideId = sel ? parseInt(sel.dataset.infId||'0') : 0;
-  const todos = data.inf.filter(i=>i.id_siniestro===sinId);
+  const todos2 = data.inf.filter(i=>i.id_siniestro===sinId);
   if(overrideId){
-    const found = todos.find(i=>i.id===overrideId);
+    const found = todos2.find(i=>i.id===overrideId);
     if(found){ delete sel.dataset.infId; return found; }
   }
-  return todos.sort((a,b)=>b.id-a.id)[0]||{};
+  // Check selector in Reportes panel (for actualizacion type)
+  if(tipoReporte==='actualizacion'){
+    const rptSel = g('r-inf-selector');
+    const rptInfId = rptSel ? parseInt(rptSel.value)||0 : 0;
+    if(rptInfId){
+      const found2 = todos2.find(i=>i.id===rptInfId);
+      if(found2) return found2;
+    }
+    // Default: most recent actualizacion
+    const acts = todos2.filter(i=>i.tipo==='actualizacion').sort((a,b)=>b.id-a.id);
+    if(acts.length) return acts[0];
+  }
+  return todos2.sort((a,b)=>b.id-a.id)[0]||{};
 }
 
 // Reservas a usar: las del informe (id_informe=X) si es actualización
