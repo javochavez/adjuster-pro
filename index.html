@@ -1865,6 +1865,7 @@ function renderReservaGrid(allRows){
   html += `</tr></tbody></table></div>`;
 
   wrap.innerHTML = html;
+  console.log('[Grid] innerHTML length:', html.length, '| first 200:', html.slice(0,200));
   // Hide classic table when grid is shown
   if(tblWrap) tblWrap.style.display = 'none';
 }
