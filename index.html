@@ -239,6 +239,7 @@ td { padding:9px 10px; vertical-align:middle; }
       <!-- DASHBOARD -->
       <div id="panel-dashboard" class="panel active">
         <div class="dash-grid" id="dash-metrics"></div>
+        <div id="dash-todo-banner"></div>
         <div id="dash-informes-banner"></div>
         <div id="dash-alerta-banner"></div>
         <div class="section-title">Expedientes activos</div>
@@ -289,6 +290,33 @@ td { padding:9px 10px; vertical-align:middle; }
             </table>
           </div>
         </div>
+
+        <!-- ToDos pendientes -->
+        <div style="margin-top:28px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+            <div style="font-size:14px;font-weight:600;color:var(--text);">&#128203; ToDos — Actividades pendientes</div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <label style="font-size:12px;color:var(--text-sec);">Recordar con</label>
+              <input type="number" id="todo-dias-aviso" value="3" min="0" max="30"
+                style="width:55px;padding:4px 6px;font-size:12px;border:1px solid var(--border-md);border-radius:var(--r);background:var(--surface);color:var(--text);font-family:inherit;"
+                oninput="renderTodosAlertas();renderDash()">
+              <label style="font-size:12px;color:var(--text-sec);">días de anticipación</label>
+              <button class="btn btn-sm" onclick="renderTodosAlertas();renderDash()">Actualizar</button>
+            </div>
+          </div>
+          <div style="font-size:12px;color:var(--text-sec);margin-bottom:12px;">Tareas vencidas o próximas a vencer según la configuración</div>
+          <div id="todo-alerta-resumen" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;"></div>
+          <div class="tbl-wrap">
+            <table>
+              <thead><tr>
+                <th>Expediente</th><th>Actividad</th><th>Prioridad</th>
+                <th>Fecha límite</th><th>Días</th><th>Asignado a</th><th></th>
+              </tr></thead>
+              <tbody id="todo-alerta-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
       </div>
 
       <!-- EXPEDIENTES -->
@@ -1041,7 +1069,33 @@ td { padding:9px 10px; vertical-align:middle; }
   </div>
 </div></div>
 
-<!-- Documento -->
+<!-- ToDo -->
+<div class="overlay" id="modal-todo">
+<div class="modal modal-sm">
+  <div class="modal-title">Nuevo ToDo</div>
+  <input type="hidden" id="todo-id">
+  <div class="form-grid">
+    <div class="fg full"><label>Actividad / Tarea</label>
+      <textarea id="todo-desc" style="min-height:60px;" placeholder="Descripción de la actividad pendiente..."></textarea></div>
+    <div class="fg"><label>Fecha límite</label><input type="date" id="todo-fecha"></div>
+    <div class="fg"><label>Prioridad</label>
+      <select id="todo-prioridad">
+        <option value="alta">🔴 Alta</option>
+        <option value="media" selected>🟡 Media</option>
+        <option value="baja">🟢 Baja</option>
+      </select></div>
+    <div class="fg full"><label>Asignado a</label>
+      <select id="todo-ajustador"><option value="">— Sin asignar —</option></select></div>
+    <div class="fg full"><label>Notas</label>
+      <textarea id="todo-notas" style="min-height:40px;" placeholder="Contexto adicional, documentos requeridos..."></textarea></div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn" onclick="cerrarModal('modal-todo')">Cancelar</button>
+    <button class="btn btn-primary" onclick="guardarTodo()">Guardar</button>
+  </div>
+</div></div>
+
+
 <div class="overlay" id="modal-doc">
 <div class="modal modal-sm">
   <div class="modal-title">Documento emitido</div>
@@ -1276,7 +1330,7 @@ function mostrarApp(email){ g('login-wrap').style.display='none'; g('app').style
 
 /* ── DATA LOAD ── */
 async function loadAll(){
-  const [sin,pol,aseg,asdo,cont,res,pag,hon,viat,act,doc,tc,bit,inf,sublim,coas,ajust,ofic,sinajust] = await Promise.all([
+  const [sin,pol,aseg,asdo,cont,res,pag,hon,viat,act,doc,tc,bit,inf,sublim,coas,ajust,ofic,sinajust,todos] = await Promise.all([
     db.from('siniestros').select('*').order('id',{ascending:false}),
     db.from('polizas').select('*').order('id',{ascending:false}),
     db.from('aseguradoras').select('*').order('nombre'),
@@ -1296,6 +1350,7 @@ async function loadAll(){
     db.from('ajustadores').select('*,id_oficina(nombre,ciudad)').order('nombre'),
     db.from('oficinas').select('*').order('nombre'),
     db.from('siniestro_ajustadores').select('*').order('id'),
+    db.from('todos').select('*').order('fecha_limite',{ascending:true}),
   ]);
   data.sin    = sin.data||[];    data.pol     = pol.data||[];
   data.aseg   = aseg.data||[];   data.asdo    = asdo.data||[];
@@ -1307,6 +1362,7 @@ async function loadAll(){
   data.sublim = sublim.data||[]; data.coas    = coas.data||[];
   data.ajust  = ajust.data||[];  data.ofic    = ofic.data||[];
   data.sinajust= sinajust.data||[];
+  data.todos  = todos.data||[];
   renderAll();
 }
 
@@ -1692,6 +1748,175 @@ function renderInformesPendientes(){
   }).join('');
 }
 
+// ══════════════════════════════════════════════════════════════════════
+// MÓDULO DE ToDos
+// ══════════════════════════════════════════════════════════════════════
+
+const TODO_PRIO = {
+  alta:  { label:'🔴 Alta',  cls:'b-critico',  color:'#ef9f9f' },
+  media: { label:'🟡 Media', cls:'b-warning',  color:'#ffcc80' },
+  baja:  { label:'🟢 Baja',  cls:'b-ok',       color:'#a5d6a7' },
+};
+
+function calcTodoPendientes(){
+  const diasAviso = parseInt(g('todo-dias-aviso')?.value ?? '3') || 3;
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const limite = new Date(hoy); limite.setDate(limite.getDate() + diasAviso);
+  return data.todos.filter(t=>{
+    if(t.completado) return false;
+    if(!t.fecha_limite) return false;
+    const fl = new Date(t.fecha_limite + ' 00:00:00'); fl.setHours(0,0,0,0);
+    return fl <= limite;
+  }).sort((a,b)=>new Date(a.fecha_limite)-new Date(b.fecha_limite));
+}
+
+function renderTodoGrid(todos, wrap){
+  if(!wrap) return;
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const pending = todos.filter(t=>!t.completado);
+  const done    = todos.filter(t=>t.completado);
+
+  let html = '';
+  if(!todos.length){
+    html = `<div style="font-size:12px;color:var(--text-ter);padding:8px 0;">Sin ToDos registrados. Usa "+ Nuevo ToDo" para agregar actividades pendientes.</div>`;
+  } else {
+    html += `<div style="margin-bottom:12px;">`;
+    if(pending.length){
+      html += `<div style="font-size:11px;font-weight:600;color:var(--text-sec);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">Pendientes (${pending.length})</div>`;
+      html += `<div style="display:flex;flex-direction:column;gap:6px;">`;
+      pending.forEach(t=>{
+        const fl   = t.fecha_limite ? new Date(t.fecha_limite+' 00:00:00') : null;
+        const dias = fl ? Math.floor((fl-hoy)/(864e5)) : null;
+        const vencido = dias!==null && dias<0;
+        const urgente = dias!==null && dias<=3;
+        const prio = TODO_PRIO[t.prioridad]||TODO_PRIO.media;
+        const ajust = t.id_ajustador ? (data.ajust.find(a=>a.id===t.id_ajustador)||{}).nombre||'' : '';
+        const bgRow = vencido?'rgba(220,60,60,.07)':urgente?'rgba(186,117,23,.07)':'var(--surface2)';
+        const borderClr = vencido?'rgba(220,60,60,.3)':urgente?'rgba(186,117,23,.3)':'var(--border)';
+        const diasTxt = dias===null?'Sin fecha':dias===0?'Hoy':dias<0?`Vencido ${Math.abs(dias)}d`:`En ${dias}d`;
+        const diasClr = vencido?'#ef9f9f':urgente?'#ffcc80':'var(--text-sec)';
+        html += `<div style="background:${bgRow};border:1px solid ${borderClr};border-radius:var(--r);padding:8px 12px;display:flex;align-items:flex-start;gap:10px;">
+          <input type="checkbox" onclick="completarTodo(${t.id})" title="Marcar como completado"
+            style="margin-top:3px;cursor:pointer;width:15px;height:15px;flex-shrink:0;">
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:13px;color:var(--text);margin-bottom:3px;">${t.descripcion||''}</div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:11px;">
+              <span style="color:${prio.color};">${prio.label}</span>
+              <span style="color:${diasClr};font-weight:600;">${diasTxt}</span>
+              ${fl?`<span style="color:var(--text-ter);">${fmtD(t.fecha_limite)}</span>`:''}
+              ${ajust?`<span style="color:var(--text-ter);">→ ${ajust}</span>`:''}
+            </div>
+            ${t.notas?`<div style="font-size:11px;color:var(--text-ter);margin-top:3px;">${t.notas}</div>`:''}
+          </div>
+          <button class="btn btn-sm btn-danger" onclick="eliminar('todos',${t.id})" title="Eliminar" style="flex-shrink:0;padding:2px 8px;font-size:11px;">✕</button>
+        </div>`;
+      });
+      html += `</div>`;
+    }
+    if(done.length){
+      html += `<div style="margin-top:12px;">
+        <div style="font-size:11px;font-weight:600;color:var(--text-ter);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">Completados (${done.length})</div>
+        <div style="display:flex;flex-direction:column;gap:4px;">`;
+      done.slice(0,5).forEach(t=>{
+        html += `<div style="padding:6px 10px;background:var(--surface);border-radius:var(--r);display:flex;gap:8px;align-items:center;opacity:.6;">
+          <span style="color:#a5d6a7;font-size:14px;">✓</span>
+          <span style="font-size:12px;color:var(--text-sec);text-decoration:line-through;">${t.descripcion||''}</span>
+          <span style="font-size:10px;color:var(--text-ter);margin-left:auto;">${fmtD(t.fecha_completado||t.fecha_limite)}</span>
+          <button class="btn btn-sm btn-danger" onclick="eliminar('todos',${t.id})" style="padding:1px 6px;font-size:10px;opacity:.7;">✕</button>
+        </div>`;
+      });
+      if(done.length>5) html+=`<div style="font-size:11px;color:var(--text-ter);padding:4px 10px;">... y ${done.length-5} más completados</div>`;
+      html += `</div></div>`;
+    }
+    html += `</div>`;
+  }
+  wrap.innerHTML = html;
+}
+
+async function guardarTodo(){
+  if(!currentSin) return;
+  const desc = g('todo-desc')?.value?.trim();
+  if(!desc){ toast('La descripción es obligatoria.'); return; }
+  const {error} = await db.from('todos').insert({
+    id_siniestro: currentSin.id,
+    descripcion:  desc,
+    fecha_limite: g('todo-fecha')?.value||null,
+    prioridad:    g('todo-prioridad')?.value||'media',
+    id_ajustador: parseInt(g('todo-ajustador')?.value)||null,
+    notas:        g('todo-notas')?.value||null,
+    completado:   false,
+  });
+  if(error){ toast('Error: '+error.message); return; }
+  toast('ToDo registrado.'); cerrarModal('modal-todo');
+  await loadAll(); renderDetalle();
+}
+
+async function completarTodo(id){
+  const hoy = new Date().toISOString().slice(0,10);
+  const {error} = await db.from('todos').update({completado:true, fecha_completado:hoy}).eq('id',id);
+  if(error){ toast('Error: '+error.message); return; }
+  // Update cache
+  const t = data.todos.find(x=>x.id===id);
+  if(t){ t.completado=true; t.fecha_completado=hoy; }
+  toast('¡Tarea completada! ✓');
+  if(currentSin){
+    const todoWrap = g('todo-grid-'+currentSin.id);
+    if(todoWrap) renderTodoGrid(data.todos.filter(t=>t.id_siniestro===currentSin.id), todoWrap);
+  }
+  renderTodosAlertas();
+  renderDash();
+}
+
+function renderTodosAlertas(){
+  const pendientes = calcTodoPendientes();
+  const vencidos   = pendientes.filter(t=>{ const fl=new Date(t.fecha_limite+' 00:00:00'); const hoy=new Date(); hoy.setHours(0,0,0,0); return fl<hoy; });
+  const proximos   = pendientes.filter(t=>{ const fl=new Date(t.fecha_limite+' 00:00:00'); const hoy=new Date(); hoy.setHours(0,0,0,0); return fl>=hoy; });
+
+  const resWrap = g('todo-alerta-resumen');
+  if(resWrap) resWrap.innerHTML=`
+    <div class="mc" style="border-left-color:#e24b4a;">
+      <div class="mc-lbl">Vencidos</div>
+      <div class="mc-val" style="color:#ef9f9f;">${vencidos.length}</div>
+    </div>
+    <div class="mc" style="border-left-color:#BA7517;">
+      <div class="mc-lbl">Próximos 3 días</div>
+      <div class="mc-val" style="color:#ffcc80;">${proximos.length}</div>
+    </div>
+    <div class="mc">
+      <div class="mc-lbl">Total pendientes urgentes</div>
+      <div class="mc-val">${pendientes.length}</div>
+    </div>`;
+
+  const tbody = g('todo-alerta-body');
+  if(!tbody) return;
+  if(!pendientes.length){
+    tbody.innerHTML=`<tr><td colspan="7" class="empty" style="color:#a5d6a7;">✓ Sin ToDos vencidos ni próximos a vencer.</td></tr>`;
+    return;
+  }
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  tbody.innerHTML = pendientes.map(t=>{
+    const s    = data.sin.find(x=>x.id===t.id_siniestro)||{};
+    const fl   = new Date(t.fecha_limite+' 00:00:00');
+    const dias = Math.floor((fl-hoy)/(864e5));
+    const venc = dias<0;
+    const prio = TODO_PRIO[t.prioridad]||TODO_PRIO.media;
+    const ajust= t.id_ajustador?(data.ajust.find(a=>a.id===t.id_ajustador)||{}).nombre||'—':'—';
+    const diasTxt = dias===0?'Hoy':dias<0?`Vencido ${Math.abs(dias)}d`:`En ${dias}d`;
+    return `<tr class="${venc?'alerta-critica':'alerta-warning'}" style="cursor:pointer;" onclick="verSiniestro(${t.id_siniestro})">
+      <td><strong>${s.numero_exp||'—'}</strong></td>
+      <td>${t.descripcion||'—'}</td>
+      <td><span style="color:${prio.color};font-size:12px;">${prio.label}</span></td>
+      <td>${fmtD(t.fecha_limite)}</td>
+      <td><span class="dias-badge ${venc?'dias-critico':'dias-warning'}">${diasTxt}</span></td>
+      <td style="font-size:11px;">${ajust}</td>
+      <td>
+        <button class="btn btn-sm" onclick="event.stopPropagation();completarTodo(${t.id})" title="Marcar completado">✓</button>
+        <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();eliminar('todos',${t.id})">✕</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
 function renderDash(){
   const activos = data.sin.filter(s=>s.estatus!=='cerrado');
   const totRes  = data.sin.reduce((a,s)=>{ const rv=reservaVigente(s.id); return a+rv; },0);
@@ -1707,6 +1932,10 @@ function renderDash(){
   const infPendientes=calcInformesPendientes();
   const infUrgentes=infPendientes.filter(p=>p.urgencia==='urgente').length;
 
+  // ToDos pendientes/vencidos
+  const todosPend = calcTodoPendientes();
+  const todosVenc = todosPend.filter(t=>{ const fl=new Date(t.fecha_limite+' 00:00:00'); const h=new Date(); h.setHours(0,0,0,0); return fl<h; }).length;
+
   g('dash-metrics').innerHTML=`
     <div class="mc"><div class="mc-lbl">Expedientes activos</div><div class="mc-val">${activos.length}<span style="font-size:13px;font-weight:400;color:var(--text-sec)"> / ${data.sin.length}</span></div></div>
     <div class="mc"><div class="mc-lbl">Reserva vigente total</div><div class="mc-val" style="font-size:15px;">${fmtMXN(totRes)}</div><div class="mc-sub">MXN equivalente</div></div>
@@ -1720,7 +1949,28 @@ function renderDash(){
       <div class="mc-lbl">Informes de actualización</div>
       <div class="mc-val" style="font-size:20px;color:${infUrgentes>0?'#ef9f9f':infPendientes.length>0?'#ffcc80':'#a5d6a7'};">${infPendientes.length}</div>
       <div class="mc-sub">${infUrgentes>0?infUrgentes+' en ventana mensual — urgente':'pendientes por movimientos'}</div>
+    </div>
+    <div class="mc" style="cursor:pointer;border-left-color:${todosVenc>0?'#e24b4a':todosPend.length>0?'#BA7517':'var(--accent)'};" onclick="switchMain('alertas',document.getElementById('nav-alertas'))">
+      <div class="mc-lbl">📋 ToDos urgentes</div>
+      <div class="mc-val" style="font-size:20px;color:${todosVenc>0?'#ef9f9f':todosPend.length>0?'#ffcc80':'#a5d6a7'};">${todosPend.length}</div>
+      <div class="mc-sub">${todosVenc>0?todosVenc+' vencidos':todosPend.length>0?'próximos 3 días':'al día'}</div>
     </div>`;
+
+  // Banner ToDos vencidos
+  const bannerTodo = g('dash-todo-banner');
+  if(bannerTodo){
+    if(todosVenc>0){
+      bannerTodo.innerHTML=`<div style="background:rgba(220,60,60,.12);border:1px solid rgba(220,60,60,.3);border-radius:var(--rl);padding:10px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:12px;color:#ef9f9f;">📋 ${todosVenc} ToDo${todosVenc>1?'s':''} vencido${todosVenc>1?'s':''} — requiere${todosVenc>1?'n':''} atención inmediata.</span>
+        <button class="btn btn-sm" style="font-size:11px;color:#ef9f9f;border-color:rgba(220,60,60,.4);" onclick="switchMain('alertas',document.getElementById('nav-alertas'))">Ver ToDos →</button>
+      </div>`;
+    } else if(todosPend.length>0){
+      bannerTodo.innerHTML=`<div style="background:rgba(186,117,23,.08);border:1px solid rgba(186,117,23,.2);border-radius:var(--rl);padding:8px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:12px;color:#ffcc80;">📋 ${todosPend.length} ToDo${todosPend.length>1?'s':''} vence${todosPend.length>1?'n':''} en los próximos 3 días.</span>
+        <button class="btn btn-sm" style="font-size:11px;color:#ffcc80;border-color:rgba(186,117,23,.2);" onclick="switchMain('alertas',document.getElementById('nav-alertas'))">Ver ToDos →</button>
+      </div>`;
+    } else { bannerTodo.innerHTML=''; }
+  }
 
   // Banner informes pendientes
   const bannerInf=g('dash-informes-banner');
@@ -1835,6 +2085,8 @@ function renderAlertas(){
 
   // Render informes de actualización pendientes
   renderInformesPendientes();
+  // Render ToDos pendientes
+  renderTodosAlertas();
 }
 
 function reservaVigente(sinId){
@@ -1927,6 +2179,7 @@ function renderDetalle(){
     <button class="tab-btn" onclick="switchTab2('t-hon',this)">Honorarios</button>
     <button class="tab-btn" onclick="switchTab2('t-viat',this)">Viáticos</button>
     <button class="tab-btn" onclick="switchTab2('t-act',this)">Actividades</button>
+    <button class="tab-btn" onclick="switchTab2('t-todo',this)">📋 ToDos</button>
     <button class="tab-btn" onclick="switchTab2('t-bit',this)">Bitácora</button>
     <button class="tab-btn" onclick="switchTab2('t-inf',this)">Informes</button>
     <button class="tab-btn" onclick="switchTab2('t-coas',this)">Coaseguro</button>
@@ -1967,6 +2220,13 @@ function renderDetalle(){
     <div class="tbl-wrap"><table><thead><tr><th>Tipo</th><th>Fecha</th><th>Descripción</th><th></th></tr></thead>
     <tbody>${renderSubTable(data.act.filter(a=>a.id_siniestro===s.id),'act',['tipo','fecha','descripcion'])}</tbody></table></div>
   </div>
+  <div id="t-todo" class="tab-pane">
+    <div class="toolbar" style="align-items:center;gap:10px;">
+      <button class="btn btn-primary" onclick="abrirModal('modal-todo')">+ Nuevo ToDo</button>
+      <span style="font-size:11px;color:var(--text-ter);">Actividades pendientes con fecha límite</span>
+    </div>
+    <div id="todo-grid-${s.id}"></div>
+  </div>
   <div id="t-bit" class="tab-pane">
     <div class="toolbar"><button class="btn btn-primary" onclick="abrirModal('modal-bit')">+ Nueva nota</button></div>
     <div class="tbl-wrap"><table><thead><tr><th>Fecha</th><th>Hora</th><th>Tiempo</th><th>Nota de actividad</th><th></th></tr></thead>
@@ -1996,6 +2256,9 @@ function renderDetalle(){
   </div>`;
   // Render the coberturas grid after DOM is set
   renderReservaGrid(data.res.filter(r=>r.id_siniestro===s.id));
+  // Render ToDos grid
+  const todoWrap = g('todo-grid-'+s.id);
+  if(todoWrap) renderTodoGrid(data.todos.filter(t=>t.id_siniestro===s.id), todoWrap);
 }
 
 function renderSubTable(rows,type,cols){
@@ -2496,6 +2759,16 @@ function abrirModal(id){
     g('bit-tipo').value='Inspección';
     g('bit-tipo-otro').value='';
     g('bit-otro-wrap').style.display='none';
+  }
+  if(id==='modal-todo'){
+    g('todo-id').value='';
+    g('todo-desc').value='';
+    g('todo-fecha').value='';
+    g('todo-prioridad').value='media';
+    g('todo-notas').value='';
+    // Populate ajustadores
+    g('todo-ajustador').innerHTML='<option value="">— Sin asignar —</option>'+
+      data.ajust.map(a=>`<option value="${a.id}">${a.nombre}</option>`).join('');
   }
   if(id==='modal-inf'){
     g('inf-fecha').value=today;
