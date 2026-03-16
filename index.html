@@ -2659,21 +2659,37 @@ async function guardarReserva(){
   const bajoSeguro=parseFloat(v('res-bajo-seguro'))||0;
   const subtotal=perdida-ded;
   const coasMonto=subtotal*(coasPct/100);
-  await db.from('reservas').insert({
+
+  // Base payload — columns that always exist
+  const payload={
     id_siniestro:currentSin.id, concepto:v('res-concepto'),
     monto:parseFloat(v('res-monto'))||0,
     depreciacion_pct:parseFloat(v('res-dep-pct'))||0,
     monto_perdida_estimada:perdida,
     deducible:ded, deducible_pct:parseFloat(v('res-ded-pct'))||0,
     coaseguro_pct:coasPct, monto_coaseguro:coasMonto,
-    monto_bajo_seguro:bajoSeguro,
-    valor_real_bien:parseFloat(v('res-valor-real'))||0,
-    suma_aseg_cobertura:parseFloat(v('res-suma-aseg-cob'))||0,
     moneda:v('res-mon'), tipo_cambio_mxn:parseFloat(v('res-tc'))||1,
     fecha:v('res-fecha')||new Date().toISOString().slice(0,10),
     bases_determinacion:v('res-bases')||null, notas:v('res-notas')
+  };
+
+  // Try with v9b columns first, fall back to base if they don't exist
+  const {error:e1}=await db.from('reservas').insert({
+    ...payload,
+    monto_bajo_seguro:bajoSeguro,
+    valor_real_bien:parseFloat(v('res-valor-real'))||0,
+    suma_aseg_cobertura:parseFloat(v('res-suma-aseg-cob'))||0,
   });
-  toast('Cobertura registrada.'); cerrarModal('modal-res'); await loadAll(); renderDetalle();
+
+  if(e1){
+    // Columns may not exist yet (migration v9b pending) — save without them
+    const {error:e2}=await db.from('reservas').insert(payload);
+    if(e2){ toast('Error al guardar: '+e2.message); return; }
+    toast('Cobertura registrada. (Ejecuta migracion_v9b.sql para activar Bajo Seguro)');
+  } else {
+    toast('Cobertura registrada.');
+  }
+  cerrarModal('modal-res'); await loadAll(); renderDetalle();
 }
 
 async function guardarSublimite(){
