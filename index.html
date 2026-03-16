@@ -787,27 +787,37 @@ td { padding:9px 10px; vertical-align:middle; }
 <!-- Reserva -->
 <div class="overlay" id="modal-res">
 <div class="modal modal-sm">
-  <div class="modal-title">Reserva</div>
+  <div class="modal-title">Cobertura / Reserva</div>
   <input type="hidden" id="res-id">
   <div class="form-grid">
-    <div class="fg full"><label>Concepto / Cobertura</label>
-      <select id="res-concepto">
-        <option value="edificio">Edificio / estructura</option>
-        <option value="contenidos">Contenidos / inventario</option>
-        <option value="maquinaria">Maquinaria y equipo</option>
-        <option value="perdida_utilidades">Pérdida de utilidades</option>
-        <option value="rc">Responsabilidad civil</option>
-        <option value="transporte">Transporte de mercancías</option>
-        <option value="equipo_electronico">Equipo electrónico</option>
-        <option value="rotura_maquinaria">Rotura de maquinaria</option>
-        <option value="otro">Otro</option>
-      </select></div>
+    <div class="modal-title" style="color:var(--text-ter);font-size:10px;font-weight:400;margin-bottom:4px;">Cobertura 1 de 4 — use "Nueva cobertura" para agregar más</div>
+    <div class="fg full"><label>Cobertura / Sección</label>
+      <input type="text" id="res-concepto" list="res-concepto-list" placeholder="ej. Edificio, Contenidos, Maquinaria y Equipo…">
+      <datalist id="res-concepto-list">
+        <option value="Edificio / Estructura">
+        <option value="Contenidos / Inventario">
+        <option value="Maquinaria y Equipo">
+        <option value="Equipo Electrónico">
+        <option value="Rotura de Maquinaria">
+        <option value="Pérdida de Utilidades">
+        <option value="Responsabilidad Civil">
+        <option value="Transporte de Mercancías">
+        <option value="Incendio y/o Rayo">
+        <option value="Cobertura Adicional">
+      </datalist></div>
     <div class="fg"><label>Reserva bruta</label><input type="number" id="res-monto" placeholder="0.00"></div>
     <div class="fg"><label>Depreciación %</label><input type="number" id="res-dep-pct" value="0" step="0.01" placeholder="0.00"></div>
-    <div class="fg"><label>Monto pérdida estimada</label><input type="number" id="res-perdida" placeholder="0.00"></div>
+    <div class="fg"><label>Monto pérdida estimada</label><input type="number" id="res-perdida" placeholder="0.00" oninput="calcBajoSeguro()"></div>
     <div class="fg"><label>Deducible (monto)</label><input type="number" id="res-deducible" placeholder="0.00"></div>
     <div class="fg"><label>Deducible %</label><input type="number" id="res-ded-pct" value="0" step="0.01" placeholder="0.00"></div>
     <div class="fg"><label>Coaseguro %</label><input type="number" id="res-coas-pct" value="0" step="0.01" placeholder="ej. 20"></div>
+    <!-- Bajo Seguro: regla proporcional -->
+    <div style="font-size:10px;color:#ffcc80;background:rgba(255,204,128,.07);border-left:3px solid #ffcc80;padding:5px 10px;margin:8px 0 4px;border-radius:0 4px 4px 0;">
+      Bajo Seguro = Pérdida × (1 − Suma Asegurada / Valor a Riesgo). Se calcula automáticamente.
+    </div>
+    <div class="fg"><label>Valor a Riesgo</label><input type="number" id="res-valor-real" value="0" step="0.01" placeholder="0.00" oninput="calcBajoSeguro()"></div>
+    <div class="fg"><label>Suma asegurada cobertura</label><input type="number" id="res-suma-aseg-cob" value="0" step="0.01" placeholder="0.00" oninput="calcBajoSeguro()"></div>
+    <div class="fg"><label>Bajo Seguro (calculado)</label><input type="number" id="res-bajo-seguro" value="0" step="0.01" placeholder="0.00" style="background:rgba(255,204,128,.08);color:var(--text);" readonly title="Calculado automáticamente: Pérdida × (1 − SA/VR)"></div>
     <div class="fg"><label>Moneda</label>
       <select id="res-mon"><option value="MXN">MXN</option><option value="USD">USD</option><option value="EUR">EUR</option></select></div>
     <div class="fg"><label>Tipo de cambio</label><input type="number" id="res-tc" value="1" step="0.0001"></div>
@@ -1406,9 +1416,17 @@ function renderDetalle(){
   </div>
 
   <div id="t-res" class="tab-pane active">
-    <div class="toolbar"><button class="btn btn-primary" onclick="abrirModal('modal-res')">+ Nueva reserva</button></div>
-    <div class="tbl-wrap"><table><thead><tr><th>Concepto</th><th>Reserva bruta</th><th>Pérdida estimada</th><th>Deducible</th><th>Coaseguro %</th><th>Reserva neta</th><th>Moneda</th><th>Fecha</th><th></th></tr></thead>
-    <tbody>${renderReservaRows(data.res.filter(r=>r.id_siniestro===s.id))}</tbody></table></div>
+    <div class="toolbar" style="align-items:center;gap:10px;">
+      <button class="btn btn-primary" onclick="abrirModal('modal-res')">+ Nueva cobertura</button>
+      <span style="font-size:11px;color:var(--text-ter);">Hasta 4 coberturas por siniestro</span>
+    </div>
+    <!-- Cuadrícula de coberturas -->
+    <div id="res-grid-wrap"></div>
+    <!-- Tabla detalle clásica (oculta por defecto cuando hay grid) -->
+    <div id="res-table-wrap" style="margin-top:12px;">
+      <div class="tbl-wrap"><table><thead><tr><th>Cobertura</th><th>Reserva bruta</th><th>Pérdida estimada</th><th>Deducible</th><th>Coaseguro %</th><th>Reserva neta</th><th>Moneda</th><th>Fecha</th><th></th></tr></thead>
+      <tbody id="res-body"></tbody></table></div>
+    </div>
   </div>
   <div id="t-pag" class="tab-pane">
     <div class="toolbar"><button class="btn btn-primary" onclick="abrirModal('modal-pago')">+ Nuevo pago</button></div>
@@ -1457,6 +1475,8 @@ function renderDetalle(){
     </tr></thead>
     <tbody>${renderSinAjustRows(data.sinajust.filter(a=>a.id_siniestro===s.id))}</tbody></table></div>
   </div>`;
+  // Render the coberturas grid after DOM is set
+  renderReservaGrid(data.res.filter(r=>r.id_siniestro===s.id));
 }
 
 function renderSubTable(rows,type,cols){
@@ -1492,13 +1512,135 @@ function renderBitacoraRows(rows){
 
 const INF_TIPOS = {preliminar:'Preliminar',actualizacion:'Actualización',final:'Final',nota_tecnica:'Nota Técnica'};
 
+function renderReservaGrid(rows){
+  const wrap = g('res-grid-wrap');
+  const tblWrap = g('res-table-wrap');
+  if(!wrap) return;
+  if(!rows.length){
+    wrap.innerHTML='';
+    if(tblWrap) tblWrap.querySelector('tbody').innerHTML=`<tr><td colspan="9" class="empty">Sin coberturas registradas.</td></tr>`;
+    return;
+  }
+
+  const fN = n=>fmtMXN(n||0);
+
+  // Build totals
+  let totBruta=0, totPerdida=0, totDed=0, totCoas=0, totBajo=0, totNeta=0;
+  const calc = rows.map(r=>{
+    const bruta   = r.monto||0;
+    const perdida = r.monto_perdida_estimada||r.monto||0;
+    const dep     = r.depreciacion_pct||0;
+    const ded     = r.deducible||0;
+    const coasPct = r.coaseguro_pct||0;
+    const coas    = r.monto_coaseguro||((perdida-ded)*(coasPct/100));
+    const bajo    = r.monto_bajo_seguro||0;
+    const neta    = perdida-bajo-ded-coas;  // Pérdida − Bajo Seguro − Deducible − Coaseguro
+    totBruta+=bruta; totPerdida+=perdida; totDed+=ded; totCoas+=coas; totBajo+=bajo; totNeta+=neta;
+    return {r, bruta, perdida, dep, ded, coasPct, coas, bajo, neta};
+  });
+
+  const ROW_LBL = [
+    ['Cobertura / Sección','concepto'],
+    ['Reserva bruta','bruta'],
+    ['Depreciación %','dep'],
+    ['Monto Pérdida Ajustada','perdida'],
+    ['Deducible','ded'],
+    ['Monto Pérdida Indemnizable','indemniz'],
+    ['Coaseguro Asegurado','coas'],
+    ['Reserva Neta','neta'],
+    ['Moneda','moneda'],
+    ['Bases de reserva','bases'],
+  ];
+
+  const moneda = rows[0]?.moneda||'MXN';
+  const showTotal = rows.length > 1;
+
+  // Column widths
+  const labelW = 200;
+  const colW   = 160;
+  const totalW = showTotal ? colW : 0;
+  const tableW = labelW + rows.length * colW + totalW;
+
+  let html = `<div style="overflow-x:auto;margin-bottom:8px;">
+  <table style="border-collapse:collapse;font-size:11px;min-width:${tableW}px;width:100%;">
+    <thead>
+      <tr>
+        <th style="background:#1F3864;color:#fff;padding:6px 10px;text-align:left;font-weight:600;width:${labelW}px;border:1px solid #1F3864;">Concepto</th>`;
+
+  calc.forEach((item,i)=>{
+    html += `<th style="background:#1F3864;color:#fff;padding:6px 10px;text-align:center;font-weight:600;min-width:${colW}px;border:1px solid #1F3864;">
+      ${item.r.concepto||('Cobertura '+(i+1))}
+    </th>`;
+  });
+  if(showTotal) html += `<th style="background:#0F2744;color:#fff;padding:6px 10px;text-align:center;font-weight:700;min-width:${colW}px;border:1px solid #0F2744;">ESTIMACIÓN TOTAL</th>`;
+  html += `</tr></thead><tbody>`;
+
+  // Rows
+  const ROWS_DEF = [
+    { label:'Reserva bruta',              key:'bruta',    fmt:'money', tot:totBruta    },
+    { label:`Depreciación %`,             key:'dep',      fmt:'pct',   tot:''          },
+    { label:'Monto Pérdida Ajustada',     key:'perdida',  fmt:'money', tot:totPerdida  },
+    { label:'Deducible',                  key:'ded',      fmt:'money', tot:totDed      },
+    { label:'Monto Pérdida Indemnizable', key:'indemniz', fmt:'money', tot:totPerdida-totDed },
+    { label:'Coaseguro Asegurado',        key:'coas',     fmt:'money', tot:totCoas     },
+    { label:'Bajo Seguro',               key:'bajo',     fmt:'money', tot:totBajo     },
+    { label:'Reserva Neta',              key:'neta',     fmt:'money', tot:totNeta,  bold:true, highlight:true },
+  ];
+
+  ROWS_DEF.forEach((rd, ri)=>{
+    const bg  = rd.highlight ? '#EBF3FF' : (ri%2===0 ? '#F5F6F8' : '#FFFFFF');
+    const bgT = rd.highlight ? '#D0E4FF' : (ri%2===0 ? '#EAECEF' : '#F5F6F8');
+    html += `<tr>
+      <td style="background:${bg};padding:5px 10px;border:1px solid #DDE0E5;font-weight:${rd.bold?'700':'500'};color:#333;">${rd.label}</td>`;
+    calc.forEach(item=>{
+      let val;
+      if(rd.key==='indemniz') val = item.perdida - item.ded;
+      else val = item[rd.key];
+      const disp = rd.fmt==='pct'
+        ? (val===0?'—':val.toFixed(2)+'%')
+        : (val===0&&rd.key!=='ded'&&rd.key!=='coas'&&rd.key!=='bajo'?'—':(moneda+' '+fN(val)));
+      html += `<td style="background:${bg};padding:5px 10px;border:1px solid #DDE0E5;text-align:right;font-weight:${rd.bold?'700':'400'};">${disp}</td>`;
+    });
+    if(showTotal){
+      const tDisp = rd.fmt==='pct' ? '—' : (rd.tot===0&&rd.key!=='ded'&&rd.key!=='coas'?'—':(moneda+' '+fN(rd.tot)));
+      html += `<td style="background:${bgT};padding:5px 10px;border:1px solid #DDE0E5;text-align:right;font-weight:700;">${tDisp}</td>`;
+    }
+    html += `</tr>`;
+  });
+
+  // Bases de reserva row
+  html += `<tr>
+    <td style="background:#F0F4FA;padding:5px 10px;border:1px solid #DDE0E5;font-weight:500;color:#333;vertical-align:top;">Bases de la reserva</td>`;
+  calc.forEach(item=>{
+    html += `<td style="background:#F0F4FA;padding:5px 10px;border:1px solid #DDE0E5;font-size:10px;color:#555;">${item.r.bases_determinacion||'—'}</td>`;
+  });
+  if(showTotal) html += `<td style="background:#E8EDF5;padding:5px 10px;border:1px solid #DDE0E5;"></td>`;
+  html += `</tr>`;
+
+  // Actions row
+  html += `<tr>
+    <td style="background:#F8F9FA;padding:5px 10px;border:1px solid #DDE0E5;font-size:10px;color:#888;">Acciones</td>`;
+  calc.forEach(item=>{
+    html += `<td style="background:#F8F9FA;padding:5px 10px;border:1px solid #DDE0E5;text-align:center;">
+      <button class="btn btn-sm btn-danger" onclick="eliminar('reservas',${item.r.id})">Eliminar</button>
+    </td>`;
+  });
+  if(showTotal) html += `<td style="background:#F8F9FA;border:1px solid #DDE0E5;"></td>`;
+  html += `</tr></tbody></table></div>`;
+
+  wrap.innerHTML = html;
+  // Hide classic table when grid is shown
+  if(tblWrap) tblWrap.style.display = 'none';
+}
+
 function renderReservaRows(rows){
-  if(!rows.length) return `<tr><td colspan="9" class="empty">Sin reservas registradas.</td></tr>`;
+  if(!rows.length) return `<tr><td colspan="9" class="empty">Sin coberturas registradas.</td></tr>`;
   return rows.map(r=>{
     const perdida=r.monto_perdida_estimada||r.monto||0;
     const ded=r.deducible||0;
     const coasMonto=r.monto_coaseguro||(((perdida-ded)*(r.coaseguro_pct||0))/100);
-    const neta=perdida-ded-coasMonto;
+    const bajo=r.monto_bajo_seguro||0;
+    const neta=perdida-bajo-ded-coasMonto;
     return `<tr>
       <td>${r.concepto||'—'}</td>
       <td style="text-align:right;">${fmtMXN(r.monto)}</td>
@@ -1697,6 +1839,13 @@ function abrirModal(id){
   if(id==='modal-res'||id==='modal-pago'||id==='modal-viat'||id==='modal-act'||id==='modal-doc'){
     const fids={'modal-res':'res-fecha','modal-pago':'pg-fecha','modal-viat':'vt-fecha','modal-act':'ac-fecha','modal-doc':'dc-fecha'};
     if(fids[id]) g(fids[id]).value=today;
+    if(id==='modal-res'){
+      ['res-concepto','res-monto','res-perdida','res-deducible','res-bases','res-notas'].forEach(f=>{if(g(f))g(f).value='';});
+      ['res-dep-pct','res-ded-pct','res-coas-pct','res-bajo-seguro','res-valor-real','res-suma-aseg-cob'].forEach(f=>{if(g(f))g(f).value='0';});
+      if(g('res-tc'))g('res-tc').value='1';
+      if(g('res-mon'))g('res-mon').value='MXN';
+      if(g('res-id'))g('res-id').value='';
+    }
   }
   if(id==='modal-sin'){
     g('sin-modal-title').textContent='Nuevo expediente';
@@ -2084,11 +2233,28 @@ async function guardarTC(){
   toast('Tipo de cambio registrado.'); cerrarModal('modal-tc'); await loadAll();
 }
 
+
+function calcBajoSeguro(){
+  const perdida = parseFloat(document.getElementById('res-perdida')?.value)||0;
+  const valReal = parseFloat(document.getElementById('res-valor-real')?.value)||0;
+  const sumaAseg= parseFloat(document.getElementById('res-suma-aseg-cob')?.value)||0;
+  const field   = document.getElementById('res-bajo-seguro');
+  if(!field) return;
+  if(valReal > 0 && sumaAseg > 0 && sumaAseg < valReal){
+    const ratio = sumaAseg / valReal;          // proporción cubierta
+    const bajo  = perdida * (1 - ratio);       // lo que no cubre la póliza
+    field.value = Math.max(0, bajo).toFixed(2);
+  } else {
+    field.value = '0';
+  }
+}
+
 async function guardarReserva(){
   if(!currentSin) return;
   const coasPct=parseFloat(v('res-coas-pct'))||0;
   const perdida=parseFloat(v('res-perdida'))||0;
   const ded=parseFloat(v('res-deducible'))||0;
+  const bajoSeguro=parseFloat(v('res-bajo-seguro'))||0;
   const subtotal=perdida-ded;
   const coasMonto=subtotal*(coasPct/100);
   await db.from('reservas').insert({
@@ -2098,11 +2264,14 @@ async function guardarReserva(){
     monto_perdida_estimada:perdida,
     deducible:ded, deducible_pct:parseFloat(v('res-ded-pct'))||0,
     coaseguro_pct:coasPct, monto_coaseguro:coasMonto,
+    monto_bajo_seguro:bajoSeguro,
+    valor_real_bien:parseFloat(v('res-valor-real'))||0,
+    suma_aseg_cobertura:parseFloat(v('res-suma-aseg-cob'))||0,
     moneda:v('res-mon'), tipo_cambio_mxn:parseFloat(v('res-tc'))||1,
     fecha:v('res-fecha')||new Date().toISOString().slice(0,10),
     bases_determinacion:v('res-bases')||null, notas:v('res-notas')
   });
-  toast('Reserva registrada.'); cerrarModal('modal-res'); await loadAll(); renderDetalle();
+  toast('Cobertura registrada.'); cerrarModal('modal-res'); await loadAll(); renderDetalle();
 }
 
 async function guardarSublimite(){
@@ -2628,6 +2797,9 @@ function buildGNP(s, secs){
       <tr><td class="lbl">Coaseguro Asegurado</td>
           <td class="num">${cob1.coaseguro_pct?monedaStr+' '+fM(cob1.monto_coaseguro||0):'N/A'}</td>
           <td class="num">${coas_aseg?monedaStr+' '+fM(coas_aseg):'N/A'}</td></tr>
+      <tr><td class="lbl">Bajo Seguro</td>
+          <td class="num">${(cob1.monto_bajo_seguro||0)?monedaStr+' '+fM(cob1.monto_bajo_seguro||0):'N/A'}</td>
+          <td class="num">${bajo_seg?monedaStr+' '+fM(bajo_seg):'N/A'}</td></tr>
       <tr><td class="lbl"><strong>Reserva Neta</strong></td>
           <td class="num"><strong>${monedaStr} ${fM((cob1.monto_perdida_estimada||cob1.monto||0)-(cob1.deducible||0)-(cob1.monto_coaseguro||0))}</strong></td>
           <td class="num"><strong>${monedaStr} ${fM(res_neta)}</strong></td></tr>
@@ -3060,7 +3232,7 @@ async function descargarWord(){
   portRows.push(fullRow('SUMA ASEGURADA:',pol.suma_asegurada?(pol.moneda||'MXN')+' '+fM(pol.suma_asegurada):''));
   portRows.push(fullRow('SUBLÍMITES:',sublims.length?sublims.map(sl=>sl.concepto+': '+(sl.moneda||'MXN')+' '+fM(sl.monto)).join('   |   '):'No aplica'));
 
-  const totReserva=rvList.reduce((acc,r)=>{const p=r.monto_perdida_estimada||r.monto||0,d2=r.deducible||0,c=r.monto_coaseguro||((p-d2)*(r.coaseguro_pct||0)/100);return acc+(p-d2-c);},0);
+  const totReserva=rvList.reduce((acc,r)=>{const p=r.monto_perdida_estimada||r.monto||0,d2=r.deducible||0,c=r.monto_coaseguro||((p-d2)*(r.coaseguro_pct||0)/100),b=r.monto_bajo_seguro||0;return acc+(p-b-d2-c);},0);
   portRows.push(new TableRow({children:[
     new TableCell({columnSpan:4,borders:allB,shading:{fill:BLUE,type:ShadingType.CLEAR},
       margins:{top:100,bottom:100,left:120,right:120},
@@ -3072,7 +3244,7 @@ async function descargarWord(){
   if(rvList.length){
     const hdr=new TableRow({children:[mkCell('CONCEPTO',{w:4800,bold:true,bg:BLUE,color:WHITE,size:18,align:AlignmentType.CENTER}),mkCell('RECLAMACIÓN ESTIMADA',{w:2672,bold:true,bg:BLUE,color:WHITE,size:18,align:AlignmentType.CENTER}),mkCell('DEDUCIBLE',{w:1300,bold:true,bg:BLUE,color:WHITE,size:18,align:AlignmentType.CENTER}),mkCell('RESERVA',{w:1372,bold:true,bg:BLUE,color:WHITE,size:18,align:AlignmentType.CENTER})]});
     let sp=0,sd=0,sr=0;
-    const dRows=rvList.map(r=>{const p=r.monto_perdida_estimada||r.monto||0,d2=r.deducible||0,c=r.monto_coaseguro||((p-d2)*(r.coaseguro_pct||0)/100),res=p-d2-c;sp+=p;sd+=d2;sr+=res;return new TableRow({children:[mkCell(r.concepto||'',{w:4800,size:18}),mkCell(fM(p),{w:2672,size:18,align:AlignmentType.RIGHT}),mkCell(fM(d2),{w:1300,size:18,align:AlignmentType.RIGHT}),mkCell(fM(res),{w:1372,size:18,align:AlignmentType.RIGHT})]});});
+    const dRows=rvList.map(r=>{const p=r.monto_perdida_estimada||r.monto||0,d2=r.deducible||0,c=r.monto_coaseguro||((p-d2)*(r.coaseguro_pct||0)/100),b=r.monto_bajo_seguro||0,res=p-b-d2-c;sp+=p;sd+=d2;sr+=res;return new TableRow({children:[mkCell(r.concepto||'',{w:4800,size:18}),mkCell(fM(p),{w:2672,size:18,align:AlignmentType.RIGHT}),mkCell(fM(d2),{w:1300,size:18,align:AlignmentType.RIGHT}),mkCell(fM(res),{w:1372,size:18,align:AlignmentType.RIGHT})]});});
     const totRow=new TableRow({children:[mkCell('TOTAL',{w:4800,bold:true,bg:GRAY,size:18}),mkCell(fM(sp),{w:2672,bold:true,bg:GRAY,size:18,align:AlignmentType.RIGHT}),mkCell(fM(sd),{w:1300,bold:true,bg:GRAY,size:18,align:AlignmentType.RIGHT}),mkCell(fM(sr),{w:1372,bold:true,bg:GRAY,size:18,align:AlignmentType.RIGHT})]});
     tablaEstim=new Table({width:{size:CONTENT_W,type:WidthType.DXA},columnWidths:[4800,2672,1300,1372],rows:[hdr,...dRows,totRow]});
   }
@@ -3207,7 +3379,8 @@ async function descargarWordGNP(){
   const deducible  = rvList.reduce((a,r)=>a+(r.deducible||0),0);
   const p_indemniz = p_ajustada - deducible;
   const coas_aseg  = rvList.reduce((a,r)=>a+(r.monto_coaseguro||0),0);
-  const res_neta   = p_indemniz - coas_aseg;
+  const bajo_seg   = rvList.reduce((a,r)=>a+(r.monto_bajo_seguro||0),0);
+  const res_neta   = p_indemniz - bajo_seg - coas_aseg;
   const bases_det  = rvList.map(r=>r.bases_determinacion).filter(Boolean).join(' ');
   const monedaStr  = pol.moneda||'MXN';
 
@@ -3362,7 +3535,8 @@ async function descargarWordGNP(){
   const cobHdr=(t,w)=>mkC(t,{w,bold:true,size:17,bg:'1F3864',color:'FFFFFF',align:AlignmentType.CENTER});
   const cobLbl=(t)=>mkC(t,{w:cobW[0],size:17,bg:'E8EDF5',bold:true});
   const cobVal=(t,idx)=>mkC(t,{w:cobW[idx],size:17,align:AlignmentType.RIGHT});
-  const cob1MPA=(cob1.monto_perdida_estimada||cob1.monto||0)-(cob1.deducible||0);
+  const cob1Bajo=(cob1.monto_bajo_seguro||0);
+  const cob1MPA=(cob1.monto_perdida_estimada||cob1.monto||0)-cob1Bajo-(cob1.deducible||0);
   const cobRows=[
     new TableRow({children:[cobHdr('Coberturas o secciones',cobW[0]),cobHdr('Cobertura 1  '+(cob1.concepto||''),cobW[1]),cobHdr('Estimación Total',cobW[2])]}),
     new TableRow({children:[cobLbl('Reserva bruta'),cobVal(monedaStr+' '+fM(cob1.monto||0),1),cobVal(monedaStr+' '+fM(res_bruta),2)]}),
@@ -3371,6 +3545,7 @@ async function descargarWordGNP(){
     new TableRow({children:[cobLbl('Deducible'),cobVal(monedaStr+' '+fM(cob1.deducible||0),1),cobVal(monedaStr+' '+fM(deducible),2)]}),
     new TableRow({children:[cobLbl('Monto Pérdida Indemnizable'),cobVal(monedaStr+' '+fM(cob1MPA),1),cobVal(monedaStr+' '+fM(p_indemniz),2)]}),
     new TableRow({children:[cobLbl('Coaseguro Asegurado'),cobVal(cob1.coaseguro_pct?monedaStr+' '+fM(cob1.monto_coaseguro||0):'N/A',1),cobVal(coas_aseg?monedaStr+' '+fM(coas_aseg):'N/A',2)]}),
+    new TableRow({children:[cobLbl('Bajo Seguro'),cobVal(cob1Bajo?monedaStr+' '+fM(cob1Bajo):'N/A',1),cobVal(bajo_seg?monedaStr+' '+fM(bajo_seg):'N/A',2)]}),
     new TableRow({children:[cobLbl('Reserva Neta'),cobVal(monedaStr+' '+fM(cob1MPA-(cob1.monto_coaseguro||0)),1),cobVal(monedaStr+' '+fM(res_neta),2)]}),
     new TableRow({children:[new TableCell({columnSpan:3,borders:allB,width:{size:CONTENT_W,type:WidthType.DXA},shading:{fill:'FAFBFC',type:ShadingType.CLEAR},margins:{top:60,bottom:60,left:100,right:100},children:[pr([tx('Especificar las bases que se tomaron para determinar la reserva:',{bold:true,size:17})],{sb:0,sa:20}),pr([tx(bases_det,{size:17,italics:true})],{sb:0,sa:0})]})]}),
     new TableRow({children:[cobLbl('Honorarios ajustador'),mkC('',{w:cobW[1]}),mkC('',{w:cobW[2]})]}),
@@ -3536,6 +3711,78 @@ async function descargarWordGNP(){
   toast('Informe GNP descargado.');
 }
 
+
+// ══════════════════════════════════════════════════════════════════════
+// buildCoberturaTableHTML — tabla multi-cobertura para PDF/HTML
+// rvList: array de reservas, moneda: 'MXN'|'USD', showTotal: bool
+// ══════════════════════════════════════════════════════════════════════
+function buildCoberturaTableHTML(rvList, moneda){
+  if(!rvList||!rvList.length) return '';
+  const fN=n=>fmtMXN(n||0);
+  const showTotal=rvList.length>1;
+
+  const calc=rvList.map(r=>{
+    const bruta=r.monto||0;
+    const perdida=r.monto_perdida_estimada||r.monto||0;
+    const dep=r.depreciacion_pct||0;
+    const ded=r.deducible||0;
+    const coasPct=r.coaseguro_pct||0;
+    const coas=r.monto_coaseguro||((perdida-ded)*(coasPct/100));
+    const bajo=r.monto_bajo_seguro||0;
+    const neta=perdida-bajo-ded-coas;  // Pérdida − Bajo Seguro − Deducible − Coaseguro
+    return {r,bruta,perdida,dep,ded,coasPct,coas,bajo,neta,indemniz:perdida-ded};
+  });
+
+  let totBruta=0,totPerdida=0,totDed=0,totCoas=0,totBajo=0,totNeta=0;
+  calc.forEach(x=>{totBruta+=x.bruta;totPerdida+=x.perdida;totDed+=x.ded;totCoas+=x.coas;totBajo+=x.bajo;totNeta+=x.neta;});
+
+  const th=(t,extra='')=>`<th style="background:#1F3864;color:#fff;font-size:9px;font-weight:700;padding:4px 7px;border:1px solid #1F3864;text-align:center;${extra}">${t}</th>`;
+  const td=(t,bg='#fff',bold=false,right=false)=>`<td style="border:1px solid #ccc;padding:3px 7px;font-size:9px;background:${bg};font-weight:${bold?'700':'400'};text-align:${right?'right':'left'};">${t}</td>`;
+  const tdL=(t,bg='#f0f0f0')=>`<td style="border:1px solid #ccc;padding:3px 7px;font-size:9px;background:${bg};font-weight:600;">${t}</td>`;
+  const m=(n)=>moneda+' '+fN(n);
+
+  let h=`<table style="width:100%;border-collapse:collapse;margin-bottom:6px;font-size:9px;">
+  <thead><tr>${th('Coberturas o secciones','text-align:left;')}`;
+  calc.forEach((x,i)=>{ h+=th(x.r.concepto||('Cobertura '+(i+1))); });
+  if(showTotal) h+=th('ESTIMACIÓN TOTAL','background:#0F2744;');
+  h+=`</tr></thead><tbody>`;
+
+  const ROWS=[
+    {label:'Reserva bruta',           key:'bruta',    tot:totBruta},
+    {label:'Depreciación % promedio',  key:'dep',      tot:'—',    fmt:'pct'},
+    {label:'Monto Pérdida Ajustada',  key:'perdida',  tot:totPerdida},
+    {label:'Deducible',               key:'ded',      tot:totDed},
+    {label:'Monto Pérdida Indemnizable',key:'indemniz',tot:totPerdida-totDed},
+    {label:'Coaseguro Asegurado',     key:'coas',     tot:totCoas, coas:true},
+    {label:'Bajo Seguro',             key:'bajo',     tot:totBajo, bajo:true},
+    {label:'Reserva Neta',            key:'neta',     tot:totNeta, bold:true, hl:true},
+  ];
+  ROWS.forEach((rd,ri)=>{
+    const bg=rd.hl?'#EBF3FF':(ri%2===0?'#F5F6F8':'#FFFFFF');
+    const bgT=rd.hl?'#D0E4FF':(ri%2===0?'#EAECEF':'#F5F6F8');
+    h+=`<tr>${tdL(rd.label,bg)}`;
+    calc.forEach(x=>{
+      const v=x[rd.key];
+      const disp=rd.fmt==='pct'?(v===0?'—':v.toFixed(2)+'%'):((rd.coas||rd.bajo)&&v===0?'N/A':m(v));
+      h+=td(disp,bg,rd.bold,true);
+    });
+    if(showTotal){
+      const t2=typeof rd.tot==='number'?(rd.coas&&rd.tot===0?'N/A':m(rd.tot)):rd.tot;
+      h+=td(t2,bgT,true,true);
+    }
+    h+=`</tr>`;
+  });
+
+  // Bases de reserva
+  h+=`<tr>${tdL('Especificar las bases que se tomaron para determinar la reserva','#F0F4FA')}`;
+  calc.forEach(x=>{ h+=td(x.r.bases_determinacion||'','#F0F4FA',false,false); });
+  if(showTotal) h+=td('','#E8EDF5');
+  h+=`</tr>`;
+
+  h+=`</tbody></table>`;
+  return h;
+}
+
 function buildFormalGenerico(s, secs, aseg){
   const pol      = data.pol.find(p=>p.id===s.id_poliza)||{};
   const asdo     = data.asdo.find(a=>a.id===pol.id_asegurado)||{};
@@ -3558,7 +3805,7 @@ function buildFormalGenerico(s, secs, aseg){
   const totReserva = rvList.reduce((acc,r)=>{
     const p=r.monto_perdida_estimada||r.monto||0, d=r.deducible||0;
     const c=r.monto_coaseguro||((p-d)*(r.coaseguro_pct||0)/100);
-    return acc+(p-d-c);
+    const b2=r.monto_bajo_seguro||0;return acc+(p-b2-d-c);
   },0);
 
   const fD = d=>{ if(!d) return '—'; const[y,m,dy]=d.split('-'); return dy+'/'+m+'/'+y; };
@@ -3841,23 +4088,7 @@ function buildFormalGenerico(s, secs, aseg){
     <div class="narrative">${dedTxt}</div>
     <div class="sec-sub">10.3 &nbsp; Estimación de reserva</div>`;
 
-    h += `<table class="est-table no-break">
-      <thead><tr>
-        <th style="text-align:left;">Concepto</th>
-        <th>Estimación pérdida</th>
-        <th>Deducible</th>
-        <th>Reserva</th>
-      </tr></thead><tbody>`;
-    let sp=0,sd=0,sr=0;
-    rvList.forEach(r=>{
-      const p=r.monto_perdida_estimada||r.monto||0, d=r.deducible||0;
-      const c=r.monto_coaseguro||((p-d)*(r.coaseguro_pct||0)/100);
-      const res=p-d-c; sp+=p; sd+=d; sr+=res;
-      h+=`<tr><td class="lbl">${r.concepto||''}</td><td class="num">${fM(p)}</td><td class="num">${fM(d)}</td><td class="num">${fM(res)}</td></tr>`;
-    });
-    h += `</tbody><tfoot><tr class="total">
-      <td class="lbl">TOTAL</td><td class="num">${fM(sp)}</td><td class="num">${fM(sd)}</td><td class="num">${fM(sr)}</td>
-    </tr></tfoot></table>`;
+    h += buildCoberturaTableHTML(rvList, pol.moneda||'MXN');
 
     h += `<div class="narrative" style="margin-top:8px;">Por la cantidad antes detallada de <strong>${pol.moneda||'MXN'} ${fM(totReserva)}</strong>, sugerimos crear la reserva correspondiente.</div>`;
   }
