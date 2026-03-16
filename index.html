@@ -1390,7 +1390,12 @@ function poblarSelectores(){
   g('co-asdo').innerHTML='<option value="">—</option>'+dOpts;
   g('s-poliza').innerHTML='<option value="">— Sin póliza aún —</option>'+pOpts;
   g('s-aseg-direct').innerHTML='<option value="">— Selecciona la compañía —</option>'+aOpts;
-  g('r-caso').innerHTML='<option value="">— Selecciona —</option>'+data.sin.map(s=>`<option value="${s.id}">${s.numero_exp}</option>`).join('');
+  g('r-caso').innerHTML='<option value="">— Selecciona —</option>'+data.sin.map(s=>{
+    const pol=data.pol.find(p=>p.id===s.id_poliza)||{};
+    const asdo=data.asdo.find(a=>a.id===pol.id_asegurado)||{};
+    const label=s.numero_exp+(asdo.nombre?' — '+asdo.nombre:'');
+    return `<option value="${s.id}">${label}</option>`;
+  }).join('');
   if(g('aj-oficina')) g('aj-oficina').innerHTML='<option value="">— Sin asignar —</option>'+ofOpts;
   if(g('sa-ajust'))   g('sa-ajust').innerHTML='<option value="">— Selecciona —</option>'+ajOpts;
 }
