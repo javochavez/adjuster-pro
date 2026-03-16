@@ -301,6 +301,7 @@ td { padding:9px 10px; vertical-align:middle; }
               <option value="asignado">Asignado</option>
               <option value="inspeccion">En inspección</option>
               <option value="informe">Elaborando informe</option>
+              <option value="documentando">Documentando</option>
               <option value="cobro">Pendiente de cobro</option>
               <option value="cerrado">Cerrado</option>
             </select>
@@ -536,7 +537,7 @@ td { padding:9px 10px; vertical-align:middle; }
         <option value="asignado">Asignado</option>
         <option value="inspeccion">En inspección</option>
         <option value="informe">Elaborando informe</option>
-        <option value="cobro">Pendiente de cobro</option>
+        <option value="documentando">Documentando</option>
         <option value="cerrado">Cerrado</option>
       </select></div>
     <div class="fg"><label>Intervención de autoridades</label>
@@ -1131,11 +1132,12 @@ const db = supabase.createClient(SUPA_URL, SUPA_KEY);
 const ALLOWED = ['jchavez@aasa.com.mx','emalagon@aasa.com.mx'];
 
 const EST = {
-  asignado:  {label:'Asignado',   cls:'b-asignado'},
-  inspeccion:{label:'En inspección', cls:'b-inspeccion'},
-  informe:   {label:'Elaborando informe', cls:'b-informe'},
-  cobro:     {label:'Pte. de cobro', cls:'b-cobro'},
-  cerrado:   {label:'Cerrado',    cls:'b-cerrado'}
+  asignado:    {label:'Asignado',           cls:'b-asignado'},
+  inspeccion:  {label:'En inspección',      cls:'b-inspeccion'},
+  informe:     {label:'Elaborando informe', cls:'b-informe'},
+  documentando:{label:'Documentando',       cls:'b-informe'},
+  cobro:       {label:'Pte. de cobro',      cls:'b-cobro'},
+  cerrado:     {label:'Cerrado',            cls:'b-cerrado'}
 };
 const RAMOS = {
   incendio:'Incendio y líneas aliadas', robo:'Robo', rc:'Resp. civil',
@@ -1314,7 +1316,7 @@ function calcInformesPendientes(){
   const diaHoy=hoy.getDate();
   const pendientes=[];
 
-  const activos=data.sin.filter(s=>['asignado','inspeccion','informe','cobro'].includes(s.estatus));
+  const activos=data.sin.filter(s=>['asignado','inspeccion','informe','documentando','cobro'].includes(s.estatus));
 
   activos.forEach(s=>{
     const pol=data.pol.find(p=>p.id===s.id_poliza)||{};
