@@ -1936,7 +1936,7 @@ function renderCoasRows(rows){
 }
 
 function renderInformesRows(rows){
-  if(!rows.length) return `<tr><td colspan="7" class="empty">Sin informes registrados.</td></tr>`;
+  if(!rows.length) return `<tr><td colspan="8" class="empty">Sin informes registrados.</td></tr>`;
   return rows.map(r=>`<tr>
     <td><strong>${INF_TIPOS[r.tipo]||r.tipo}</strong></td>
     <td><span style="background:var(--surface2);padding:2px 8px;border-radius:6px;font-size:11px;">v${r.numero_version}</span></td>
@@ -1944,8 +1944,32 @@ function renderInformesRows(rows){
     <td>${r.hora_envio?r.hora_envio.slice(0,5):'—'}</td>
     <td>${r.destinatario||'—'}</td>
     <td>${r.asunto||'—'}</td>
+    <td>
+      <button class="btn btn-sm" onclick="generarDesdeInforme(${r.id})" title="Generar PDF/Word de este informe">📄 Generar</button>
+    </td>
     <td><button class="btn btn-sm btn-danger" onclick="eliminar('informes',${r.id})">Eliminar</button></td>
   </tr>`).join('');
+}
+
+function generarDesdeInforme(infId){
+  if(!currentSin) return;
+  // Switch to Reportes panel and pre-select this expediente
+  const inf = data.inf.find(i=>i.id===infId);
+  if(!inf){ toast('Informe no encontrado.'); return; }
+  // Set the specific informe as "lastInf" for generation by temporarily reordering
+  // We do this by navigating to Reportes with the siniestro pre-selected
+  switchMain('reportes', document.getElementById('nav-reportes'));
+  // Pre-select the siniestro in the report selector
+  setTimeout(()=>{
+    const sel = g('r-caso');
+    if(sel){
+      sel.value = currentSin.id;
+      // Store the specific infId to use for generation
+      sel.dataset.infId = infId;
+      previsualizarReporte();
+    }
+  }, 100);
+  toast('Expediente seleccionado en Reportes. Usa los botones de generación.');
 }
 
 /* ── TOGGLES OTRO ── */
@@ -2802,10 +2826,8 @@ function buildFormal(s, secs){
   const honAjust=hons.reduce((a,h)=>a+(h.monto||0),0);
   const honPeritos=pags.filter(p=>p.tipo==='honorarios_peritos').reduce((a,p)=>a+(p.monto||0),0);
   const gasAjuste=pags.filter(p=>p.tipo==='viaticos').reduce((a,p)=>a+(p.monto||0),0);
-  const INF_T={preliminar:'INFORME PRELIMINAR',actualizacion:'INFORME DE ACTUALIZACIÓN',final:'INFORME FINAL',nota_tecnica:'NOTA TÉCNICA'};
-  const lastInf=data.inf.filter(i=>i.id_siniestro===s.id).sort((a,b)=>b.id-a.id)[0]||{};
-  const tipoTitulo=INF_T[lastInf.tipo||'preliminar']||'INFORME PRELIMINAR';
-  const salvTxt={si:'SI ( X )  NO ( )  POR DETERMINAR ( )',no:'SI ( )  NO ( X )  POR DETERMINAR ( )',por_determinar:'SI ( )  NO ( )  POR DETERMINAR ( X )'}[s.salvamento||'por_determinar'];
+  const tipoTitulo=infTitulo(lastInf);
+    const salvTxt={si:'SI ( X )  NO ( )  POR DETERMINAR ( )',no:'SI ( )  NO ( X )  POR DETERMINAR ( )',por_determinar:'SI ( )  NO ( )  POR DETERMINAR ( X )'}[s.salvamento||'por_determinar'];
   const bases=Object.values(resVig).map(r=>r.bases_determinacion).filter(Boolean).join(' ');
 
   let h=`<div style="padding:15mm;font-family:'Segoe UI',Arial,sans-serif;font-size:11px;color:#111;">`;
@@ -3053,13 +3075,10 @@ const GNP_BANNER_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDA
 function buildGNP(s, secs){
   const pol      = data.pol.find(p=>p.id===s.id_poliza)||{};
   const asdo     = data.asdo.find(a=>a.id===pol.id_asegurado)||{};
-  const lastInf  = data.inf.filter(i=>i.id_siniestro===s.id).sort((a,b)=>b.id-a.id)[0]||{};
-  const resRows  = data.res.filter(r=>r.id_siniestro===s.id);
-  const resVig   = {};
-  resRows.forEach(r=>{if(!resVig[r.concepto]||r.id>resVig[r.concepto].id)resVig[r.concepto]=r;});
-  const rvList   = Object.values(resVig);
-  // Normalize legacy concepto keys
-  Object.values(resVig).forEach(r=>{ r.concepto=CONCEPTO_LABEL[r.concepto]||r.concepto||'Cobertura'; });
+  const lastInf  = lastInfParaReporte(s.id);
+  const esAct    = lastInf.tipo==='actualizacion';
+  let   rvList   = rvListParaInforme(s.id, lastInf);
+  rvList.forEach(r=>{ r.concepto=CONCEPTO_LABEL[r.concepto]||r.concepto||'Cobertura'; });
   const coasRows = data.coas.filter(c=>c.id_siniestro===s.id);
   const sinAjusts= data.sinajust.filter(a=>a.id_siniestro===s.id);
   const ajusts   = sinAjusts.map(sa=>data.ajust.find(a=>a.id===sa.id_ajustador)).filter(Boolean);
@@ -3139,7 +3158,7 @@ function buildGNP(s, secs){
 
   // Fecha, título, AT'N, Presente
   h += `<div class="fecha">Ciudad de México, ${now}.</div>
-  <div class="titulo">INFORME PRELIMINAR</div>
+  <div class="titulo">${infTitulo(lastInf)}</div>
   <div class="atn">AT´N.: ${lastInf.destinatario||''}</div>
   <div class="presente">PRESENTE</div>`;
 
@@ -3425,7 +3444,7 @@ async function descargarWord(){
 
   const pol     = data.pol.find(p=>p.id===s.id_poliza)||{};
   const asdo    = data.asdo.find(a=>a.id===pol.id_asegurado)||{};
-  const lastInf = data.inf.filter(i=>i.id_siniestro===s.id).sort((a,b)=>b.id-a.id)[0]||{};
+  const lastInf = lastInfParaReporte(s.id);
   const resRows = data.res.filter(r=>r.id_siniestro===s.id);
   const resVig  = {};
   resRows.forEach(r=>{if(!resVig[r.concepto]||r.id>resVig[r.concepto].id)resVig[r.concepto]=r;});
@@ -3435,7 +3454,7 @@ async function descargarWord(){
   const sinAjusts=data.sinajust.filter(a=>a.id_siniestro===s.id);
   const ajusts  = sinAjusts.map(sa=>data.ajust.find(a=>a.id===sa.id_ajustador)).filter(Boolean);
 
-  const tipoTitulo='INFORME PRELIMINAR';
+  const tipoTitulo=infTitulo(lastInf);
   const now=new Date().toLocaleDateString('es-MX',{day:'2-digit',month:'long',year:'numeric'});
 
   const fD=(d2)=>{ if(!d2) return ''; const[y,m,dy]=d2.split('-'); return dy+'/'+m+'/'+y; };
@@ -3506,7 +3525,7 @@ async function descargarWord(){
           children:[
             new Paragraph({children:logoImgRun2?[logoImgRun2]:[txt('AASA',{bold:true,size:36,color:BLUE})],
               alignment:AlignmentType.RIGHT,spacing:{before:0,after:80}}),
-            new Paragraph({children:[txt('INFORME PRELIMINAR',{bold:true,size:28,color:'2E5090',font:'Arial'})],
+            new Paragraph({children:[txt(tipoTitulo,{bold:true,size:28,color:'2E5090',font:'Arial'})],
               alignment:AlignmentType.RIGHT,spacing:{before:0,after:0}}),
           ]}),
       ]})]
@@ -3683,7 +3702,7 @@ async function descargarWord(){
 
   const toc=[['1','INTRODUCCIÓN'],['2','ASEGURADO'],['2.1','DESCRIPCIÓN GENERAL DEL RIESGO ASEGURADO'],['2.2','GIRO DEL ASEGURADO'],['2.3','UBICACIÓN DONDE OCURRIÓ EL SINIESTRO'],['3','INSPECCIÓN DEL SINIESTRO'],['4','CÓMO OCURRIÓ EL SINIESTRO'],['5','CAUSA DEL SINIESTRO'],['6','BIENES AFECTADOS'],['7','ALCANCE DEL DAÑO'],['8','PROCEDENCIA'],['9','PÓLIZA DE SEGURO'],['10','DETERMINACIÓN DE LA RESERVA'],['10.1','RECLAMACIÓN'],['10.2','AJUSTE'],['10.3','ESTIMACIÓN DE RESERVA'],['11','SALVAMENTO'],['12','OBSERVACIONES Y ACTIVIDADES']].map(([n,t])=>para2([txt(n+'  '+t,{size:18,font:'Calibri'})],{sb:20,sa:20}));
 
-  const estrategias=s.estrategias_observaciones||'De momento ninguna.';
+  const estrategias=campoDesdInf(lastInf,'estrategias',s,'estrategias_observaciones')||'De momento ninguna.';
 
   const children=[
     new Table({width:{size:CONTENT_W,type:WidthType.DXA},columnWidths:COL,rows:portRows}),ep(),
@@ -3783,13 +3802,10 @@ async function descargarWordGNP(){
 
   const pol      = data.pol.find(p=>p.id===s.id_poliza)||{};
   const asdo     = data.asdo.find(a=>a.id===pol.id_asegurado)||{};
-  const lastInf  = data.inf.filter(i=>i.id_siniestro===s.id).sort((a,b)=>b.id-a.id)[0]||{};
-  const resRows  = data.res.filter(r=>r.id_siniestro===s.id);
-  const resVig   = {};
-  resRows.forEach(r=>{if(!resVig[r.concepto]||r.id>resVig[r.concepto].id)resVig[r.concepto]=r;});
-  const rvList   = Object.values(resVig);
-  // Normalize legacy concepto keys
-  Object.values(resVig).forEach(r=>{ r.concepto=CONCEPTO_LABEL[r.concepto]||r.concepto||'Cobertura'; });
+  const lastInf  = lastInfParaReporte(s.id);
+  const tipoTitulo = infTitulo(lastInf);
+  let rvList = rvListParaInforme(s.id, lastInf);
+  rvList.forEach(r=>{ r.concepto=CONCEPTO_LABEL[r.concepto]||r.concepto||'Cobertura'; });
   const coasRows = data.coas.filter(c=>c.id_siniestro===s.id);
   const sinAjusts= data.sinajust.filter(a=>a.id_siniestro===s.id);
   const ajusts   = sinAjusts.map(sa=>data.ajust.find(a=>a.id===sa.id_ajustador)).filter(Boolean);
@@ -4015,7 +4031,7 @@ async function descargarWordGNP(){
   // ── DOCUMENT BODY ─────────────────────────────────────────────────────
   const children=[
     pr([tx('Ciudad de México, '+now+'.',{size:19,bold:true})],{sb:0,sa:80}),
-    pr([tx('INFORME PRELIMINAR',{size:24,bold:true})],{sb:0,sa:40}),
+    pr([tx(tipoTitulo,{size:24,bold:true})],{sb:0,sa:40}),
     pr([tx('AT´N.: '+(lastInf.destinatario||''),{size:19,bold:true})],{sb:0,sa:20}),
     pr([tx('PRESENTE',{size:19,bold:true})],{sb:0,sa:120}),
     new Table({width:{size:CONTENT_W,type:WidthType.DXA},columnWidths:COLS,rows:idRows}),
@@ -4076,7 +4092,7 @@ async function descargarWordGNP(){
     ]}),
     ep(),
     secTitle('9','Estrategias y observaciones'),
-    pr([tx(lastInf.estrategias||s.estrategias_observaciones||'',{size:18})],{sb:60,sa:60}),
+    pr([tx(campoDesdInf(lastInf,'estrategias',s,'estrategias_observaciones'),{size:18})],{sb:60,sa:60}),
     ...(s.documentos_faltantes?[
       pr([tx('DOCUMENTOS SOLICITADOS FALTANTES',{bold:true,size:18})],{sb:80,sa:40}),
       pr([tx(s.documentos_faltantes,{size:18})],{sb:0,sa:60}),
@@ -4137,6 +4153,55 @@ async function descargarWordGNP(){
   document.body.appendChild(a); a.click();
   setTimeout(()=>{ document.body.removeChild(a); URL.revokeObjectURL(url); },1000);
   toast('Informe GNP descargado.');
+}
+
+
+// ══════════════════════════════════════════════════════════════════════
+// HELPERS COMPARTIDOS PARA GENERADORES DE INFORMES
+// ══════════════════════════════════════════════════════════════════════
+
+// Título dinámico según tipo e índice
+function infTitulo(lastInf){
+  if(!lastInf||!lastInf.tipo||lastInf.tipo==='preliminar') return 'INFORME PRELIMINAR';
+  if(lastInf.tipo==='final')        return 'INFORME FINAL';
+  if(lastInf.tipo==='nota_tecnica') return 'NOTA TÉCNICA';
+  if(lastInf.tipo==='actualizacion'){
+    const n = lastInf.numero_version||1;
+    return 'INFORME DE ACTUALIZACIÓN ' + n;
+  }
+  return 'INFORME PRELIMINAR';
+}
+
+// Informe a usar para generación: respeta override de infId si viene del tab Informes
+function lastInfParaReporte(sinId){
+  const sel = g('r-caso');
+  const overrideId = sel ? parseInt(sel.dataset.infId||'0') : 0;
+  const todos = data.inf.filter(i=>i.id_siniestro===sinId);
+  if(overrideId){
+    const found = todos.find(i=>i.id===overrideId);
+    if(found){ delete sel.dataset.infId; return found; }
+  }
+  return todos.sort((a,b)=>b.id-a.id)[0]||{};
+}
+
+// Reservas a usar: las del informe (id_informe=X) si es actualización
+function rvListParaInforme(sinId, lastInf){
+  const todas = data.res.filter(r=>r.id_siniestro===sinId);
+  if(lastInf?.id && lastInf.tipo==='actualizacion'){
+    const delInf = todas.filter(r=>r.id_informe===lastInf.id);
+    if(delInf.length) return delInf;
+  }
+  // Fallback: vigentes (más reciente por concepto)
+  const vigMap={};
+  todas.forEach(r=>{if(!vigMap[r.concepto]||r.id>vigMap[r.concepto].id)vigMap[r.concepto]=r;});
+  return Object.values(vigMap);
+}
+
+// Campo narrativo: usa el campo del informe si existe, si no el del expediente
+function campoDesdInf(lastInf, campoInf, s, campoSin){
+  if(lastInf&&lastInf[campoInf]) return lastInf[campoInf];
+  if(s&&campoSin&&s[campoSin]) return s[campoSin];
+  return '';
 }
 
 
@@ -4216,17 +4281,13 @@ function buildFormalGenerico(s, secs, aseg){
   const pol      = data.pol.find(p=>p.id===s.id_poliza)||{};
   const asdo     = data.asdo.find(a=>a.id===pol.id_asegurado)||{};
   const now      = new Date().toLocaleDateString('es-MX',{day:'2-digit',month:'long',year:'numeric'});
-  const lastInf  = data.inf.filter(i=>i.id_siniestro===s.id).sort((a,b)=>b.id-a.id)[0]||{};
-  const INF_T    = {preliminar:'INFORME PRELIMINAR',actualizacion:'INFORME DE ACTUALIZACIÓN',
-                    final:'INFORME FINAL',nota_tecnica:'NOTA TÉCNICA'};
-  const tipoTitulo = INF_T[lastInf.tipo||'preliminar']||'INFORME PRELIMINAR';
+  const lastInf  = lastInfParaReporte(s.id);
+  const tipoTitulo = infTitulo(lastInf);
+  const esAct      = lastInf.tipo==='actualizacion';
 
   // ── Financieros ────────────────────────────────────────────────────
-  const resRows = data.res.filter(r=>r.id_siniestro===s.id);
-  const resVig  = {};
-  resRows.forEach(r=>{if(!resVig[r.concepto]||r.id>resVig[r.concepto].id)resVig[r.concepto]=r;});
-  Object.values(resVig).forEach(r=>{ r.concepto=CONCEPTO_LABEL[r.concepto]||r.concepto||'Cobertura'; });
-  const rvList  = Object.values(resVig);
+  let rvList = rvListParaInforme(s.id, lastInf);
+  rvList.forEach(r=>{ r.concepto=CONCEPTO_LABEL[r.concepto]||r.concepto||'Cobertura'; });
   const sublims = data.sublim.filter(sl=>sl.id_poliza===pol.id);
   const coasRows= data.coas.filter(c=>c.id_siniestro===s.id);
   const sinAjusts= data.sinajust.filter(a=>a.id_siniestro===s.id);
