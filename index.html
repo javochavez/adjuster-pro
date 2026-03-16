@@ -457,14 +457,13 @@ td { padding:9px 10px; vertical-align:middle; }
 
   <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;">Identificación</div>
   <div class="form-grid">
-    <div class="fg"><label>No. de expediente</label><input type="text" id="s-exp" placeholder="SIN-2026-001"></div>
+    <div class="fg"><label>Ref. AASA</label><input type="text" id="s-exp" placeholder="ej. GNPEML010870925, ATLJCA010740624"></div>
     <div class="fg"><label>No. de siniestro</label><input type="text" id="s-numsin" placeholder="Llenar cuando se tenga"></div>
     <div class="fg full">
       <label>Compañía aseguradora</label>
       <select id="s-aseg-direct" onchange="actualizarCamposAseg()"><option value="">— Selecciona la compañía —</option></select>
     </div>
     <div class="fg"><label>Póliza</label><select id="s-poliza"></select></div>
-    <div class="fg"><label>Referencia ajustadora</label><input type="text" id="s-ref-ajust" placeholder="ej. ATLJCA010740624"></div>
     <div class="fg"><label>Clave ajustador (compañía)</label><input type="text" id="s-clave-ajust"></div>
     <div class="fg"><label>Referencia asegurado</label><input type="text" id="s-ref-aseg"></div>
     <div class="fg full"><label>Giro del asegurado</label><input type="text" id="s-giro" placeholder="ej. Ingenio azucarero"></div>
@@ -2135,7 +2134,7 @@ function abrirModal(id){
     g('sin-modal-title').textContent='Nuevo expediente';
     g('s-id').value='';
     ['s-exp','s-numsin','s-tipo','s-subramo','s-causa','s-causa-com','s-riesgo','s-clave-cat',
-     's-ref-ajust','s-clave-ajust','s-ref-aseg','s-giro','s-desc','s-desc-riesgo','s-introduccion','s-notas','s-estrategias',
+     's-clave-ajust','s-ref-aseg','s-giro','s-desc','s-desc-riesgo','s-introduccion','s-notas','s-estrategias',
      's-tramite-gnp','s-ot','s-fsin','s-hora-ocurr','s-finsp','s-finf',
      's-hora-asig','s-f1cont','s-h1cont','s-f1vis','s-h1vis',
      's-insp-persona','s-insp-cargo','s-insp-tel','s-insp-dom','s-bienes',
@@ -2255,7 +2254,7 @@ async function guardarSiniestro(){
     tipo_siniestro:v('s-tipo'), subramo:v('s-subramo')||null,
     causa:v('s-causa'), causa_comentario:v('s-causa-com')||null,
     riesgo_afectado:v('s-riesgo')||null, clave_evento_catastrofico:v('s-clave-cat')||null,
-    referencia_ajustadora:v('s-ref-ajust')||null, clave_ajustador_cia:v('s-clave-ajust')||null,
+    referencia_ajustadora:v('s-exp')||null, clave_ajustador_cia:v('s-clave-ajust')||null,
     referencia_asegurado:v('s-ref-aseg')||null, giro_asegurado:v('s-giro')||null,
     descripcion:v('s-desc'), descripcion_riesgo:v('s-desc-riesgo')||null, introduccion:v('s-introduccion')||null, notas:v('s-notas'),
     estatus:v('s-est'),
@@ -2323,7 +2322,7 @@ function editarSiniestro(id){
   g('s-tipo').value=s.tipo_siniestro||''; g('s-subramo').value=s.subramo||'';
   g('s-causa').value=s.causa||''; g('s-causa-com').value=s.causa_comentario||'';
   g('s-riesgo').value=s.riesgo_afectado||''; g('s-clave-cat').value=s.clave_evento_catastrofico||'';
-  g('s-ref-ajust').value=s.referencia_ajustadora||''; g('s-clave-ajust').value=s.clave_ajustador_cia||'';
+  g('s-clave-ajust').value=s.clave_ajustador_cia||'';
   g('s-ref-aseg').value=s.referencia_asegurado||''; g('s-giro').value=s.giro_asegurado||'';
   g('s-desc').value=s.descripcion||''; g('s-desc-riesgo').value=s.descripcion_riesgo||''; if(g('s-introduccion'))g('s-introduccion').value=s.introduccion||''; g('s-notas').value=s.notas||'';
   g('s-estrategias').value=(()=>{
@@ -2866,7 +2865,7 @@ function buildFormal(s, secs){
       <tr><td class="lbl">Fecha de siniestro</td><td class="val">${fmtD(s.fecha_siniestro)}</td><td class="lbl">Agente</td><td colspan="3" class="val">${pol.agente||''}</td></tr>
       <tr><td class="lbl">Asegurado</td><td colspan="3" class="val">${asdo.nombre||''}</td><td class="lbl">Referencia Asegurado</td><td class="val">${s.referencia_asegurado||''}</td></tr>
       <tr><td class="lbl">Importe reclamado</td><td class="val">${perdidaEst?fmtMXN(perdidaEst):'Pendiente'}</td><td class="lbl">Moneda</td><td class="val">${moneda}</td><td class="lbl">Clave ajustador</td><td class="val">${s.clave_ajustador_cia||''}</td></tr>
-      <tr><td class="lbl">Ref. ajustadora</td><td class="val">${s.referencia_ajustadora||''}</td><td class="lbl">Giro del asegurado</td><td colspan="3" class="val">${s.giro_asegurado||''}</td></tr>
+      <tr><td class="lbl">Ref. AASA</td><td class="val">${s.numero_exp||''}</td><td class="lbl">Giro del asegurado</td><td colspan="3" class="val">${s.giro_asegurado||''}</td></tr>
       <tr><td class="lbl">Causa del siniestro</td><td colspan="2" class="val">${s.causa||''}</td><td class="lbl">Comentario de la causa</td><td colspan="2" class="val">${s.causa_comentario||''}</td></tr>
       <tr><td class="lbl">Clave evento (catastrófico)</td><td class="val">${s.clave_evento_catastrofico||''}</td><td class="lbl">Riesgo afectado</td><td colspan="3" class="val">${s.riesgo_afectado||''}</td></tr>
     </table>`;
@@ -2969,10 +2968,10 @@ function buildInterno(s, secs){
   if(secs.includes('identificacion')){
     h+=`<div class="int-grid">
     <div class="int-card"><div class="int-card-title">Expediente</div>
-      <div class="int-row"><span class="int-lbl">No. expediente</span><span class="int-val">${s.numero_exp}</span></div>
+      <div class="int-row"><span class="int-lbl">Ref. AASA</span><span class="int-val">${s.numero_exp}</span></div>
       <div class="int-row"><span class="int-lbl">No. siniestro</span><span class="int-val">${s.numero_siniestro||'—'}</span></div>
       <div class="int-row"><span class="int-lbl">Trámite / OT</span><span class="int-val">${s.tramite_gnp||s.ot||'—'}</span></div>
-      <div class="int-row"><span class="int-lbl">Ref. ajustadora</span><span class="int-val">${s.referencia_ajustadora||'—'}</span></div>
+      <div class="int-row"><span class="int-lbl">Ref. AASA</span><span class="int-val">${s.numero_exp}</span></div>
       <div class="int-row"><span class="int-lbl">Estatus</span><span class="int-val">${EST[s.estatus]?.label||s.estatus}</span></div>
     </div>
     <div class="int-card"><div class="int-card-title">Póliza</div>
@@ -3224,7 +3223,7 @@ function buildGNP(s, secs){
     </tr>
     <tr>
       <td class="lbl">Clave ajustador GNP</td><td class="val">${s.gnp_clave_ajustador||''}</td>
-      <td class="lbl">Referencia ajustador</td><td class="val" colspan="3">${s.referencia_ajustadora||''}</td>
+      <td class="lbl">Ref. AASA</td><td class="val" colspan="3">${s.numero_exp||''}</td>
     </tr>
     <tr>
       <td class="lbl">Giro del asegurado</td><td class="val" colspan="5">${s.giro_asegurado||''}</td>
@@ -3594,7 +3593,7 @@ async function descargarWord(){
           margins:{top:60,bottom:0,left:0,right:120},
           children:[
             new Paragraph({children:[txt(asdo.nombre||'',{size:16,color:LBLUE_SOFT})],spacing:{before:0,after:16}}),
-            new Paragraph({children:[txt(s.numero_siniestro?'No. Siniestro: '+s.numero_siniestro:(s.referencia_ajustadora||''),{size:16,color:LBLUE_SOFT})],spacing:{before:0,after:0}}),
+            new Paragraph({children:[txt(s.numero_siniestro?'No. Siniestro: '+s.numero_siniestro:(s.numero_exp||''),{size:16,color:LBLUE_SOFT})],spacing:{before:0,after:0}}),
           ]}),
         new TableCell({width:{size:2200,type:WidthType.DXA},borders:noB,
           margins:{top:60,bottom:0,left:120,right:0},verticalAlign:VerticalAlign.CENTER,
@@ -3630,7 +3629,7 @@ async function descargarWord(){
 
   portRows.push(new TableRow({children:[lbl('Siniestro :',COL[0]),val(s.numero_siniestro||'',COL[1]),mkCell('',{w:COL[2]+COL[3],borders:noB,span:2})]}));
   portRows.push(new TableRow({children:[lbl('Póliza :',COL[0]),val(pol.numero||'',COL[1]),mkCell('',{w:COL[2]+COL[3],borders:noB,span:2})]}));
-  portRows.push(new TableRow({children:[lbl('N/Ref. :',COL[0]),val(s.referencia_ajustadora||'',COL[1]),mkCell('',{w:COL[2]+COL[3],borders:noB,span:2})]}));
+  portRows.push(new TableRow({children:[lbl('Ref. AASA :',COL[0]),val(s.numero_exp||'',COL[1]),mkCell('',{w:COL[2]+COL[3],borders:noB,span:2})]}));
 
   const fullRow=(label,value)=>new TableRow({children:[
     lbl(label,COL[0]),
@@ -3979,7 +3978,7 @@ async function descargarWordGNP(){
     // Fila 7: Clave ajustador | val | Referencia ajustador | val(span 3)
     new TableRow({children:[
       id6lbl('Clave ajustador GNP',C1), id6val(s.gnp_clave_ajustador||'',C2),
-      id6lbl('Referencia ajustador',C3), id6val(s.referencia_ajustadora||'',C4+C5+C6,3),
+      id6lbl('Ref. AASA',C3), id6val(s.numero_exp||'',C4+C5+C6,3),
     ]}),
     // Fila 8: Giro — ancho completo (span 5)
     new TableRow({children:[
@@ -4458,7 +4457,7 @@ function buildFormalGenerico(s, secs, aseg){
       <td class="lbl">Póliza&nbsp;:</td><td class="val">${pol.numero||''}</td>
     </tr>
     <tr>
-      <td class="lbl">N/Ref.&nbsp;:</td><td class="val" colspan="3">${s.referencia_ajustadora||''}</td>
+      <td class="lbl">Ref. AASA&nbsp;:</td><td class="val" colspan="3">${s.numero_exp||''}</td>
     </tr>
     ${portRow('ASEGURADO', asdo.nombre||'')}
     ${portRow('DOMICILIO FISCAL', pol.domicilio_legal||'')}
