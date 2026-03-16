@@ -2120,7 +2120,7 @@ function renderSiniestros(){
   g('sin-body').innerHTML=fil.map(s=>{
     const pol=data.pol.find(p=>p.id===s.id_poliza)||{};
     const asdo=data.asdo.find(a=>a.id===pol.id_asegurado)||{};
-    return `<tr onclick="irAExpediente(${s.id})">
+    return `<tr onclick="verSiniestro(${s.id})" style="cursor:pointer;">
       <td><strong>${s.numero_exp}</strong></td>
       <td>${pol.numero||'—'}</td>
       <td>${asdo.nombre||'—'}</td>
