@@ -1740,12 +1740,17 @@ function renderBitacoraRows(rows){
 const INF_TIPOS = {preliminar:'Preliminar',actualizacion:'Actualización',final:'Final',nota_tecnica:'Nota Técnica'};
 
 function renderReservaGrid(allRows){
+  // DIAGNOSTIC — remove after fix confirmed
+  console.log('[Grid] allRows recibidos:', allRows.length, allRows.map(r=>({id:r.id,concepto:r.concepto,monto:r.monto,perdida:r.monto_perdida_estimada})));
+
   // De-duplicate: keep most recent row per concepto (vigente)
   const vigMap={};
   allRows.forEach(r=>{if(!vigMap[r.concepto]||r.id>vigMap[r.concepto].id)vigMap[r.concepto]=r;});
   const rows=Object.values(vigMap);
+  console.log('[Grid] rows vigentes:', rows.length, rows.map(r=>({concepto:r.concepto,monto:r.monto})));
 
   const wrap = g('res-grid-wrap');
+  console.log('[Grid] wrap element:', wrap);
   const tblWrap = g('res-table-wrap');
   if(!wrap) return;
   if(!rows.length){
