@@ -2208,7 +2208,7 @@ function renderDetalle(){
       <span style="font-size:11px;color:var(--text-ter);">Hasta 4 coberturas por siniestro</span>
     </div>
     <!-- Cuadrícula de coberturas -->
-    <div id="res-grid-wrap" style="overflow-x:auto;overflow-y:auto;width:100%;max-height:70vh;"></div>
+    <div id="res-grid-wrap" style="overflow-x:auto;width:100%;"></div>
     <!-- Tabla detalle clásica (oculta por defecto cuando hay grid) -->
     <div id="res-table-wrap" style="margin-top:12px;">
       <div class="tbl-wrap"><table><thead><tr><th>Cobertura</th><th>Reserva bruta</th><th>Pérdida estimada</th><th>Deducible</th><th>Coaseguro %</th><th>Reserva neta</th><th>Moneda</th><th>Fecha</th><th></th></tr></thead>
@@ -2367,8 +2367,8 @@ function renderReservaGrid(allRows){
   const totalW = showTotal ? colW : 0;
   const tableW = labelW + rows.length * colW + totalW;
 
-  let html = `<table style="border-collapse:collapse;font-size:11px;min-width:${tableW}px;table-layout:fixed;">
-  <table style="border-collapse:collapse;font-size:11px;min-width:${tableW}px;table-layout:fixed;">
+  let html = `<table style="border-collapse:collapse;font-size:11px;width:auto;">
+    <thead>
     <thead>
       <tr>
         <th style="background:#1F3864!important;color:#fff!important;padding:6px 10px;text-align:left;font-weight:600;width:${labelW}px;border:1px solid #1F3864;text-transform:none;letter-spacing:normal;font-size:11px;">Concepto</th>`;
