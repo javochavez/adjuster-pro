@@ -1619,7 +1619,12 @@ function renderDetalle(){
       ${s.tramite_gnp?'<div style="font-size:11px;margin-top:2px;">Trámite GNP: <strong style="color:#ffcc80;">'+s.tramite_gnp+'</strong>'+(s.gnp_jefe_depto?' &nbsp;·&nbsp; Jefe Depto: <span style="color:var(--text-sec)">'+s.gnp_jefe_depto+'</span>':'')+'</div>':''}
       ${s.ot?'<div style="font-size:11px;margin-top:2px;">OT Atlas: <strong style="color:#90caf9;">'+s.ot+'</strong>'+(s.atlas_poliza_coaseg?' &nbsp;·&nbsp; Póliza Atlas: <span style="color:var(--text-sec)">'+s.atlas_poliza_coaseg+'</span>':'')+'</div>':''}
       ${renderAjustBadges(s.id)}
-      <div style="margin-top:6px;"><span class="badge ${EST[s.estatus]?.cls||''}">${EST[s.estatus]?.label||s.estatus}</span></div>
+      <div style="margin-top:6px;display:flex;align-items:center;gap:8px;">
+        <span style="font-size:11px;color:var(--text-ter);">Estatus:</span>
+        <select onchange="cambiarEstatus(this.value)" style="font-size:12px;padding:3px 8px;border-radius:6px;border:1px solid var(--border-md);background:var(--surface2);color:var(--text);font-family:inherit;cursor:pointer;">
+          ${Object.entries(EST).map(([k,v])=>`<option value="${k}" ${s.estatus===k?'selected':''}>${v.label}</option>`).join('')}
+        </select>
+      </div>
     </div>
     <div style="display:flex;gap:8px;">
       <button class="btn btn-sm" onclick="editarSiniestro(${s.id})">Editar expediente</button>
@@ -2012,6 +2017,17 @@ function actualizarCamposAseg(){
   const polFil = asegId ? data.pol.filter(p=>p.id_aseguradora===asegId) : data.pol;
   g('s-poliza').innerHTML='<option value="">— Sin póliza aún —</option>'+
     polFil.map(p=>`<option value="${p.id}">${p.numero}</option>`).join('');
+}
+
+async function cambiarEstatus(nuevoEstatus){
+  if(!currentSin) return;
+  const {error} = await db.from('siniestros').update({estatus:nuevoEstatus}).eq('id',currentSin.id);
+  if(error){ toast('Error al cambiar estatus: '+error.message); return; }
+  currentSin.estatus = nuevoEstatus;
+  const idx = data.sin.findIndex(s=>s.id===currentSin.id);
+  if(idx>=0) data.sin[idx].estatus = nuevoEstatus;
+  toast('Estatus: '+EST[nuevoEstatus]?.label);
+  renderDash();
 }
 
 function volverLista(){ g('sin-detail-view').style.display='none'; g('sin-list-view').style.display='block'; currentSin=null; }
