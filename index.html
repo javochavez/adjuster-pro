@@ -460,7 +460,6 @@ td { padding:9px 10px; vertical-align:middle; }
     <div class="fg"><label>Ref. AASA</label><input type="text" id="s-exp" placeholder="ej. GNPEML010870925, ATLJCA010740624"></div>
     <div class="fg"><label>No. de siniestro</label><input type="text" id="s-numsin" placeholder="Llenar cuando se tenga"></div>
     <div class="fg"><label>Clave ajustador (compañía)</label><input type="text" id="s-clave-ajust"></div>
-    <div class="fg"><label>Referencia asegurado</label><input type="text" id="s-ref-aseg"></div>
     <div class="fg full"><label>Giro del asegurado</label><input type="text" id="s-giro" placeholder="ej. Ingenio azucarero"></div>
   </div>
 
@@ -624,7 +623,6 @@ td { padding:9px 10px; vertical-align:middle; }
     <div class="fg"><label>Causa</label><input type="text" id="s-causa"></div>
     <div class="fg"><label>Comentario de causa</label><input type="text" id="s-causa-com" placeholder="ej. En análisis de causa"></div>
     <div class="fg"><label>Riesgo afectado</label><input type="text" id="s-riesgo" placeholder="ej. b) Corto Circuito"></div>
-    <div class="fg"><label>Clave evento catastrófico</label><input type="text" id="s-clave-cat"></div>
     <div class="fg"><label>Estatus</label>
       <select id="s-est">
         <option value="asignado">Asignado</option>
@@ -649,7 +647,6 @@ td { padding:9px 10px; vertical-align:middle; }
     <div class="fg"><label>Hora primer contacto</label><input type="time" id="s-h1cont"></div>
     <div class="fg"><label>Fecha primera visita</label><input type="date" id="s-f1vis"></div>
     <div class="fg"><label>Hora primera visita</label><input type="time" id="s-h1vis"></div>
-    <div class="fg"><label>Fecha inspección</label><input type="date" id="s-finsp"></div>
     <div class="fg"><label>Fecha límite informe</label><input type="date" id="s-finf"></div>
   </div>
 
@@ -2424,8 +2421,8 @@ function abrirModal(id){
     g('sin-modal-title').textContent='Nuevo expediente';
     g('s-id').value='';
     resetBuscadorSinModal();
-    ['s-exp','s-numsin','s-tipo','s-subramo','s-causa','s-causa-com','s-riesgo','s-clave-cat',
-     's-clave-ajust','s-ref-aseg','s-giro','s-desc','s-desc-riesgo','s-introduccion','s-notas','s-estrategias',
+    ['s-exp','s-numsin','s-subramo','s-causa','s-riesgo',
+     's-clave-ajust','s-giro','s-desc','s-desc-riesgo','s-introduccion','s-notas','s-estrategias',
      's-tramite-gnp','s-ot','s-fsin','s-hora-ocurr','s-finsp','s-finf',
      's-hora-asig','s-f1cont','s-h1cont','s-f1vis','s-h1vis',
      's-insp-persona','s-insp-cargo','s-insp-tel','s-insp-dom','s-bienes',
@@ -2542,9 +2539,9 @@ async function guardarSiniestro(){
   const d2={
     numero_exp:v('s-exp'), numero_siniestro:v('s-numsin')||null,
     id_poliza:parseInt(v('s-poliza'))||null,
-    tipo_siniestro:v('s-tipo'), subramo:v('s-subramo')||null,
-    causa:v('s-causa'), causa_comentario:v('s-causa-com')||null,
-    riesgo_afectado:v('s-riesgo')||null, clave_evento_catastrofico:v('s-clave-cat')||null,
+    subramo:v('s-subramo')||null,
+    causa:v('s-causa')||null,
+    riesgo_afectado:v('s-riesgo')||null,
     referencia_ajustadora:v('s-exp')||null, clave_ajustador_cia:v('s-clave-ajust')||null,
     referencia_asegurado:v('s-ref-aseg')||null, giro_asegurado:v('s-giro')||null,
     descripcion:v('s-desc'), descripcion_riesgo:v('s-desc-riesgo')||null, introduccion:v('s-introduccion')||null, notas:v('s-notas'),
@@ -2610,11 +2607,9 @@ function editarSiniestro(id){
   const s=data.sin.find(x=>x.id===id); if(!s) return;
   g('sin-modal-title').textContent='Editar expediente'; g('s-id').value=s.id;
   g('s-exp').value=s.numero_exp||''; g('s-numsin').value=s.numero_siniestro||'';
-  g('s-tipo').value=s.tipo_siniestro||''; g('s-subramo').value=s.subramo||'';
-  g('s-causa').value=s.causa||''; g('s-causa-com').value=s.causa_comentario||'';
-  g('s-riesgo').value=s.riesgo_afectado||''; g('s-clave-cat').value=s.clave_evento_catastrofico||'';
+  g('s-subramo').value=s.subramo||''; g('s-causa').value=s.causa||''; g('s-riesgo').value=s.riesgo_afectado||'';
   g('s-clave-ajust').value=s.clave_ajustador_cia||'';
-  g('s-ref-aseg').value=s.referencia_asegurado||''; g('s-giro').value=s.giro_asegurado||'';
+  g('s-giro').value=s.giro_asegurado||'';
   g('s-desc').value=s.descripcion||''; g('s-desc-riesgo').value=s.descripcion_riesgo||''; if(g('s-introduccion'))g('s-introduccion').value=s.introduccion||''; g('s-notas').value=s.notas||'';
   g('s-estrategias').value=(()=>{
     const parts=[s.estrategias_observaciones,s.actividades_realizar,s.comentarios].filter(Boolean);
@@ -2625,9 +2620,8 @@ function editarSiniestro(id){
   g('s-fasig').value=s.fecha_asignacion||''; g('s-hora-asig').value=s.hora_asignacion||'';
   g('s-f1cont').value=s.fecha_primer_contacto||''; g('s-h1cont').value=s.hora_primer_contacto||'';
   g('s-f1vis').value=s.fecha_primera_visita||''; g('s-h1vis').value=s.hora_primera_visita||'';
-  g('s-finsp').value=s.fecha_inspeccion||''; g('s-finf').value=s.fecha_informe||'';
   g('s-insp-persona').value=s.inspeccion_persona||''; g('s-insp-cargo').value=s.inspeccion_cargo||'';
-  g('s-insp-tel').value=s.inspeccion_telefono||''; g('s-insp-dom').value=s.inspeccion_domicilio||'';
+g('s-insp-dom').value=s.inspeccion_domicilio||'';
   g('s-bienes').value=s.bienes_danados||'';
   g('s-autoridades').value=s.intervencion_autoridades?'1':'0';
   g('s-autoridades-det').value=s.intervencion_autoridades_detalle||'';
@@ -3157,7 +3151,8 @@ function buildFormal(s, secs){
   if(secs.includes('identificacion')){
     h+=`<table class="id-table">
       <tr><td class="lbl">No. Siniestro</td><td class="val">${s.numero_siniestro||''}</td><td class="lbl">Jefe Depto</td><td colspan="3" class="val">${lastInf.jefe_depto||''}</td></tr>
-      <tr><td class="lbl">No. Trámite</td><td class="val">${s.tramite_gnp||s.ot||''}</td><td class="lbl">Oficina</td><td class="val">${pol.oficina||lastInf.oficina_cia||''}</td><td class="lbl">Póliza</td><td class="val">${pol.numero||''}</td></tr>
+      <tr><td class="lbl">OT / Trámite</td><td class="val">${s.ot||s.tramite_gnp||''}</td><td class="lbl">Oficina</td><td class="val">${pol.oficina||lastInf.oficina_cia||''}</td><td class="lbl">Póliza</td><td class="val">${pol.numero||''}</td></tr>
+      ${(s.ot||s.tramite_gnp)?`<tr><td class="lbl">OT / No. Trámite</td><td class="val" colspan="3">${s.ot||s.tramite_gnp||''}</td></tr>`:''}
       <tr><td class="lbl">Ramo</td><td class="val">${RAMOS[pol.ramo]||pol.ramo||''}</td><td class="lbl">Subramo</td><td class="val">${pol.subramo||s.subramo||''}</td><td class="lbl">Vigencia</td><td class="val">Del ${fmtD(pol.vigencia_ini)} Al ${fmtD(pol.vigencia_fin)}</td></tr>
       <tr><td class="lbl">Fecha de siniestro</td><td class="val">${fmtD(s.fecha_siniestro)}</td><td class="lbl">Agente</td><td colspan="3" class="val">${pol.agente||''}</td></tr>
       <tr><td class="lbl">Asegurado</td><td colspan="3" class="val">${asdo.nombre||''}</td><td class="lbl">Referencia Asegurado</td><td class="val">${s.referencia_asegurado||''}</td></tr>
@@ -3940,6 +3935,7 @@ async function descargarWord(){
     v2?val(v2,COL[3]):mkCell('',{w:COL[3],borders:noB}),
   ]});
 
+  if(s.ot||s.tramite_gnp) portRows.push(fullRow('OT / No. TRÁMITE', s.ot||s.tramite_gnp||''));
   portRows.push(fullRow('ASEGURADO',asdo.nombre||''));
   portRows.push(fullRow('DOMICILIO FISCAL',pol.domicilio_legal||''));
   portRows.push(fullRow('GIRO DEL NEGOCIO:',s.giro_asegurado||''));
