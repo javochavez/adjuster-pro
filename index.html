@@ -1739,18 +1739,13 @@ function renderBitacoraRows(rows){
 
 const INF_TIPOS = {preliminar:'Preliminar',actualizacion:'Actualización',final:'Final',nota_tecnica:'Nota Técnica'};
 
+const CONCEPTO_LABEL={"edificio": "Edificio / Estructura", "contenidos": "Contenidos / Inventario", "maquinaria": "Maquinaria y Equipo", "perdida_utilidades": "Pérdida de Utilidades", "rc": "Responsabilidad Civil", "transporte": "Transporte de Mercancías", "equipo_electronico": "Equipo Electrónico", "rotura_maquinaria": "Rotura de Maquinaria", "otro": "Cobertura Adicional"};
 function renderReservaGrid(allRows){
-  // DIAGNOSTIC — remove after fix confirmed
-  console.log('[Grid] allRows recibidos:', allRows.length, allRows.map(r=>({id:r.id,concepto:r.concepto,monto:r.monto,perdida:r.monto_perdida_estimada})));
-
-  // De-duplicate: keep most recent row per concepto (vigente)
-  const vigMap={};
-  allRows.forEach(r=>{if(!vigMap[r.concepto]||r.id>vigMap[r.concepto].id)vigMap[r.concepto]=r;});
-  const rows=Object.values(vigMap);
-  console.log('[Grid] rows vigentes:', rows.length, rows.map(r=>({concepto:r.concepto,monto:r.monto})));
-
-  const wrap = g('res-grid-wrap');
-  console.log('[Grid] wrap element:', wrap);
+  // Normalize legacy concepto keys to display labels
+  allRows = allRows.map(r=>({
+    ...r,
+    concepto: CONCEPTO_LABEL[r.concepto] || r.concepto || 'Cobertura'
+  }));
   const tblWrap = g('res-table-wrap');
   if(!wrap) return;
   if(!rows.length){
@@ -3059,6 +3054,8 @@ function buildGNP(s, secs){
   const resVig   = {};
   resRows.forEach(r=>{if(!resVig[r.concepto]||r.id>resVig[r.concepto].id)resVig[r.concepto]=r;});
   const rvList   = Object.values(resVig);
+  // Normalize legacy concepto keys
+  Object.values(resVig).forEach(r=>{ r.concepto=CONCEPTO_LABEL[r.concepto]||r.concepto||'Cobertura'; });
   const coasRows = data.coas.filter(c=>c.id_siniestro===s.id);
   const sinAjusts= data.sinajust.filter(a=>a.id_siniestro===s.id);
   const ajusts   = sinAjusts.map(sa=>data.ajust.find(a=>a.id===sa.id_ajustador)).filter(Boolean);
@@ -3429,6 +3426,7 @@ async function descargarWord(){
   const resVig  = {};
   resRows.forEach(r=>{if(!resVig[r.concepto]||r.id>resVig[r.concepto].id)resVig[r.concepto]=r;});
   const rvList  = Object.values(resVig);
+  Object.values(resVig).forEach(r=>{ r.concepto=CONCEPTO_LABEL[r.concepto]||r.concepto||'Cobertura'; });
   const sublims = data.sublim.filter(sl=>sl.id_poliza===pol.id);
   const sinAjusts=data.sinajust.filter(a=>a.id_siniestro===s.id);
   const ajusts  = sinAjusts.map(sa=>data.ajust.find(a=>a.id===sa.id_ajustador)).filter(Boolean);
@@ -3786,6 +3784,8 @@ async function descargarWordGNP(){
   const resVig   = {};
   resRows.forEach(r=>{if(!resVig[r.concepto]||r.id>resVig[r.concepto].id)resVig[r.concepto]=r;});
   const rvList   = Object.values(resVig);
+  // Normalize legacy concepto keys
+  Object.values(resVig).forEach(r=>{ r.concepto=CONCEPTO_LABEL[r.concepto]||r.concepto||'Cobertura'; });
   const coasRows = data.coas.filter(c=>c.id_siniestro===s.id);
   const sinAjusts= data.sinajust.filter(a=>a.id_siniestro===s.id);
   const ajusts   = sinAjusts.map(sa=>data.ajust.find(a=>a.id===sa.id_ajustador)).filter(Boolean);
@@ -4142,6 +4142,7 @@ async function descargarWordGNP(){
 // ══════════════════════════════════════════════════════════════════════
 function buildCoberturaTableHTML(rvList, moneda){
   if(!rvList||!rvList.length) return '';
+  rvList=rvList.map(r=>({...r,concepto:CONCEPTO_LABEL[r.concepto]||r.concepto||'Cobertura'}));
   const fN=n=>fmtMXN(n||0);
   const showTotal=rvList.length>1;
 
@@ -4220,6 +4221,7 @@ function buildFormalGenerico(s, secs, aseg){
   const resRows = data.res.filter(r=>r.id_siniestro===s.id);
   const resVig  = {};
   resRows.forEach(r=>{if(!resVig[r.concepto]||r.id>resVig[r.concepto].id)resVig[r.concepto]=r;});
+  Object.values(resVig).forEach(r=>{ r.concepto=CONCEPTO_LABEL[r.concepto]||r.concepto||'Cobertura'; });
   const rvList  = Object.values(resVig);
   const sublims = data.sublim.filter(sl=>sl.id_poliza===pol.id);
   const coasRows= data.coas.filter(c=>c.id_siniestro===s.id);
