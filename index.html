@@ -459,15 +459,109 @@ td { padding:9px 10px; vertical-align:middle; }
   <div class="form-grid">
     <div class="fg"><label>Ref. AASA</label><input type="text" id="s-exp" placeholder="ej. GNPEML010870925, ATLJCA010740624"></div>
     <div class="fg"><label>No. de siniestro</label><input type="text" id="s-numsin" placeholder="Llenar cuando se tenga"></div>
-    <div class="fg full">
-      <label>Compañía aseguradora</label>
-      <select id="s-aseg-direct" onchange="actualizarCamposAseg()"><option value="">— Selecciona la compañía —</option></select>
-    </div>
-    <div class="fg"><label>Póliza</label><select id="s-poliza"></select></div>
     <div class="fg"><label>Clave ajustador (compañía)</label><input type="text" id="s-clave-ajust"></div>
     <div class="fg"><label>Referencia asegurado</label><input type="text" id="s-ref-aseg"></div>
     <div class="fg full"><label>Giro del asegurado</label><input type="text" id="s-giro" placeholder="ej. Ingenio azucarero"></div>
   </div>
+
+  <!-- ── PASO 1: ASEGURADO ─────────────────────────────────────────── -->
+  <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin:14px 0 8px;">Paso 1 — Asegurado</div>
+  <div id="sin-asdo-search-wrap">
+    <div style="display:flex;gap:8px;align-items:flex-end;">
+      <div style="flex:1;">
+        <label style="font-size:12px;color:var(--text-sec);display:block;margin-bottom:4px;">Buscar asegurado por nombre o RFC</label>
+        <input type="text" id="sin-asdo-q" placeholder="Escriba para buscar…" oninput="buscarAseguradoSin()" autocomplete="off"
+          style="width:100%;padding:7px 10px;border:1px solid var(--border-md);border-radius:var(--r);background:var(--bg2);color:var(--text);font-size:13px;font-family:inherit;">
+      </div>
+      <button class="btn" type="button" onclick="toggleCrearAseguradoSin()" id="btn-crear-asdo-sin" style="white-space:nowrap;">+ Crear asegurado</button>
+    </div>
+    <div id="sin-asdo-results" style="margin-top:4px;"></div>
+    <input type="hidden" id="sin-asdo-sel-id">
+
+    <!-- Sub-formulario inline para crear asegurado -->
+    <div id="sin-asdo-form" style="display:none;margin-top:10px;padding:12px;background:var(--surface2);border:1px solid var(--border-md);border-radius:var(--rl);">
+      <div style="font-size:11px;font-weight:600;color:var(--accent-lt);margin-bottom:8px;">Nuevo asegurado</div>
+      <div class="form-grid">
+        <div class="fg full"><label>Nombre / Razón social</label><input type="text" id="sin-new-asdo-nombre" placeholder="Nombre completo o razón social"></div>
+        <div class="fg"><label>RFC</label><input type="text" id="sin-new-asdo-rfc" placeholder="RFC con homoclave"></div>
+        <div class="fg"><label>Tipo</label>
+          <select id="sin-new-asdo-tipo"><option value="moral">Persona moral</option><option value="fisica">Persona física</option></select></div>
+        <div class="fg"><label>Teléfono</label><input type="text" id="sin-new-asdo-tel"></div>
+        <div class="fg"><label>Correo</label><input type="text" id="sin-new-asdo-email"></div>
+        <div class="fg full"><label>Dirección</label><input type="text" id="sin-new-asdo-dir"></div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:8px;">
+        <button class="btn btn-primary btn-sm" type="button" onclick="guardarNuevoAseguradoSin()">Guardar asegurado</button>
+        <button class="btn btn-sm" type="button" onclick="cancelarCrearAseguradoSin()">Cancelar</button>
+      </div>
+    </div>
+
+    <!-- Asegurado seleccionado -->
+    <div id="sin-asdo-sel-display" style="display:none;margin-top:8px;padding:8px 12px;background:rgba(100,180,100,.08);border:1px solid rgba(100,180,100,.3);border-radius:var(--r);display:none;align-items:center;gap:10px;">
+      <span style="font-size:13px;font-weight:600;color:var(--text);" id="sin-asdo-sel-label"></span>
+      <button class="btn btn-sm" type="button" onclick="limpiarAseguradoSin()" style="margin-left:auto;">Cambiar</button>
+    </div>
+  </div>
+
+  <!-- ── PASO 2: PÓLIZA ─────────────────────────────────────────────── -->
+  <div id="sin-pol-step" style="display:none;">
+    <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin:14px 0 8px;">Paso 2 — Póliza</div>
+    <div style="display:flex;gap:8px;align-items:flex-end;">
+      <div style="flex:1;">
+        <label style="font-size:12px;color:var(--text-sec);display:block;margin-bottom:4px;">Buscar póliza por número</label>
+        <input type="text" id="sin-pol-q" placeholder="Escriba para buscar…" oninput="buscarPolizaSin()" autocomplete="off"
+          style="width:100%;padding:7px 10px;border:1px solid var(--border-md);border-radius:var(--r);background:var(--bg2);color:var(--text);font-size:13px;font-family:inherit;">
+      </div>
+      <button class="btn" type="button" onclick="toggleCrearPolizaSin()" id="btn-crear-pol-sin" style="white-space:nowrap;">+ Crear póliza</button>
+    </div>
+    <div id="sin-pol-results" style="margin-top:4px;"></div>
+    <input type="hidden" id="sin-pol-sel-id">
+
+    <!-- Sub-formulario inline para crear póliza -->
+    <div id="sin-pol-form" style="display:none;margin-top:10px;padding:12px;background:var(--surface2);border:1px solid var(--border-md);border-radius:var(--rl);">
+      <div style="font-size:11px;font-weight:600;color:var(--accent-lt);margin-bottom:8px;">Nueva póliza</div>
+      <div class="form-grid">
+        <div class="fg"><label>Número de póliza</label><input type="text" id="sin-new-pol-num" placeholder="Número de póliza"></div>
+        <div class="fg"><label>Compañía aseguradora</label>
+          <select id="sin-new-pol-aseg"><option value="">— Selecciona —</option></select></div>
+        <div class="fg"><label>Ramo</label>
+          <select id="sin-new-pol-ramo">
+            <option value="incendio">Incendio y líneas aliadas</option>
+            <option value="robo">Robo</option>
+            <option value="rc">Responsabilidad civil</option>
+            <option value="transporte">Transporte</option>
+            <option value="energia">Energía</option>
+            <option value="construccion">Construcción</option>
+            <option value="equipo_contratistas">Equipo de Contratistas</option>
+            <option value="interrupcion">Interrupción de negocios</option>
+            <option value="catastrofico">Catastrófico</option>
+          </select></div>
+        <div class="fg"><label>Subramo</label><input type="text" id="sin-new-pol-subramo" placeholder="ej. E.E., Incendio, Robo"></div>
+        <div class="fg"><label>Vigencia inicio</label><input type="date" id="sin-new-pol-vini"></div>
+        <div class="fg"><label>Vigencia fin</label><input type="date" id="sin-new-pol-vfin"></div>
+        <div class="fg"><label>Suma asegurada</label><input type="number" id="sin-new-pol-sa" placeholder="0.00"></div>
+        <div class="fg"><label>Moneda</label>
+          <select id="sin-new-pol-mon"><option value="MXN">MXN</option><option value="USD">USD</option><option value="EUR">EUR</option></select></div>
+        <div class="fg"><label>Agente</label><input type="text" id="sin-new-pol-agente"></div>
+        <div class="fg full"><label>Ubicación del riesgo</label><input type="text" id="sin-new-pol-ubic" placeholder="Dirección del riesgo asegurado"></div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:8px;">
+        <button class="btn btn-primary btn-sm" type="button" onclick="guardarNuevaPolizaSin()">Guardar póliza</button>
+        <button class="btn btn-sm" type="button" onclick="cancelarCrearPolizaSin()">Cancelar</button>
+      </div>
+    </div>
+
+    <!-- Póliza seleccionada -->
+    <div id="sin-pol-sel-display" style="display:none;margin-top:8px;padding:8px 12px;background:rgba(100,180,100,.08);border:1px solid rgba(100,180,100,.3);border-radius:var(--r);align-items:center;gap:10px;">
+      <span style="font-size:13px;font-weight:600;color:var(--text);" id="sin-pol-sel-label"></span>
+      <button class="btn btn-sm" type="button" onclick="limpiarPolizaSin()" style="margin-left:auto;">Cambiar</button>
+    </div>
+  </div>
+
+  <!-- Selector de compañía oculto (mantiene compatibilidad con actualizarCamposAseg) -->
+  <select id="s-aseg-direct" style="display:none;" onchange="actualizarCamposAseg()"></select>
+  <!-- Selector de póliza oculto (compatibilidad con guardarSiniestro) -->
+  <select id="s-poliza" style="display:none;"></select>
 
   <!-- SECCIÓN GNP — visible solo cuando aseguradora.codigo_sistema = 'GNP' -->
   <div id="seccion-gnp" style="display:none;">
@@ -1270,7 +1364,193 @@ function diasInactivo(fechaStr){
 }
 
 // ══════════════════════════════════════════════════════════════════════
-// REGLAS DE INFORMES DE ACTUALIZACIÓN POR ASEGURADORA
+// BÚSQUEDA Y CREACIÓN DE ASEGURADO / PÓLIZA EN MODAL SINIESTRO
+// ══════════════════════════════════════════════════════════════════════
+
+function buscarAseguradoSin(){
+  const q=(g('sin-asdo-q').value||'').toLowerCase().trim();
+  const res=g('sin-asdo-results');
+  if(!q){ res.innerHTML=''; return; }
+  const matches=data.asdo.filter(a=>(a.nombre||'').toLowerCase().includes(q)||(a.rfc||'').toLowerCase().includes(q)).slice(0,6);
+  if(!matches.length){
+    res.innerHTML=`<div style="font-size:12px;color:var(--text-ter);padding:6px 0;">Sin resultados. Use "+ Crear asegurado".</div>`;
+    return;
+  }
+  res.innerHTML=`<div style="background:var(--surface2);border:1px solid var(--border-md);border-radius:var(--r);overflow:hidden;margin-top:2px;">
+    ${matches.map(a=>`<div onclick="seleccionarAseguradoSin(${a.id},'${(a.nombre||'').replace(/'/g,"\\'")}' )"
+      style="padding:8px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border);transition:background .1s;"
+      onmouseover="this.style.background='var(--surface3)'" onmouseout="this.style.background=''">
+      <strong>${a.nombre||'—'}</strong>${a.rfc?` <span style="color:var(--text-ter);font-size:11px;">· ${a.rfc}</span>`:''}
+    </div>`).join('')}
+  </div>`;
+}
+
+function seleccionarAseguradoSin(id, nombre){
+  g('sin-asdo-sel-id').value = id;
+  g('sin-asdo-q').value = nombre;
+  g('sin-asdo-results').innerHTML = '';
+  g('sin-asdo-sel-label').textContent = nombre;
+  g('sin-asdo-sel-display').style.display = 'flex';
+  g('sin-asdo-form').style.display = 'none';
+  // Mostrar paso 2
+  g('sin-pol-step').style.display = 'block';
+  // Precargar pólizas del asegurado en el buscador
+  g('sin-pol-q').value = '';
+  g('sin-pol-results').innerHTML = '';
+  g('sin-pol-sel-id').value = '';
+  g('sin-pol-sel-display').style.display = 'none';
+  g('s-poliza').value = '';
+  g('s-aseg-direct').value = '';
+}
+
+function limpiarAseguradoSin(){
+  g('sin-asdo-sel-id').value = '';
+  g('sin-asdo-q').value = '';
+  g('sin-asdo-sel-display').style.display = 'none';
+  g('sin-pol-step').style.display = 'none';
+  limpiarPolizaSin();
+}
+
+function toggleCrearAseguradoSin(){
+  const f = g('sin-asdo-form');
+  f.style.display = f.style.display==='none' ? 'block' : 'none';
+}
+
+function cancelarCrearAseguradoSin(){
+  g('sin-asdo-form').style.display = 'none';
+  ['sin-new-asdo-nombre','sin-new-asdo-rfc','sin-new-asdo-tel','sin-new-asdo-email','sin-new-asdo-dir'].forEach(f=>{ if(g(f)) g(f).value=''; });
+}
+
+async function guardarNuevoAseguradoSin(){
+  const nombre = g('sin-new-asdo-nombre').value.trim();
+  if(!nombre){ toast('El nombre es obligatorio.'); return; }
+  const {data:rows, error} = await db.from('asegurados').insert({
+    nombre, rfc:g('sin-new-asdo-rfc').value||null,
+    tipo:g('sin-new-asdo-tipo').value,
+    telefono:g('sin-new-asdo-tel').value||null,
+    correo:g('sin-new-asdo-email').value||null,
+    direccion:g('sin-new-asdo-dir').value||null,
+  }).select('id').single();
+  if(error){ toast('Error: '+error.message); return; }
+  await loadAll();
+  toast('Asegurado creado.');
+  cancelarCrearAseguradoSin();
+  g('sin-asdo-form').style.display='none';
+  seleccionarAseguradoSin(rows.id, nombre);
+}
+
+// ── Póliza ────────────────────────────────────────────────────────────
+
+function buscarPolizaSin(){
+  const q=(g('sin-pol-q').value||'').toLowerCase().trim();
+  const res=g('sin-pol-results');
+  const asdoId=parseInt(g('sin-asdo-sel-id').value)||0;
+  // Filter polizas by asegurado if selected
+  const pool = asdoId
+    ? data.pol.filter(p=>p.id_asegurado===asdoId)
+    : data.pol;
+  const matches = q
+    ? pool.filter(p=>(p.numero||'').toLowerCase().includes(q)).slice(0,6)
+    : pool.slice(0,6);
+  if(!matches.length){
+    res.innerHTML=`<div style="font-size:12px;color:var(--text-ter);padding:6px 0;">Sin pólizas. Use "+ Crear póliza".</div>`;
+    return;
+  }
+  const asegNombre = id => (data.aseg.find(a=>a.id===id)||{}).nombre||'';
+  res.innerHTML=`<div style="background:var(--surface2);border:1px solid var(--border-md);border-radius:var(--r);overflow:hidden;margin-top:2px;">
+    ${matches.map(p=>`<div onclick="seleccionarPolizaSin(${p.id},'${(p.numero||'').replace(/'/g,"\\'")}',${p.id_aseguradora||0})"
+      style="padding:8px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border);"
+      onmouseover="this.style.background='var(--surface3)'" onmouseout="this.style.background=''">
+      <strong>${p.numero||'—'}</strong>
+      <span style="color:var(--text-ter);font-size:11px;"> · ${asegNombre(p.id_aseguradora)} · ${p.ramo||''} · Vige: ${p.vigencia_ini||'?'} – ${p.vigencia_fin||'?'}</span>
+    </div>`).join('')}
+  </div>`;
+}
+
+function seleccionarPolizaSin(polId, numero, asegId){
+  g('sin-pol-sel-id').value = polId;
+  g('sin-pol-q').value = numero;
+  g('sin-pol-results').innerHTML = '';
+  const aseg = data.aseg.find(a=>a.id===asegId)||{};
+  g('sin-pol-sel-label').textContent = numero + (aseg.nombre ? ' — '+aseg.nombre : '');
+  g('sin-pol-sel-display').style.display = 'flex';
+  g('sin-pol-form').style.display = 'none';
+  // Sync hidden selects for compatibility
+  g('s-poliza').innerHTML = `<option value="${polId}" selected>${numero}</option>`;
+  g('s-poliza').value = polId;
+  if(asegId){
+    // Ensure aseguradora option exists in hidden select
+    if(!g('s-aseg-direct').querySelector(`option[value="${asegId}"]`)){
+      g('s-aseg-direct').innerHTML += `<option value="${asegId}">${aseg.nombre||''}</option>`;
+    }
+    g('s-aseg-direct').value = asegId;
+    actualizarCamposAseg();
+  }
+}
+
+function limpiarPolizaSin(){
+  g('sin-pol-sel-id').value = '';
+  g('sin-pol-q').value = '';
+  g('sin-pol-results').innerHTML = '';
+  g('sin-pol-sel-display').style.display = 'none';
+  g('s-poliza').value = '';
+  g('s-aseg-direct').value = '';
+}
+
+function toggleCrearPolizaSin(){
+  const f=g('sin-pol-form');
+  if(f.style.display==='none'){
+    f.style.display='block';
+    // Populate aseguradoras in sub-form select
+    g('sin-new-pol-aseg').innerHTML='<option value="">— Selecciona —</option>'+
+      data.aseg.map(a=>`<option value="${a.id}">${a.nombre}</option>`).join('');
+    // Pre-select asegurado's common insurer if known
+  } else {
+    f.style.display='none';
+  }
+}
+
+function cancelarCrearPolizaSin(){
+  g('sin-pol-form').style.display='none';
+}
+
+async function guardarNuevaPolizaSin(){
+  const num = g('sin-new-pol-num').value.trim();
+  const asegId = parseInt(g('sin-new-pol-aseg').value)||null;
+  const asdoId = parseInt(g('sin-asdo-sel-id').value)||null;
+  if(!num){ toast('El número de póliza es obligatorio.'); return; }
+  if(!asegId){ toast('Selecciona una compañía aseguradora.'); return; }
+  const {data:rows, error} = await db.from('polizas').insert({
+    numero:num, id_asegurado:asdoId, id_aseguradora:asegId,
+    ramo:g('sin-new-pol-ramo').value||null,
+    subramo:g('sin-new-pol-subramo').value||null,
+    vigencia_ini:g('sin-new-pol-vini').value||null,
+    vigencia_fin:g('sin-new-pol-vfin').value||null,
+    suma_asegurada:parseFloat(g('sin-new-pol-sa').value)||null,
+    moneda:g('sin-new-pol-mon').value||'MXN',
+    agente:g('sin-new-pol-agente').value||null,
+    ubicacion_riesgo:g('sin-new-pol-ubic').value||null,
+  }).select('id').single();
+  if(error){ toast('Error: '+error.message); return; }
+  await loadAll();
+  toast('Póliza creada.');
+  cancelarCrearPolizaSin();
+  seleccionarPolizaSin(rows.id, num, asegId);
+}
+
+function resetBuscadorSinModal(){
+  // Reset search/create UI when opening modal-sin
+  ['sin-asdo-q','sin-pol-q'].forEach(f=>{ if(g(f)) g(f).value=''; });
+  ['sin-asdo-results','sin-pol-results'].forEach(f=>{ if(g(f)) g(f).innerHTML=''; });
+  ['sin-asdo-sel-id','sin-pol-sel-id'].forEach(f=>{ if(g(f)) g(f).value=''; });
+  if(g('sin-asdo-sel-display')) g('sin-asdo-sel-display').style.display='none';
+  if(g('sin-pol-sel-display'))  g('sin-pol-sel-display').style.display='none';
+  if(g('sin-asdo-form'))  g('sin-asdo-form').style.display='none';
+  if(g('sin-pol-form'))   g('sin-pol-form').style.display='none';
+  if(g('sin-pol-step'))   g('sin-pol-step').style.display='none';
+}
+
+
 // ══════════════════════════════════════════════════════════════════════
 const REGLAS_INFORMES = {
   // clave = codigo_sistema de la aseguradora (o fragmento del nombre en minúsculas)
@@ -2133,6 +2413,7 @@ function abrirModal(id){
   if(id==='modal-sin'){
     g('sin-modal-title').textContent='Nuevo expediente';
     g('s-id').value='';
+    resetBuscadorSinModal();
     ['s-exp','s-numsin','s-tipo','s-subramo','s-causa','s-causa-com','s-riesgo','s-clave-cat',
      's-clave-ajust','s-ref-aseg','s-giro','s-desc','s-desc-riesgo','s-introduccion','s-notas','s-estrategias',
      's-tramite-gnp','s-ot','s-fsin','s-hora-ocurr','s-finsp','s-finf',
@@ -2376,9 +2657,16 @@ function editarSiniestro(id){
   if(g('s-subrogacion'))      g('s-subrogacion').value=s.subrogacion||'N/A';
   if(g('s-asesores'))         g('s-asesores').value=s.asesores||'No aplican';
   const pol=data.pol.find(p=>p.id===s.id_poliza)||{};
-  if(pol.id_aseguradora){
-    g('s-aseg-direct').value=pol.id_aseguradora;
-    actualizarCamposAseg();
+  const asdo=data.asdo.find(a=>a.id===pol.id_asegurado)||{};
+
+  // Pre-populate asegurado search
+  resetBuscadorSinModal();
+  if(asdo.id){
+    seleccionarAseguradoSin(asdo.id, asdo.nombre||'—');
+  }
+  // Pre-populate póliza search
+  if(pol.id){
+    seleccionarPolizaSin(pol.id, pol.numero||'—', pol.id_aseguradora||0);
     // Restore company-specific fields after actualizarCamposAseg
     if(g('s-tramite-gnp'))    g('s-tramite-gnp').value=s.tramite_gnp||'';
     if(g('s-gnp-jefe'))       g('s-gnp-jefe').value=s.gnp_jefe_depto||'';
@@ -2388,7 +2676,6 @@ function editarSiniestro(id){
     if(g('s-atlas-poliza'))   g('s-atlas-poliza').value=s.atlas_poliza_coaseg||'';
     if(g('s-atlas-sin-gnp'))  g('s-atlas-sin-gnp').value=s.atlas_sinies_coaseg||'';
   }
-  g('s-poliza').value=s.id_poliza||'';
   g('modal-sin').classList.add('open');
 }
 
