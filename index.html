@@ -1739,7 +1739,12 @@ function renderBitacoraRows(rows){
 
 const INF_TIPOS = {preliminar:'Preliminar',actualizacion:'Actualización',final:'Final',nota_tecnica:'Nota Técnica'};
 
-function renderReservaGrid(rows){
+function renderReservaGrid(allRows){
+  // De-duplicate: keep most recent row per concepto (vigente)
+  const vigMap={};
+  allRows.forEach(r=>{if(!vigMap[r.concepto]||r.id>vigMap[r.concepto].id)vigMap[r.concepto]=r;});
+  const rows=Object.values(vigMap);
+
   const wrap = g('res-grid-wrap');
   const tblWrap = g('res-table-wrap');
   if(!wrap) return;
@@ -3051,7 +3056,8 @@ function buildGNP(s, secs){
   const deducible   = rvList.reduce((a,r)=>a+(r.deducible||0),0);
   const p_indemniz  = p_ajustada - deducible;
   const coas_aseg   = rvList.reduce((a,r)=>a+(r.monto_coaseguro||0),0);
-  const res_neta    = p_indemniz - coas_aseg;
+  const bajo_seg    = rvList.reduce((a,r)=>a+(r.monto_bajo_seguro||0),0);
+  const res_neta    = p_indemniz - bajo_seg - coas_aseg;
   const bases_det   = rvList.map(r=>r.bases_determinacion).filter(Boolean).join(' ');
   const monedaStr   = (pol.moneda||'MXN');
 
