@@ -2028,6 +2028,7 @@ async function cambiarEstatus(nuevoEstatus){
   if(idx>=0) data.sin[idx].estatus = nuevoEstatus;
   toast('Estatus: '+EST[nuevoEstatus]?.label);
   renderDash();
+  renderSiniestros();
 }
 
 function volverLista(){ g('sin-detail-view').style.display='none'; g('sin-list-view').style.display='block'; currentSin=null; }
