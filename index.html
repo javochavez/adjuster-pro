@@ -239,6 +239,7 @@ td { padding:9px 10px; vertical-align:middle; }
       <!-- DASHBOARD -->
       <div id="panel-dashboard" class="panel active">
         <div class="dash-grid" id="dash-metrics"></div>
+        <div id="dash-informes-banner"></div>
         <div id="dash-alerta-banner"></div>
         <div class="section-title">Expedientes activos</div>
         <div class="tbl-wrap">
@@ -272,6 +273,21 @@ td { padding:9px 10px; vertical-align:middle; }
             </tr></thead>
             <tbody id="alertas-body"></tbody>
           </table>
+        </div>
+        <!-- Informes de actualización pendientes -->
+        <div style="margin-top:24px;">
+          <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px;">Recordatorios — Informes de Actualización</div>
+          <div style="font-size:12px;color:var(--text-sec);margin-bottom:12px;">Expedientes activos que requieren informe de actualización según las reglas de cada aseguradora</div>
+          <div id="inf-act-resumen" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;"></div>
+          <div class="tbl-wrap">
+            <table id="inf-act-table">
+              <thead><tr>
+                <th>Expediente</th><th>Asegurado</th><th>Aseguradora</th><th>Motivo</th>
+                <th>Último informe</th><th>Días desde último informe</th><th></th>
+              </tr></thead>
+              <tbody id="inf-act-body"></tbody>
+            </table>
+          </div>
         </div>
       </div>
 
@@ -1217,6 +1233,145 @@ function diasInactivo(fechaStr){
   return Math.floor((hoy-f)/(1000*60*60*24));
 }
 
+// ══════════════════════════════════════════════════════════════════════
+// REGLAS DE INFORMES DE ACTUALIZACIÓN POR ASEGURADORA
+// ══════════════════════════════════════════════════════════════════════
+const REGLAS_INFORMES = {
+  // clave = codigo_sistema de la aseguradora (o fragmento del nombre en minúsculas)
+  // ventana_ini/fin: día del mes (1-31) en que aplica la ventana periódica
+  // demanda: true = también alerta si hubo movimiento después del último informe
+  'GNP':     { ventana_ini:1,  ventana_fin:5,  demanda:true, label:'GNP'    },
+  'INBURSA': { ventana_ini:1,  ventana_fin:5,  demanda:true, label:'Inbursa' },
+  'ATLAS':   { ventana_ini:15, ventana_fin:20, demanda:true, label:'Atlas'   },
+};
+
+// Devuelve la regla para una aseguradora dada (por codigo_sistema o nombre)
+function reglaInforme(aseg){
+  if(!aseg) return null;
+  const cod=(aseg.codigo_sistema||'').toUpperCase();
+  if(REGLAS_INFORMES[cod]) return REGLAS_INFORMES[cod];
+  const nom=(aseg.nombre||'').toUpperCase();
+  for(const k of Object.keys(REGLAS_INFORMES)){
+    if(nom.includes(k)) return REGLAS_INFORMES[k];
+  }
+  return null;
+}
+
+// Último informe de ACTUALIZACIÓN registrado para un siniestro
+function ultimoInformeActualizacion(sinId){
+  const infs=data.inf.filter(i=>i.id_siniestro===sinId&&i.tipo==='actualizacion');
+  if(!infs.length) return null;
+  return infs.sort((a,b)=>new Date(b.fecha_envio||b.created_at)-new Date(a.fecha_envio||a.created_at))[0];
+}
+
+// Último movimiento RELEVANTE posterior al último informe de actualización
+function movimientoDespuesDeInforme(sinId, fechaInforme){
+  if(!fechaInforme) return true; // si nunca ha habido informe, hay cambios pendientes
+  const fi=new Date(fechaInforme); fi.setHours(0,0,0,0);
+  const chk=(arr,campo)=>arr.some(r=>r.id_siniestro===sinId&&r[campo]&&new Date(r[campo])>fi);
+  return chk(data.res,'fecha')||chk(data.pag,'fecha')||chk(data.hon,'fecha_pacto')||
+         chk(data.bit,'fecha')||chk(data.inf.filter(i=>i.tipo!=='actualizacion'),'fecha_envio');
+}
+
+// Calcula todos los expedientes que necesitan informe de actualización hoy
+function calcInformesPendientes(){
+  const hoy=new Date(); hoy.setHours(0,0,0,0);
+  const diaHoy=hoy.getDate();
+  const pendientes=[];
+
+  const activos=data.sin.filter(s=>['asignado','inspeccion','informe','cobro'].includes(s.estatus));
+
+  activos.forEach(s=>{
+    const pol=data.pol.find(p=>p.id===s.id_poliza)||{};
+    const aseg=data.aseg.find(a=>a.id===pol.id_aseguradora)||{};
+    const regla=reglaInforme(aseg);
+    if(!regla) return;
+
+    const ultInf=ultimoInformeActualizacion(s.id);
+    const fechaUltInf=ultInf?.fecha_envio||null;
+    const diasDesde=fechaUltInf?Math.floor((hoy-new Date(fechaUltInf))/(864e5)):9999;
+
+    // Verificar si ya hay informe de actualización en el mes actual
+    let tieneEnMesActual=false;
+    if(fechaUltInf){
+      const fu=new Date(fechaUltInf);
+      tieneEnMesActual=(fu.getFullYear()===hoy.getFullYear()&&fu.getMonth()===hoy.getMonth());
+    }
+
+    const enVentana=(diaHoy>=regla.ventana_ini&&diaHoy<=regla.ventana_fin);
+    const hayMovimiento=regla.demanda&&movimientoDespuesDeInforme(s.id,fechaUltInf);
+
+    let motivo=null;
+    let urgencia='normal'; // 'urgente' | 'normal'
+
+    if(enVentana&&!tieneEnMesActual){
+      motivo=`Ventana mensual ${regla.label} (días ${regla.ventana_ini}–${regla.ventana_fin})`;
+      urgencia='urgente';
+    } else if(hayMovimiento&&!tieneEnMesActual){
+      motivo='Cambios en el expediente sin informe de actualización posterior';
+      urgencia='normal';
+    }
+
+    if(motivo){
+      pendientes.push({s, aseg, pol, ultInf, fechaUltInf, diasDesde, motivo, urgencia});
+    }
+  });
+
+  return pendientes.sort((a,b)=>{
+    if(a.urgencia!==b.urgencia) return a.urgencia==='urgente'?-1:1;
+    return b.diasDesde-a.diasDesde;
+  });
+}
+
+function renderInformesPendientes(){
+  const pendientes=calcInformesPendientes();
+  const urgentes=pendientes.filter(p=>p.urgencia==='urgente').length;
+  const normales=pendientes.filter(p=>p.urgencia==='normal').length;
+
+  // Resumen en panel alertas
+  const resWrap=g('inf-act-resumen');
+  if(resWrap){
+    resWrap.innerHTML=`
+      <div class="mc" style="border-left-color:#e24b4a;">
+        <div class="mc-lbl">En ventana mensual</div>
+        <div class="mc-val" style="color:#ef9f9f;">${urgentes}</div>
+        <div class="mc-sub">Requieren informe esta semana</div>
+      </div>
+      <div class="mc" style="border-left-color:#BA7517;">
+        <div class="mc-lbl">Con cambios sin informe</div>
+        <div class="mc-val" style="color:#ffcc80;">${normales}</div>
+        <div class="mc-sub">Movimientos no reportados</div>
+      </div>
+      <div class="mc">
+        <div class="mc-lbl">Total pendientes</div>
+        <div class="mc-val">${pendientes.length}</div>
+      </div>`;
+  }
+
+  const tbody=g('inf-act-body');
+  if(!tbody) return;
+  if(!pendientes.length){
+    tbody.innerHTML=`<tr><td colspan="7" class="empty" style="color:#a5d6a7;">✓ No hay informes de actualización pendientes.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML=pendientes.map(({s,aseg,ultInf,fechaUltInf,diasDesde,motivo,urgencia})=>{
+    const pol=data.pol.find(p=>p.id===s.id_poliza)||{};
+    const asdo=data.asdo.find(a=>a.id===pol.id_asegurado)||{};
+    const rowCls=urgencia==='urgente'?'alerta-critica':'alerta-warning';
+    const diasTxt=diasDesde>=9999?'Nunca':diasDesde+' días';
+    const diasCls=urgencia==='urgente'?'dias-critico':'dias-warning';
+    return `<tr class="${rowCls}" style="cursor:pointer;" onclick="verSiniestro(${s.id})">
+      <td><strong>${s.numero_exp}</strong></td>
+      <td>${asdo.nombre||'—'}</td>
+      <td>${aseg.nombre||'—'}</td>
+      <td style="font-size:11px;">${motivo}</td>
+      <td>${fechaUltInf?fmtD(fechaUltInf):'<span style="color:var(--text-ter);">Ninguno</span>'}</td>
+      <td><span class="dias-badge ${diasCls}">${diasTxt}</span></td>
+      <td><button class="btn btn-sm" onclick="event.stopPropagation();verSiniestro(${s.id})">Ver expediente</button></td>
+    </tr>`;
+  }).join('');
+}
+
 function renderDash(){
   const activos = data.sin.filter(s=>s.estatus!=='cerrado');
   const totRes  = data.sin.reduce((a,s)=>{ const rv=reservaVigente(s.id); return a+rv; },0);
@@ -1228,6 +1383,10 @@ function renderDash(){
   const inactivos15 = activos.filter(s=>{ const um=ultimoMovimiento(s.id); return diasInactivo(um?.fecha)>=15; });
   const inactivos30 = activos.filter(s=>{ const um=ultimoMovimiento(s.id); return diasInactivo(um?.fecha)>=30; });
 
+  // Informes de actualización pendientes
+  const infPendientes=calcInformesPendientes();
+  const infUrgentes=infPendientes.filter(p=>p.urgencia==='urgente').length;
+
   g('dash-metrics').innerHTML=`
     <div class="mc"><div class="mc-lbl">Expedientes activos</div><div class="mc-val">${activos.length}<span style="font-size:13px;font-weight:400;color:var(--text-sec)"> / ${data.sin.length}</span></div></div>
     <div class="mc"><div class="mc-lbl">Reserva vigente total</div><div class="mc-val" style="font-size:15px;">${fmtMXN(totRes)}</div><div class="mc-sub">MXN equivalente</div></div>
@@ -1236,19 +1395,50 @@ function renderDash(){
       <div class="mc-lbl">Sin movimiento ≥15 días</div>
       <div class="mc-val" style="font-size:20px;color:${inactivos15.length>0?'#ef9f9f':'#a5d6a7'};">${inactivos15.length}</div>
       <div class="mc-sub">${inactivos30.length} con ≥30 días — clic para ver alertas</div>
+    </div>
+    <div class="mc" style="cursor:pointer;border-left-color:${infPendientes.length>0?'#BA7517':'var(--accent)'};" onclick="switchMain('alertas',document.getElementById('nav-alertas'))">
+      <div class="mc-lbl">Informes de actualización</div>
+      <div class="mc-val" style="font-size:20px;color:${infUrgentes>0?'#ef9f9f':infPendientes.length>0?'#ffcc80':'#a5d6a7'};">${infPendientes.length}</div>
+      <div class="mc-sub">${infUrgentes>0?infUrgentes+' en ventana mensual — urgente':'pendientes por movimientos'}</div>
     </div>`;
 
-  // Banner de alerta si hay expedientes críticos
+  // Banner informes pendientes
+  const bannerInf=g('dash-informes-banner');
+  if(bannerInf){
+    if(infUrgentes>0){
+      bannerInf.innerHTML=`<div style="background:rgba(186,117,23,.15);border:1px solid rgba(186,117,23,.4);border-radius:var(--rl);padding:10px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:12px;color:#ffcc80;">📋 ${infUrgentes} expediente${infUrgentes>1?'s':''} en ventana de informe de actualización — elaborar antes del día ${Math.max(...Object.values(REGLAS_INFORMES).map(r=>r.ventana_fin))} de este mes.</span>
+        <button class="btn btn-sm" style="font-size:11px;color:#ffcc80;border-color:rgba(186,117,23,.4);" onclick="switchMain('alertas',document.getElementById('nav-alertas'))">Ver recordatorios →</button>
+      </div>`;
+    } else if(infPendientes.length>0){
+      bannerInf.innerHTML=`<div style="background:rgba(186,117,23,.08);border:1px solid rgba(186,117,23,.2);border-radius:var(--rl);padding:8px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:12px;color:#ffcc80;">📋 ${infPendientes.length} expediente${infPendientes.length>1?'s':''} con cambios pendientes de informe de actualización.</span>
+        <button class="btn btn-sm" style="font-size:11px;color:#ffcc80;border-color:rgba(186,117,23,.2);" onclick="switchMain('alertas',document.getElementById('nav-alertas'))">Ver recordatorios →</button>
+      </div>`;
+    } else {
+      bannerInf.innerHTML='';
+    }
+  }
+
+  // Badge nav-alertas — suma inactividad + informes
+  const navBtn=g('nav-alertas');
+  const totalBadge=inactivos15.length+infPendientes.length;
+  if(navBtn){
+    const existingBadge=navBtn.querySelector('.nav-badge');
+    if(existingBadge) existingBadge.remove();
+    if(totalBadge>0) navBtn.innerHTML+='<span class="nav-badge">'+totalBadge+'</span>';
+  }
+
+  // Banner inactividad
   const banner=g('dash-alerta-banner');
-  if(inactivos15.length>0){
-    banner.innerHTML=`<div style="background:rgba(220,60,60,.12);border:1px solid rgba(220,60,60,.3);border-radius:var(--rl);padding:10px 14px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;">
-      <span style="font-size:12px;color:#ef9f9f;">⚠ ${inactivos15.length} expediente${inactivos15.length>1?'s':''} sin movimiento en los últimos 15 días o más.</span>
-      <button class="btn btn-sm" style="font-size:11px;color:#ef9f9f;border-color:rgba(220,60,60,.4);" onclick="switchMain('alertas',document.getElementById('nav-alertas'))">Ver alertas →</button>
-    </div>`;
-    // Badge en nav
-    const navBtn=g('nav-alertas');
-    if(navBtn&&!navBtn.querySelector('.nav-badge')) navBtn.innerHTML+='<span class="nav-badge">'+inactivos15.length+'</span>';
-  } else { banner.innerHTML=''; }
+  if(banner){
+    if(inactivos15.length>0){
+      banner.innerHTML=`<div style="background:rgba(220,60,60,.12);border:1px solid rgba(220,60,60,.3);border-radius:var(--rl);padding:10px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:12px;color:#ef9f9f;">⚠ ${inactivos15.length} expediente${inactivos15.length>1?'s':''} sin movimiento en los últimos 15 días o más.</span>
+        <button class="btn btn-sm" style="font-size:11px;color:#ef9f9f;border-color:rgba(220,60,60,.4);" onclick="switchMain('alertas',document.getElementById('nav-alertas'))">Ver alertas →</button>
+      </div>`;
+    } else { banner.innerHTML=''; }
+  }
 
   g('dash-body').innerHTML = activos.slice(0,20).map(s=>{
     const pol=data.pol.find(p=>p.id===s.id_poliza)||{};
@@ -1299,6 +1489,7 @@ function renderAlertas(){
 
   if(!inactivos.length){
     g('alertas-body').innerHTML=`<tr><td colspan="8" class="empty" style="color:#a5d6a7;">✓ Todos los expedientes activos tienen movimiento reciente.</td></tr>`;
+    renderInformesPendientes();
     return;
   }
 
@@ -1321,6 +1512,9 @@ function renderAlertas(){
       <td style="font-size:11px;color:var(--text-sec);">${tipLabel}</td>
       <td><button class="btn btn-sm" onclick="event.stopPropagation();verSiniestro(${s.id});switchMain('siniestros',document.querySelector('.nav-btn:nth-child(2)'))">Ver expediente</button></td>
     </tr>`;}).join('');
+
+  // Render informes de actualización pendientes
+  renderInformesPendientes();
 }
 
 function reservaVigente(sinId){
