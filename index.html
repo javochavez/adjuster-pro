@@ -1745,14 +1745,14 @@ function renderInformesPendientes(){
     const rowCls=urgencia==='urgente'?'alerta-critica':'alerta-warning';
     const diasTxt=diasDesde>=9999?'Nunca':diasDesde+' días';
     const diasCls=urgencia==='urgente'?'dias-critico':'dias-warning';
-    return `<tr class="${rowCls}" style="cursor:pointer;" onclick="verSiniestro(${s.id})">
+    return `<tr class="${rowCls}" style="cursor:pointer;" onclick="irAExpediente(${s.id})">
       <td><strong>${s.numero_exp}</strong></td>
       <td>${asdo.nombre||'—'}</td>
       <td>${aseg.nombre||'—'}</td>
       <td style="font-size:11px;">${motivo}</td>
       <td>${fechaUltInf?fmtD(fechaUltInf):'<span style="color:var(--text-ter);">Ninguno</span>'}</td>
       <td><span class="dias-badge ${diasCls}">${diasTxt}</span></td>
-      <td><button class="btn btn-sm" onclick="event.stopPropagation();verSiniestro(${s.id})">Ver expediente</button></td>
+      <td><button class="btn btn-sm" onclick="event.stopPropagation();irAExpediente(${s.id})">Ver expediente</button></td>
     </tr>`;
   }).join('');
 }
@@ -1911,7 +1911,7 @@ function renderTodosAlertas(){
     const prio = TODO_PRIO[t.prioridad]||TODO_PRIO.media;
     const ajust= t.id_ajustador?(data.ajust.find(a=>a.id===t.id_ajustador)||{}).nombre||'—':'—';
     const diasTxt = dias===0?'Hoy':dias<0?`Vencido ${Math.abs(dias)}d`:`En ${dias}d`;
-    return `<tr class="${venc?'alerta-critica':'alerta-warning'}" style="cursor:pointer;" onclick="verSiniestro(${t.id_siniestro})">
+    return `<tr class="${venc?'alerta-critica':'alerta-warning'}" style="cursor:pointer;" onclick="irAExpediente(${t.id_siniestro})">
       <td><strong>${s.numero_exp||'—'}</strong></td>
       <td>${t.descripcion||'—'}</td>
       <td><span style="color:${prio.color};font-size:12px;">${prio.label}</span></td>
@@ -2030,7 +2030,7 @@ function renderDash(){
     const dias=diasInactivo(um?.fecha);
     const diasCls=dias>=30?'dias-critico':dias>=15?'dias-warning':'';
     const rowCls=dias>=30?'alerta-critica':dias>=15?'alerta-warning':'';
-    return `<tr class="${rowCls}" onclick="verSiniestro(${s.id})" style="cursor:pointer;">
+    return `<tr class="${rowCls}" onclick="irAExpediente(${s.id})" style="cursor:pointer;">
       <td><strong>${s.numero_exp}</strong></td>
       <td>${asdo.nombre||'—'}</td><td>${aseg.nombre||'—'}</td>
       <td>${RAMOS[pol.ramo]||pol.ramo||'—'}</td>
@@ -2081,7 +2081,7 @@ function renderAlertas(){
       fecha:'Último registro', fecha_pacto:'Honorario pactado', fecha_pago:'Honorario pagado',
       fecha_envio:'Informe enviado', asignacion:'Fecha de asignación'
     }[um.tipo]||'Registro'):'Sin registros';
-    return `<tr class="${critico?'alerta-critica':'alerta-warning'}" style="cursor:pointer;" onclick="verSiniestro(${s.id})">
+    return `<tr class="${critico?'alerta-critica':'alerta-warning'}" style="cursor:pointer;" onclick="irAExpediente(${s.id})">
       <td><strong>${s.numero_exp}</strong></td>
       <td>${asdo.nombre||'—'}</td>
       <td>${aseg.nombre||'—'}</td>
@@ -2089,7 +2089,7 @@ function renderAlertas(){
       <td>${um?fmtD(um.fecha):'—'}</td>
       <td><span class="dias-badge ${critico?'dias-critico':'dias-warning'}">${dias} días</span></td>
       <td style="font-size:11px;color:var(--text-sec);">${tipLabel}</td>
-      <td><button class="btn btn-sm" onclick="event.stopPropagation();verSiniestro(${s.id});switchMain('siniestros',document.querySelector('.nav-btn:nth-child(2)'))">Ver expediente</button></td>
+      <td><button class="btn btn-sm" onclick="event.stopPropagation();irAExpediente(${s.id})">Ver expediente</button></td>
     </tr>`;}).join('');
 
   // Render informes de actualización pendientes
@@ -2120,7 +2120,7 @@ function renderSiniestros(){
   g('sin-body').innerHTML=fil.map(s=>{
     const pol=data.pol.find(p=>p.id===s.id_poliza)||{};
     const asdo=data.asdo.find(a=>a.id===pol.id_asegurado)||{};
-    return `<tr onclick="verSiniestro(${s.id})">
+    return `<tr onclick="irAExpediente(${s.id})">
       <td><strong>${s.numero_exp}</strong></td>
       <td>${pol.numero||'—'}</td>
       <td>${asdo.nombre||'—'}</td>
@@ -2141,6 +2141,12 @@ function verSiniestro(id){
   g('sin-list-view').style.display='none';
   const dv=g('sin-detail-view'); dv.style.display='block';
   renderDetalle();
+}
+
+// Navega al panel Expedientes y abre el detalle del siniestro
+function irAExpediente(id){
+  switchMain('siniestros', document.getElementById('nav-siniestros'));
+  verSiniestro(id);
 }
 
 function renderDetalle(){
