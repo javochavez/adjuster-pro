@@ -736,7 +736,13 @@ body.modo-lectura .readonly-hidden { display:none !important; }
   <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin:12px 0 8px;">Narrativa (Informe genérico)</div>
   <div class="form-grid">
     <div class="fg full"><label>Descripción general del riesgo asegurado</label><textarea id="s-desc-riesgo" style="min-height:70px;" placeholder="Descripción física del bien o instalación asegurada, características generales, uso y ocupación..."></textarea></div>
-    <div class="fg full" id="s-introduccion-wrap" style="overflow:visible;"><label>Introducción del informe</label><textarea id="s-introduccion" style="min-height:160px;resize:both;min-width:100%;width:100%;box-sizing:border-box;" placeholder="Texto de apertura del informe: contexto, alcance del ajuste, propósito del documento..."></textarea></div>
+    <div class="fg full" id="s-introduccion-wrap" style="overflow:visible;"><label>Introducción del informe</label><textarea id="s-introduccion" style="min-height:160px;resize:both;min-width:100%;width:100%;box-sizing:border-box;">El presente informe preliminar se elabora en seguimiento de la designación de [Compañía], por parte de su apreciable [Funcionario], relativa a la atención de la pérdida sufrida por el Asegurado por [Describir el tipo de daños y bienes afectados], hechos ocurridos el [Fecha del Siniestro] en su domicilio sito en [Dirección donde ocurrieron los daños].
+
+Siguiendo las instrucciones de asignación, de inmediato procedimos a contactar a [Persona de Contacto], quien nos [Detallar acuerdo para la inspección, fecha, hora, etc.].
+
+Como acordado, el [Fecha de inspección] a las [Hora], nos presentamos en [Sitio de la inspección], lugar en el que fuimos atendidos por [Persona que atendió] quien nos mostró los daños sufridos.
+
+Con base en lo anterior y la información inicialmente recabada, presentamos a ustedes el presente Informe Preliminar.</textarea></div>
     <div class="fg"><label>Procedencia del reclamo</label>
       <select id="s-procedencia">
         <option value="procedente">Procedente</option>
@@ -2724,6 +2730,8 @@ function abrirModal(id){
     g('s-procedencia').value='procedente';
     g('s-autoridades').value='0'; g('s-salvamento').value='por_determinar';
     g('s-recuperacion').value='0'; g('s-coaseguro').value='0'; g('s-reaseguro').value='0';
+    // Default text for Introducción (only for new expediente)
+    if(g('s-introduccion')) g('s-introduccion').value=`El presente informe preliminar se elabora en seguimiento de la designación de [Compañía], por parte de su apreciable [Funcionario], relativa a la atención de la pérdida sufrida por el Asegurado por [Describir el tipo de daños y bienes afectados], hechos ocurridos el [Fecha del Siniestro] en su domicilio sito en [Dirección donde ocurrieron los daños].\n\nSiguiendo las instrucciones de asignación, de inmediato procedimos a contactar a [Persona de Contacto], quien nos [Detallar acuerdo para la inspección, fecha, hora, etc.].\n\nComo acordado, el [Fecha de inspección] a las [Hora], nos presentamos en [Sitio de la inspección], lugar en el que fuimos atendidos por [Persona que atendió] quien nos mostró los daños sufridos.\n\nCon base en lo anterior y la información inicialmente recabada, presentamos a ustedes el presente Informe Preliminar.`;
     g('s-aseg-direct').value='';
     g('seccion-gnp').style.display='none'; g('seccion-atlas').style.display='none';
     if(g('s-modo-captura-lbl')) g('s-modo-captura-lbl').textContent='Modo: Institucional';
