@@ -152,7 +152,20 @@ td { padding:9px 10px; vertical-align:middle; }
 .back-btn { background:transparent; border:1px solid var(--border-md); padding:5px 12px; border-radius:var(--r); cursor:pointer; font-size:11px; color:var(--text-sec); font-family:inherit; margin-bottom:12px; }
 .back-btn:hover { border-color:var(--border-hi); color:var(--text); }
 
-/* ── REPORTE ── */
+/* ── MODO LECTURA ── */
+body.modo-lectura .btn-primary,
+body.modo-lectura .btn-danger,
+body.modo-lectura button[onclick*="abrirModal"],
+body.modo-lectura button[onclick*="guardar"],
+body.modo-lectura button[onclick*="eliminar"],
+body.modo-lectura button[onclick*="editarSiniestro"],
+body.modo-lectura button[onclick*="cambiarEstatus"],
+body.modo-lectura button[onclick*="completarTodo"],
+body.modo-lectura .toolbar > .btn,
+body.modo-lectura select[onchange*="cambiarEstatus"],
+body.modo-lectura #s-modo-captura-lbl { display:none !important; }
+body.modo-lectura .readonly-hidden { display:none !important; }
+
 .rpt-wrap { background:#fff; border-radius:var(--r); padding:24px; color:#111; font-size:12px; line-height:1.6; }
 .rpt-header { display:flex; justify-content:space-between; align-items:flex-start; padding-bottom:10px; border-bottom:2px solid #1558b0; margin-bottom:14px; }
 .rpt-logo { max-height:55px; max-width:150px; object-fit:contain; }
@@ -723,7 +736,7 @@ td { padding:9px 10px; vertical-align:middle; }
   <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin:12px 0 8px;">Narrativa (Informe genérico)</div>
   <div class="form-grid">
     <div class="fg full"><label>Descripción general del riesgo asegurado</label><textarea id="s-desc-riesgo" style="min-height:70px;" placeholder="Descripción física del bien o instalación asegurada, características generales, uso y ocupación..."></textarea></div>
-    <div class="fg full" id="s-introduccion-wrap"><label>Introducción del informe</label><textarea id="s-introduccion" style="min-height:70px;" placeholder="Texto de apertura del informe: contexto, alcance del ajuste, propósito del documento..."></textarea></div>
+    <div class="fg full" id="s-introduccion-wrap"><label>Introducción del informe</label><textarea id="s-introduccion" style="min-height:160px;" placeholder="Texto de apertura del informe: contexto, alcance del ajuste, propósito del documento..."></textarea></div>
     <div class="fg"><label>Procedencia del reclamo</label>
       <select id="s-procedencia">
         <option value="procedente">Procedente</option>
@@ -1288,7 +1301,11 @@ td { padding:9px 10px; vertical-align:middle; }
 const SUPA_URL = 'https://lxtieqaldwcntxaqklww.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx4dGllcWFsZHdjbnR4YXFrbHd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0NTk3NjcsImV4cCI6MjA4OTAzNTc2N30.-OvmJm4j70xWq-kz8X1OIoYsEh7KvCIQGqAjiLGaz-g';
 const db = supabase.createClient(SUPA_URL, SUPA_KEY);
-const ALLOWED = ['jchavez@aasa.com.mx','emalagon@aasa.com.mx'];
+const ALLOWED  = ['jchavez@aasa.com.mx','emalagon@aasa.com.mx'];
+const READONLY = []; // Agrega aquí correos de usuarios de solo lectura, ej: 'consulta@aasa.com.mx'
+let currentUserReadonly = false;
+
+function esReadonly(){ return currentUserReadonly; }
 
 const EST = {
   asignado:    {label:'Asignado',           cls:'b-asignado'},
@@ -1328,7 +1345,7 @@ async function doLogin(){
   const email=v('l-email').trim().toLowerCase(), pass=v('l-pass');
   const errEl=g('login-err'), btn=g('login-btn');
   errEl.textContent='';
-  if(!ALLOWED.includes(email)){ errEl.textContent='Acceso no autorizado.'; return; }
+  if(!ALLOWED.includes(email) && !READONLY.includes(email)){ errEl.textContent='Acceso no autorizado.'; return; }
   btn.textContent='Verificando...'; btn.disabled=true;
   const {data:d,error}=await db.auth.signInWithPassword({email,password:pass});
   btn.textContent='Ingresar'; btn.disabled=false;
@@ -1336,7 +1353,19 @@ async function doLogin(){
   mostrarApp(d.user.email);
 }
 async function doLogout(){ await db.auth.signOut(); g('app').style.display='none'; g('login-wrap').style.display='flex'; g('l-pass').value=''; }
-function mostrarApp(email){ g('login-wrap').style.display='none'; g('app').style.display='flex'; g('user-lbl').textContent=email; loadAll(); }
+function mostrarApp(email){
+  g('login-wrap').style.display='none';
+  g('app').style.display='flex';
+  g('user-lbl').textContent=email;
+  currentUserReadonly = READONLY.includes(email) || !ALLOWED.includes(email);
+  if(currentUserReadonly){
+    document.body.classList.add('modo-lectura');
+    // Show readonly badge in topbar
+    const lbl = g('user-lbl');
+    if(lbl) lbl.textContent = email + '  [Solo lectura]';
+  }
+  loadAll();
+}
 
 /* ── DATA LOAD ── */
 async function loadAll(){
@@ -5363,7 +5392,7 @@ function switchMain(tab,btn){
 /* ── INIT ── */
 (async()=>{
   const {data:{session}}=await db.auth.getSession();
-  if(session&&ALLOWED.includes(session.user.email)) mostrarApp(session.user.email);
+  if(session&&(ALLOWED.includes(session.user.email)||READONLY.includes(session.user.email))) mostrarApp(session.user.email);
 })();
 </script>
 </body>
