@@ -511,6 +511,12 @@ body.modo-lectura .readonly-hidden { display:none !important; }
     <div class="fg"><label>Ref. AASA</label><input type="text" id="s-exp" placeholder="ej. GNPEML010870925, ATLJCA010740624"></div>
     <div class="fg"><label>No. de siniestro</label><input type="text" id="s-numsin" placeholder="Llenar cuando se tenga"></div>
     <div class="fg"><label>Clave ajustador (compañía)</label><input type="text" id="s-clave-ajust"></div>
+    <div class="fg"><label>Funcionario asignador <span style="font-size:10px;color:var(--text-ter);font-weight:400;">(de la compañía)</span></label>
+      <select id="s-funcionario-dest" onchange="actualizarFuncionarioDest()">
+        <option value="">— Seleccionar del directorio —</option>
+      </select></div>
+    <div class="fg"><label>Nombre del funcionario</label><input type="text" id="s-dest-nombre" placeholder="Se llena al seleccionar del directorio"></div>
+    <div class="fg"><label>Cargo del funcionario</label><input type="text" id="s-dest-cargo" placeholder="ej. Jefe de Siniestros Daños"></div>
     <div class="fg full"><label>Giro del asegurado</label><input type="text" id="s-giro" placeholder="ej. Ingenio azucarero"></div>
   </div>
 
@@ -1616,6 +1622,7 @@ function seleccionarPolizaSin(polId, numero, asegId){
     }
     g('s-aseg-direct').value = asegId;
     actualizarCamposAseg(); // this rebuilds s-poliza — so set value AFTER
+    poblarFuncionarioDestSin(asegId);
   }
   // Ensure polId option exists and is selected (actualizarCamposAseg may have rebuilt the list)
   if(!g('s-poliza').querySelector(`option[value="${polId}"]`)){
@@ -1673,6 +1680,30 @@ async function guardarNuevaPolizaSin(){
   cancelarCrearPolizaSin();
   seleccionarPolizaSin(rows.id, num, asegId);
 }
+
+function poblarFuncionarioDestSin(asegId){
+  const sel = g('s-funcionario-dest');
+  if(!sel) return;
+  const conts = data.cont
+    .filter(co=>!asegId || co.id_aseguradora===asegId)
+    .sort((a,b)=>{
+      if(a.tipo==='funcionario_cia'&&b.tipo!=='funcionario_cia') return -1;
+      if(b.tipo==='funcionario_cia'&&a.tipo!=='funcionario_cia') return 1;
+      return (a.nombre||'').localeCompare(b.nombre||'');
+    });
+  sel.innerHTML = '<option value="">— Seleccionar del directorio —</option>' +
+    conts.map(co=>`<option value="${co.id}">${co.nombre}${co.cargo?' — '+co.cargo:''}</option>`).join('');
+}
+
+function actualizarFuncionarioDest(){
+  const id  = parseInt(g('s-funcionario-dest')?.value)||0;
+  const cont = data.cont.find(co=>co.id===id);
+  if(cont){
+    if(g('s-dest-nombre')) g('s-dest-nombre').value = cont.nombre||'';
+    if(g('s-dest-cargo'))  g('s-dest-cargo').value  = cont.cargo||'';
+  }
+}
+
 
 function resetBuscadorSinModal(){
   // Reset search/create UI when opening modal-sin
@@ -2765,7 +2796,7 @@ function abrirModal(id){
     g('s-id').value='';
     resetBuscadorSinModal();
     ['s-exp','s-numsin','s-subramo','s-causa','s-riesgo',
-     's-clave-ajust','s-giro','s-desc','s-desc-riesgo','s-introduccion','s-inspeccion-narrativa','s-notas','s-estrategias',
+     's-clave-ajust','s-dest-nombre','s-dest-cargo','s-giro','s-desc','s-desc-riesgo','s-introduccion','s-inspeccion-narrativa','s-notas','s-estrategias',
      's-tramite-gnp','s-ot','s-fsin','s-hora-ocurr','s-finsp','s-finf',
      's-hora-asig','s-f1cont','s-h1cont','s-f1vis','s-h1vis',
      's-insp-persona','s-insp-cargo','s-insp-tel','s-insp-dom','s-bienes',
@@ -2904,6 +2935,8 @@ async function guardarSiniestro(){
     causa:v('s-causa')||null,
     riesgo_afectado:v('s-riesgo')||null,
     referencia_ajustadora:v('s-exp')||null, clave_ajustador_cia:v('s-clave-ajust')||null,
+    id_contacto_dest:parseInt(v('s-funcionario-dest'))||null,
+    destinatario_nombre:v('s-dest-nombre')||null, destinatario_cargo:v('s-dest-cargo')||null,
     referencia_asegurado:v('s-ref-aseg')||null, giro_asegurado:v('s-giro')||null,
     descripcion:v('s-desc'), descripcion_riesgo:v('s-desc-riesgo')||null, introduccion:v('s-introduccion')||null, inspeccion_narrativa:v('s-inspeccion-narrativa')||null, notas:v('s-notas'),
     estatus:v('s-est'),
@@ -2971,6 +3004,8 @@ function editarSiniestro(id){
   g('s-subramo').value=s.subramo||''; g('s-causa').value=s.causa||''; g('s-riesgo').value=s.riesgo_afectado||'';
   g('s-clave-ajust').value=s.clave_ajustador_cia||'';
   g('s-giro').value=s.giro_asegurado||'';
+  if(g('s-dest-nombre')) g('s-dest-nombre').value=s.destinatario_nombre||'';
+  if(g('s-dest-cargo'))  g('s-dest-cargo').value=s.destinatario_cargo||'';
   g('s-desc').value=s.descripcion||''; g('s-desc-riesgo').value=s.descripcion_riesgo||''; if(g('s-introduccion'))g('s-introduccion').value=s.introduccion||''; g('s-notas').value=s.notas||'';
   g('s-estrategias').value=(()=>{
     const parts=[s.estrategias_observaciones,s.actividades_realizar,s.comentarios].filter(Boolean);
@@ -3333,17 +3368,25 @@ function poblarFuncionariosInf(){
   if(!sel || !currentSin) return;
   const pol    = data.pol.find(p=>p.id===currentSin.id_poliza)||{};
   const asegId = pol.id_aseguradora||0;
-  // Show all contacts of the aseguradora, prioritizing funcionarios_cia
   const conts  = data.cont.filter(c=>!asegId || c.id_aseguradora===asegId)
                            .sort((a,b)=>{
                               if(a.tipo==='funcionario_cia'&&b.tipo!=='funcionario_cia') return -1;
                               if(b.tipo==='funcionario_cia'&&a.tipo!=='funcionario_cia') return 1;
                               return (a.nombre||'').localeCompare(b.nombre||'');
                             });
-  const aseg   = data.aseg.find(a=>a.id===asegId)||{};
   sel.innerHTML = `<option value="">— Seleccionar del directorio —</option>` +
     conts.map(c=>`<option value="${c.id}">${c.nombre}${c.cargo?' — '+c.cargo:''}</option>`).join('');
+  // Pre-select from siniestro default
+  if(currentSin.id_contacto_dest){
+    sel.value = currentSin.id_contacto_dest;
+    seleccionarContactoInf(currentSin.id_contacto_dest);
+  } else if(currentSin.destinatario_nombre){
+    if(g('inf-dest'))  g('inf-dest').value  = currentSin.destinatario_nombre||'';
+    if(g('inf-jefe'))  g('inf-jefe').value  = currentSin.destinatario_cargo||'';
+  }
 }
+// ── old version replaced above ──
+
 
 function seleccionarContactoInf(id){
   const cont = data.cont.find(c=>c.id===parseInt(id));
