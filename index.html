@@ -743,6 +743,14 @@ Siguiendo las instrucciones de asignación, de inmediato procedimos a contactar 
 Como acordado, el [Fecha de inspección] a las [Hora], nos presentamos en [Sitio de la inspección], lugar en el que fuimos atendidos por [Persona que atendió] quien nos mostró los daños sufridos.
 
 Con base en lo anterior y la información inicialmente recabada, presentamos a ustedes el presente Informe Preliminar.</textarea></div>
+
+    <div class="fg full">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+        <label style="margin-bottom:0;">Inspección del siniestro</label>
+        <button type="button" class="btn btn-sm" onclick="generarTextoInspeccion()" title="Genera el texto usando fecha de primera visita, domicilio y persona entrevistada">✦ Generar texto</button>
+      </div>
+      <textarea id="s-inspeccion-narrativa" style="min-height:100px;" placeholder="Descripción de la inspección realizada — use el botón para generar el texto base..."></textarea>
+    </div>
     <div class="fg"><label>Procedencia del reclamo</label>
       <select id="s-procedencia">
         <option value="procedente">Procedente</option>
@@ -1917,6 +1925,26 @@ async function completarTodo(id){
   renderDash();
 }
 
+function generarTextoInspeccion(){
+  const fecha   = v('s-f1vis') || '';
+  const lugar   = v('s-lugar-sin') || '[Domicilio Inspeccionado]';
+  const persona = v('s-insp-persona') || '[Persona Entrevistada]';
+
+  // Format date as long Spanish format
+  let fechaLarga = '[Fecha de Primera Visita]';
+  if(fecha){
+    const d = new Date(fecha + 'T12:00:00');
+    const dias = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+    const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+    fechaLarga = dias[d.getDay()] + ' ' + d.getDate() + ' de ' + meses[d.getMonth()] + ' de ' + d.getFullYear();
+  }
+
+  const texto = `El ${fechaLarga} nos presentamos en el domicilio afectado, sito en ${lugar}, lugar en el que fuimos atendidos por ${persona}, quien nos mostró los daños, observando, lo siguiente:`;
+
+  if(g('s-inspeccion-narrativa')) g('s-inspeccion-narrativa').value = texto;
+  toast('Texto de inspección generado.');
+}
+
 function renderTodosAlertas(){
   const pendientes = calcTodoPendientes();
   const vencidos   = pendientes.filter(t=>{ const fl=new Date(t.fecha_limite+' 00:00:00'); const hoy=new Date(); hoy.setHours(0,0,0,0); return fl<hoy; });
@@ -2712,7 +2740,7 @@ function abrirModal(id){
     g('s-id').value='';
     resetBuscadorSinModal();
     ['s-exp','s-numsin','s-subramo','s-causa','s-riesgo',
-     's-clave-ajust','s-giro','s-desc','s-desc-riesgo','s-introduccion','s-notas','s-estrategias',
+     's-clave-ajust','s-giro','s-desc','s-desc-riesgo','s-introduccion','s-inspeccion-narrativa','s-notas','s-estrategias',
      's-tramite-gnp','s-ot','s-fsin','s-hora-ocurr','s-finsp','s-finf',
      's-hora-asig','s-f1cont','s-h1cont','s-f1vis','s-h1vis',
      's-insp-persona','s-insp-cargo','s-insp-tel','s-insp-dom','s-bienes',
@@ -2846,7 +2874,7 @@ async function guardarSiniestro(){
     riesgo_afectado:v('s-riesgo')||null,
     referencia_ajustadora:v('s-exp')||null, clave_ajustador_cia:v('s-clave-ajust')||null,
     referencia_asegurado:v('s-ref-aseg')||null, giro_asegurado:v('s-giro')||null,
-    descripcion:v('s-desc'), descripcion_riesgo:v('s-desc-riesgo')||null, introduccion:v('s-introduccion')||null, notas:v('s-notas'),
+    descripcion:v('s-desc'), descripcion_riesgo:v('s-desc-riesgo')||null, introduccion:v('s-introduccion')||null, inspeccion_narrativa:v('s-inspeccion-narrativa')||null, notas:v('s-notas'),
     estatus:v('s-est'),
     fecha_siniestro:v('s-fsin')||null, hora_ocurrencia:v('s-hora-ocurr')||null,
     fecha_asignacion:v('s-fasig')||null, hora_asignacion:v('s-hora-asig')||null,
@@ -4387,7 +4415,7 @@ async function descargarWord(){
     para2([txt('2.3  UBICACIÓN DONDE OCURRIÓ EL SINIESTRO',{bold:true,size:20,color:BLUE})],{sb:120,sa:60}),
     body2(s.lugar_siniestro||pol.ubicacion_riesgo||pol.domicilio_legal||''),ep(),
     secTitle('3','Inspección del siniestro'),
-    body2('El '+fD(s.fecha_primera_visita)+(s.hora_primera_visita?', a las '+s.hora_primera_visita.slice(0,5)+' hrs.,':'')+' nos presentamos en las instalaciones del Asegurado, siendo atendidos por '+(s.inspeccion_persona||'')+(s.inspeccion_cargo?', '+s.inspeccion_cargo:'')+'.'),ep(),
+    body2(s.inspeccion_narrativa||(('El '+fD(s.fecha_primera_visita)+(s.hora_primera_visita?', a las '+s.hora_primera_visita.slice(0,5)+' hrs.,':'')+' nos presentamos en las instalaciones del Asegurado, siendo atendidos por '+(s.inspeccion_persona||'')+(s.inspeccion_cargo?', '+s.inspeccion_cargo:'')+'.') )),ep(),
     secTitle('4','Cómo ocurrió el siniestro'),
     body2(campoDesdInf(lastInf,'desarrollo_siniestro',s,'descripcion')),ep(),
     secTitle('5','Causa del siniestro'),
@@ -5210,7 +5238,7 @@ function buildFormalGenerico(s, secs, aseg){
 
   if(secs.includes('inspeccion')){
     h += `<div class="sec-title">3 &nbsp; Inspección del siniestro</div>
-    <div class="narrative">El ${fD(s.fecha_primera_visita)}${s.hora_primera_visita?', a las '+s.hora_primera_visita.slice(0,5)+' hrs.':''}, nos presentamos en las instalaciones del Asegurado, siendo atendidos por ${s.inspeccion_persona||''}${s.inspeccion_cargo?', '+s.inspeccion_cargo:''}.</div>`;
+    <div class="narrative">${s.inspeccion_narrativa||'El '+fD(s.fecha_primera_visita)+(s.hora_primera_visita?', a las '+s.hora_primera_visita.slice(0,5)+' hrs.':'')+', nos presentamos en las instalaciones del Asegurado, siendo atendidos por '+(s.inspeccion_persona||''+(s.inspeccion_cargo?', '+s.inspeccion_cargo:''))+'.'}</div>`;
   }
 
   if(secs.includes('desarrollo')){
