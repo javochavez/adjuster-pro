@@ -696,7 +696,7 @@ body.modo-lectura .readonly-hidden { display:none !important; }
     <div class="fg"><label>Hora de asignación</label><input type="time" id="s-hora-asig"></div>
     <div class="fg"><label>Fecha primer contacto</label><input type="date" id="s-f1cont"></div>
     <div class="fg"><label>Hora primer contacto</label><input type="time" id="s-h1cont"></div>
-    <div class="fg"><label>Fecha primera visita</label><input type="date" id="s-f1vis"></div>
+    <div class="fg"><label>Fecha primera visita</label><input type="date" id="s-f1vis" onchange="if(g('s-inspeccion-narrativa')&&!g('s-inspeccion-narrativa').dataset.editado)generarTextoInspeccion()"></div>
     <div class="fg"><label>Hora primera visita</label><input type="time" id="s-h1vis"></div>
     <div class="fg"><label>Fecha límite informe</label><input type="date" id="s-finf"></div>
   </div>
@@ -749,7 +749,7 @@ Con base en lo anterior y la información inicialmente recabada, presentamos a u
         <label style="margin-bottom:0;">Inspección del siniestro</label>
         <button type="button" class="btn btn-sm" onclick="generarTextoInspeccion()" title="Genera el texto usando fecha de primera visita, domicilio y persona entrevistada">✦ Generar texto</button>
       </div>
-      <textarea id="s-inspeccion-narrativa" style="min-height:100px;" placeholder="Descripción de la inspección realizada — use el botón para generar el texto base..."></textarea>
+      <textarea id="s-inspeccion-narrativa" style="min-height:100px;" placeholder="Capture la fecha de primera visita y el domicilio inspeccionado, luego use ✦ Generar texto..." oninput="this.dataset.editado='1'"></textarea>
     </div>
     <div class="fg"><label>Procedencia del reclamo</label>
       <select id="s-procedencia">
@@ -1944,7 +1944,10 @@ function generarTextoInspeccion(){
 
   const texto = `El ${fechaLarga} nos presentamos en el domicilio afectado, sito en ${domicilio}, lugar en el que fuimos atendidos por ${persona}, quien nos mostró los daños, observando, lo siguiente:`;
 
-  if(g('s-inspeccion-narrativa')) g('s-inspeccion-narrativa').value = texto;
+  if(g('s-inspeccion-narrativa')){
+    g('s-inspeccion-narrativa').value = texto;
+    delete g('s-inspeccion-narrativa').dataset.editado;
+  }
   toast('Texto de inspección generado.');
 }
 
@@ -2761,6 +2764,7 @@ function abrirModal(id){
     g('s-procedencia').value='procedente';
     g('s-autoridades').value='0'; g('s-salvamento').value='por_determinar';
     g('s-recuperacion').value='0'; g('s-coaseguro').value='0'; g('s-reaseguro').value='0';
+    if(g('s-inspeccion-narrativa')) delete g('s-inspeccion-narrativa').dataset.editado;
     // Default text for Introducción (only for new expediente)
     if(g('s-introduccion')) g('s-introduccion').value=`El presente informe preliminar se elabora en seguimiento de la designación de [Compañía], por parte de su apreciable [Funcionario], relativa a la atención de la pérdida sufrida por el Asegurado por [Describir el tipo de daños y bienes afectados], hechos ocurridos el [Fecha del Siniestro] en su domicilio sito en [Dirección donde ocurrieron los daños].\n\nSiguiendo las instrucciones de asignación, de inmediato procedimos a contactar a [Persona de Contacto], quien nos [Detallar acuerdo para la inspección, fecha, hora, etc.].\n\nComo acordado, el [Fecha de inspección] a las [Hora], nos presentamos en [Sitio de la inspección], lugar en el que fuimos atendidos por [Persona que atendió] quien nos mostró los daños sufridos.\n\nCon base en lo anterior y la información inicialmente recabada, presentamos a ustedes el presente Informe Preliminar.`;
     g('s-aseg-direct').value='';
