@@ -166,6 +166,17 @@ body.modo-lectura select[onchange*="cambiarEstatus"],
 body.modo-lectura #s-modo-captura-lbl { display:none !important; }
 body.modo-lectura .readonly-hidden { display:none !important; }
 
+/* ── RICH TEXT EDITOR ── */
+.rte-wrap { border:1px solid var(--border-md); border-radius:var(--r); overflow:hidden; }
+.rte-toolbar { display:flex; align-items:center; gap:2px; padding:4px 6px; background:var(--surface2); border-bottom:1px solid var(--border); }
+.rte-toolbar button { background:transparent; border:1px solid transparent; border-radius:4px; padding:3px 7px; cursor:pointer; font-size:12px; color:var(--text-sec); font-family:inherit; line-height:1; }
+.rte-toolbar button:hover { background:var(--surface3); border-color:var(--border-md); color:var(--text); }
+.rte-sep { width:1px; height:16px; background:var(--border-md); margin:0 4px; }
+.rte-editor { min-height:120px; padding:8px 10px; background:var(--bg2); color:var(--text); font-size:13px; font-family:inherit; line-height:1.6; outline:none; }
+.rte-editor:empty:before { content:attr(data-placeholder); color:var(--text-ter); pointer-events:none; }
+.rte-editor ul,.rte-editor ol { padding-left:20px; }
+.rte-editor strong { font-weight:700; }
+
 .rpt-wrap { background:#fff; border-radius:var(--r); padding:24px; color:#111; font-size:12px; line-height:1.6; }
 .rpt-header { display:flex; justify-content:space-between; align-items:flex-start; padding-bottom:10px; border-bottom:2px solid #1558b0; margin-bottom:14px; }
 .rpt-logo { max-height:55px; max-width:150px; object-fit:contain; }
@@ -691,7 +702,25 @@ body.modo-lectura .readonly-hidden { display:none !important; }
     <div class="fg"><label>Intervención de autoridades</label>
       <select id="s-autoridades"><option value="0">No</option><option value="1">Sí</option></select></div>
     <div class="fg full"><label>Detalle intervención autoridades</label><input type="text" id="s-autoridades-det"></div>
-    <div class="fg full"><label>Bienes dañados</label><textarea id="s-bienes" style="min-height:55px;" placeholder="Descripción de los bienes físicos afectados"></textarea></div>
+    <div class="fg full">
+      <label>Descripción de los daños <span style="font-size:10px;color:var(--text-ter);font-weight:400;">(texto enriquecido)</span></label>
+      <div class="rte-wrap">
+        <div class="rte-toolbar">
+          <button type="button" onclick="rteCmd('bold')"        title="Negrita"><strong>N</strong></button>
+          <button type="button" onclick="rteCmd('italic')"      title="Cursiva"><em>K</em></button>
+          <button type="button" onclick="rteCmd('underline')"   title="Subrayado"><u>S</u></button>
+          <span class="rte-sep"></span>
+          <button type="button" onclick="rteCmd('insertUnorderedList')" title="Lista con viñetas">≡•</button>
+          <button type="button" onclick="rteCmd('insertOrderedList')"   title="Lista numerada">≡1</button>
+          <span class="rte-sep"></span>
+          <button type="button" onclick="rteCmd('removeFormat')" title="Quitar formato">✕</button>
+        </div>
+        <div id="s-bienes-rte" class="rte-editor" contenteditable="true"
+          data-placeholder="Descripción detallada de los bienes afectados y los daños observados..."
+          oninput="syncBienesRte()"></div>
+        <textarea id="s-bienes" style="display:none;"></textarea>
+      </div>
+    </div>
   </div>
 
   <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin:12px 0 8px;">Cronología</div>
@@ -1339,6 +1368,25 @@ Con base en lo anterior y la información inicialmente recabada, presentamos a u
 const SUPA_URL = 'https://lxtieqaldwcntxaqklww.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx4dGllcWFsZHdjbnR4YXFrbHd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0NTk3NjcsImV4cCI6MjA4OTAzNTc2N30.-OvmJm4j70xWq-kz8X1OIoYsEh7KvCIQGqAjiLGaz-g';
 const db = supabase.createClient(SUPA_URL, SUPA_KEY);
+// ── RICH TEXT EDITOR ─────────────────────────────────────────────────
+function rteCmd(cmd, val=null){
+  document.execCommand(cmd, false, val);
+  const rte = g('s-bienes-rte');
+  if(rte) rte.focus();
+  syncBienesRte();
+}
+function syncBienesRte(){
+  const rte = g('s-bienes-rte');
+  const ta  = g('s-bienes');
+  if(rte && ta) ta.value = rte.innerHTML;
+}
+function loadBienesRte(html){
+  const rte = g('s-bienes-rte');
+  if(rte) rte.innerHTML = html||'';
+  const ta  = g('s-bienes');
+  if(ta)  ta.value = html||'';
+}
+
 const ALLOWED  = ['jchavez@aasa.com.mx','emalagon@aasa.com.mx'];
 const READONLY = []; // Agrega aquí correos de usuarios de solo lectura, ej: 'consulta@aasa.com.mx'
 let currentUserReadonly = false;
@@ -2799,7 +2847,7 @@ function abrirModal(id){
      's-clave-ajust','s-dest-nombre','s-dest-cargo','s-giro','s-desc','s-desc-riesgo','s-introduccion','s-inspeccion-narrativa','s-notas','s-estrategias',
      's-tramite-gnp','s-ot','s-fsin','s-hora-ocurr','s-finsp','s-finf',
      's-hora-asig','s-f1cont','s-h1cont','s-f1vis','s-h1vis',
-     's-insp-persona','s-insp-cargo','s-insp-tel','s-insp-dom','s-bienes',
+     's-insp-persona','s-insp-cargo','s-insp-tel','s-insp-dom',
      's-autoridades-det','s-salv-det','s-salv-valor','s-rec-terceros','s-rec-det',
      's-coas-det','s-reas-corredor','s-lugar-sin',
      's-gnp-jefe','s-gnp-oficina','s-gnp-clave-ajust',
@@ -2816,6 +2864,7 @@ function abrirModal(id){
     g('s-recuperacion').value='0'; g('s-coaseguro').value='0'; g('s-reaseguro').value='0';
     if(g('s-inspeccion-narrativa')) delete g('s-inspeccion-narrativa').dataset.editado;
     // Default text for Introducción (only for new expediente)
+    loadBienesRte('');
     if(g('s-introduccion')) g('s-introduccion').value=`El presente informe preliminar se elabora en seguimiento de la designación de [Compañía], por parte de su apreciable [Funcionario], relativa a la atención de la pérdida sufrida por el Asegurado por [Describir el tipo de daños y bienes afectados], hechos ocurridos el [Fecha del Siniestro] en su domicilio sito en [Dirección donde ocurrieron los daños].\n\nSiguiendo las instrucciones de asignación, de inmediato procedimos a contactar a [Persona de Contacto], quien nos [Detallar acuerdo para la inspección, fecha, hora, etc.].\n\nComo acordado, el [Fecha de inspección] a las [Hora], nos presentamos en [Sitio de la inspección], lugar en el que fuimos atendidos por [Persona que atendió] quien nos mostró los daños sufridos.\n\nCon base en lo anterior y la información inicialmente recabada, presentamos a ustedes el presente Informe Preliminar.`;
     g('s-aseg-direct').value='';
     g('seccion-gnp').style.display='none'; g('seccion-atlas').style.display='none';
@@ -2948,6 +2997,7 @@ async function guardarSiniestro(){
     inspeccion_persona:v('s-insp-persona')||null, inspeccion_cargo:v('s-insp-cargo')||null,
     inspeccion_telefono:v('s-insp-tel')||null, inspeccion_domicilio:v('s-insp-dom')||null,
     bienes_danados:v('s-bienes')||null,
+    descripcion_danios_html:v('s-bienes')||null,
     intervencion_autoridades:v('s-autoridades')==='1',
     intervencion_autoridades_detalle:v('s-autoridades-det')||null,
     salvamento:v('s-salvamento'),
@@ -3018,7 +3068,7 @@ function editarSiniestro(id){
   g('s-f1vis').value=s.fecha_primera_visita||''; g('s-h1vis').value=s.hora_primera_visita||'';
   g('s-insp-persona').value=s.inspeccion_persona||''; g('s-insp-cargo').value=s.inspeccion_cargo||'';
 g('s-insp-dom').value=s.inspeccion_domicilio||'';
-  g('s-bienes').value=s.bienes_danados||'';
+  loadBienesRte(s.descripcion_danios_html||s.bienes_danados||'');
   g('s-autoridades').value=s.intervencion_autoridades?'1':'0';
   g('s-autoridades-det').value=s.intervencion_autoridades_detalle||'';
   g('s-salvamento').value=s.salvamento||'por_determinar';
@@ -3674,7 +3724,7 @@ function buildFormal(s, secs){
       <tr><td class="lbl">Persona entrevistada</td><td>${s.inspeccion_persona||''}</td><td class="lbl">Puesto y/o cargo</td><td>${s.inspeccion_cargo||''}</td></tr>
       <tr><td class="lbl">Domicilio asegurado</td><td colspan="3">${s.inspeccion_domicilio||''}</td></tr>
       <tr><td class="lbl">Teléfono</td><td colspan="3">${s.inspeccion_telefono||''}</td></tr>
-      <tr><td class="lbl">Bienes dañados</td><td colspan="3">${s.bienes_danados||''}</td></tr>
+      <tr><td class="lbl">Bienes dañados</td><td colspan="3">${s.descripcion_danios_html||s.bienes_danados||''}</td></tr>
       <tr><td class="lbl">Intervención de autoridades</td><td colspan="3">${s.intervencion_autoridades?'Sí'+(s.intervencion_autoridades_detalle?' — '+s.intervencion_autoridades_detalle:''):'No'}</td></tr>
     </tbody></table></div>`;
   }
@@ -4104,7 +4154,7 @@ function buildGNP(s, secs){
       <tr><td class="lbl">Lugar del siniestro</td>
           <td class="val">${s.lugar_siniestro||''}</td></tr>
       <tr><td class="lbl">Bienes dañados</td>
-          <td class="val">${s.bienes_danados||''}</td></tr>
+          <td class="val">${s.descripcion_danios_html||s.bienes_danados||''}</td></tr>
       <tr><td class="lbl">Intervención de Autoridades</td>
           <td class="val">${s.intervencion_autoridades?(s.intervencion_autoridades_detalle||'Sí'):'No'}</td></tr>
     </table>`;
@@ -4527,13 +4577,13 @@ async function descargarWord(){
     secTitle('5','Causa del siniestro'),
     body2(s.causa||''),ep(),
     secTitle('6','Bienes afectados'),
-    body2(s.bienes_danados||''),ep(),
+    body2((s.descripcion_danios_html?s.descripcion_danios_html.replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ').trim():s.bienes_danados)||''),ep(),
     secTitle('7','Alcance del daño'),
     body2(s.situacion_actual||''),ep(),
     secTitle('8','Procedencia'),
     body2(s.fundamento||'De acuerdo como se dieron los hechos, condiciones contractuales de la póliza y bienes afectados; el siniestro es de carácter '+procTxt.split(' (')[0]+', y al momento no se tiene exclusión alguna aplicable.'),ep(),
     secTitle('9','Póliza de seguro'),
-    ...[['Tipo de Seguro',pol.tipo_seguro||''],['Vigencia del Seguro','Desde las 12:00 hrs. del día '+fD(pol.vigencia_ini)+', hasta las 12:00 hrs. del '+fD(pol.vigencia_fin)+'.'],['Bienes Cubiertos',s.bienes_danados||''],['Riesgos Cubiertos',s.riesgo_afectado||''],['Sumas aseguradas',(pol.moneda||'MXN')+' '+fM(pol.suma_asegurada)],['Deducible',dedTxt],['Coaseguro',s.coaseguro?(s.coaseguro_detalle||'Sí'):'N/A']].map(([label,value])=>para2([txt(label+'  ',{bold:true,size:20}),txt(value,{size:20})],{sb:60,sa:60,indent:720})),
+    ...[['Tipo de Seguro',pol.tipo_seguro||''],['Vigencia del Seguro','Desde las 12:00 hrs. del día '+fD(pol.vigencia_ini)+', hasta las 12:00 hrs. del '+fD(pol.vigencia_fin)+'.'],['Bienes Cubiertos',(s.descripcion_danios_html?s.descripcion_danios_html.replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ').trim():s.bienes_danados)||''],['Riesgos Cubiertos',s.riesgo_afectado||''],['Sumas aseguradas',(pol.moneda||'MXN')+' '+fM(pol.suma_asegurada)],['Deducible',dedTxt],['Coaseguro',s.coaseguro?(s.coaseguro_detalle||'Sí'):'N/A']].map(([label,value])=>para2([txt(label+'  ',{bold:true,size:20}),txt(value,{size:20})],{sb:60,sa:60,indent:720})),
     ep(),
     secTitle('10','Determinación de la reserva'),
     para2([txt('10.1  RECLAMACIÓN',{bold:true,size:20,color:BLUE})],{sb:120,sa:60}),
@@ -5367,7 +5417,7 @@ function buildFormalGenerico(s, secs, aseg){
 
   if(secs.includes('inspeccion')){
     h += `<div class="sec-title">6 &nbsp; Bienes afectados</div>
-    <div class="narrative">${s.bienes_danados||''}</div>`;
+    <div class="narrative">${s.descripcion_danios_html||s.bienes_danados||''}</div>`;
 
     h += `<div class="sec-title">7 &nbsp; Alcance del daño</div>
     <div class="narrative">${s.situacion_actual||''}</div>`;
