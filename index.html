@@ -405,7 +405,7 @@ body.modo-lectura .readonly-hidden { display:none !important; }
           <div class="toolbar">
             <button class="btn btn-primary" onclick="abrirModal('modal-cont')">+ Nuevo contacto</button>
           </div>
-          <div class="tbl-wrap"><table><thead><tr><th>Nombre</th><th>Cargo</th><th>Aseguradora / Asegurado</th><th>Teléfono</th><th>Correo</th><th></th></tr></thead>
+          <div class="tbl-wrap"><table><thead><tr><th>Nombre</th><th>Cargo</th><th>Tipo</th><th>Aseguradora / Asegurado</th><th>Teléfono</th><th>Correo</th><th></th></tr></thead>
           <tbody id="cont-body"></tbody></table></div>
         </div>
         <div id="cat-tc" style="display:none;">
@@ -934,7 +934,16 @@ Con base en lo anterior y la información inicialmente recabada, presentamos a u
   <input type="hidden" id="co-id">
   <div class="form-grid">
     <div class="fg full"><label>Nombre</label><input type="text" id="co-nombre"></div>
-    <div class="fg"><label>Cargo</label><input type="text" id="co-cargo"></div>
+    <div class="fg"><label>Cargo / Puesto</label><input type="text" id="co-cargo"></div>
+    <div class="fg"><label>Tipo</label>
+      <select id="co-tipo">
+        <option value="general">General</option>
+        <option value="funcionario_cia">Funcionario compañía (asignador)</option>
+        <option value="perito">Perito</option>
+        <option value="abogado">Abogado</option>
+        <option value="corredor">Corredor</option>
+        <option value="otro">Otro</option>
+      </select></div>
     <div class="fg"><label>Teléfono</label><input type="text" id="co-tel"></div>
     <div class="fg full"><label>Correo</label><input type="email" id="co-email"></div>
     <div class="fg"><label>Aseguradora</label><select id="co-aseg"><option value="">—</option></select></div>
@@ -1200,7 +1209,16 @@ Con base en lo anterior y la información inicialmente recabada, presentamos a u
     <div class="fg"><label>No. de páginas</label><input type="number" id="inf-pags" value="1" min="1"></div>
     <div class="fg"><label>Fecha de envío</label><input type="date" id="inf-fecha"></div>
     <div class="fg"><label>Hora de envío</label><input type="time" id="inf-hora"></div>
-    <div class="fg full"><label>Destinatario</label><input type="text" id="inf-dest" placeholder="Nombre, cargo, aseguradora"></div>
+    <div class="fg full">
+      <label>Funcionario asignador <span style="font-size:10px;color:var(--text-ter);font-weight:400;">(del directorio de la compañía)</span></label>
+      <div style="display:flex;gap:8px;">
+        <select id="inf-contacto-sel" style="flex:1;" onchange="seleccionarContactoInf(this.value)">
+          <option value="">— Seleccionar del directorio —</option>
+        </select>
+        <button type="button" class="btn btn-sm" onclick="abrirModal('modal-cont')" title="Agregar nuevo contacto al directorio">+ Agregar</button>
+      </div>
+    </div>
+    <div class="fg full"><label>Destinatario (nombre)</label><input type="text" id="inf-dest" placeholder="Nombre, cargo, aseguradora"></div>
     <div class="fg"><label>Jefe de Depto. (compañía)</label><input type="text" id="inf-jefe" placeholder="ej. Rocío Rodríguez Nava"></div>
     <div class="fg"><label>Oficina (compañía)</label><input type="text" id="inf-oficina" placeholder="ej. Veracruz"></div>
     <div class="fg full"><label>Asunto</label><input type="text" id="inf-asunto" placeholder="Asunto del correo o documento"></div>
@@ -2712,6 +2730,7 @@ function renderContactos(){
     const aseg=data.aseg.find(a=>a.id===c.id_aseguradora);
     const asdo=data.asdo.find(a=>a.id===c.id_asegurado);
     return `<tr><td><strong>${c.nombre}</strong></td><td>${c.cargo||'—'}</td>
+      <td><span style="font-size:11px;${c.tipo==='funcionario_cia'?'color:var(--accent-lt);font-weight:600;':''}">${c.tipo==='funcionario_cia'?'Funcionario compañía':c.tipo||'General'}</span></td>
       <td>${aseg?aseg.nombre:asdo?asdo.nombre:'—'}</td>
       <td>${c.telefono||'—'}</td><td>${c.correo||'—'}</td>
       <td><button class="btn btn-sm btn-danger" onclick="eliminar('contactos',${c.id})">Eliminar</button></td>
@@ -2802,7 +2821,7 @@ function abrirModal(id){
   }
   if(id==='modal-cont'){
     ['co-nombre','co-cargo','co-tel','co-email'].forEach(f=>g(f).value='');
-    g('co-aseg').value=''; g('co-asdo').value='';
+    g('co-tipo').value='general'; g('co-aseg').value=''; g('co-asdo').value='';
   }
   if(id==='modal-pol'){
     g('pol-modal-title').textContent='Nueva póliza';
@@ -2845,6 +2864,11 @@ function abrirModal(id){
     if(g('inf-act-section')) g('inf-act-section').style.display='none';
     // Pre-load current expediente values
     if(currentSin){
+      // Populate funcionarios selector filtered by aseguradora
+      poblarFuncionariosInf();
+      if(g('inf-contacto-sel')) g('inf-contacto-sel').value='';
+      if(g('inf-dest'))  g('inf-dest').value='';
+      if(g('inf-jefe'))  g('inf-jefe').value='';
       if(g('inf-desarrollo'))       g('inf-desarrollo').value       = currentSin.descripcion||'';  // narración de hechos
       if(g('inf-estrategias'))      g('inf-estrategias').value      = currentSin.estrategias_observaciones||'';
       if(g('inf-situacion-actual')) g('inf-situacion-actual').value = currentSin.situacion_actual||'';
@@ -3226,7 +3250,8 @@ async function guardarInforme(){
     id_siniestro:currentSin.id, tipo, numero_version:version,
     fecha_envio:v('inf-fecha')||new Date().toISOString().slice(0,10),
     hora_envio:v('inf-hora')||new Date().toTimeString().slice(0,8),
-    destinatario:v('inf-dest'), asunto:v('inf-asunto'), notas:v('inf-notas'),
+    destinatario:v('inf-dest'), jefe_depto:v('inf-jefe'), asunto:v('inf-asunto'), notas:v('inf-notas'),
+    id_contacto_dest:parseInt(v('inf-contacto-sel'))||null,
     num_paginas:parseInt(v('inf-pags'))||1,
     jefe_depto:v('inf-jefe')||null, oficina_cia:v('inf-oficina')||null,
     desarrollo_siniestro:v('inf-desarrollo')||null,
@@ -3303,8 +3328,32 @@ function editarAsegurado(id){
   g('modal-asdo').classList.add('open');
 }
 
+function poblarFuncionariosInf(){
+  const sel = g('inf-contacto-sel');
+  if(!sel || !currentSin) return;
+  const pol    = data.pol.find(p=>p.id===currentSin.id_poliza)||{};
+  const asegId = pol.id_aseguradora||0;
+  // Show all contacts of the aseguradora, prioritizing funcionarios_cia
+  const conts  = data.cont.filter(c=>!asegId || c.id_aseguradora===asegId)
+                           .sort((a,b)=>{
+                              if(a.tipo==='funcionario_cia'&&b.tipo!=='funcionario_cia') return -1;
+                              if(b.tipo==='funcionario_cia'&&a.tipo!=='funcionario_cia') return 1;
+                              return (a.nombre||'').localeCompare(b.nombre||'');
+                            });
+  const aseg   = data.aseg.find(a=>a.id===asegId)||{};
+  sel.innerHTML = `<option value="">— Seleccionar del directorio —</option>` +
+    conts.map(c=>`<option value="${c.id}">${c.nombre}${c.cargo?' — '+c.cargo:''}</option>`).join('');
+}
+
+function seleccionarContactoInf(id){
+  const cont = data.cont.find(c=>c.id===parseInt(id));
+  if(!cont) return;
+  if(g('inf-dest'))  g('inf-dest').value  = cont.nombre||'';
+  if(g('inf-jefe'))  g('inf-jefe').value  = cont.cargo||'';
+}
+
 async function guardarContacto(){
-  const d2={nombre:v('co-nombre'),cargo:v('co-cargo'),telefono:v('co-tel'),correo:v('co-email'),id_aseguradora:parseInt(v('co-aseg'))||null,id_asegurado:parseInt(v('co-asdo'))||null};
+  const d2={nombre:v('co-nombre'),cargo:v('co-cargo'),tipo:v('co-tipo')||'general',telefono:v('co-tel'),correo:v('co-email'),id_aseguradora:parseInt(v('co-aseg'))||null,id_asegurado:parseInt(v('co-asdo'))||null};
   await db.from('contactos').insert(d2); toast('Contacto creado.');
   cerrarModal('modal-cont'); await loadAll();
 }
@@ -3527,7 +3576,11 @@ function buildFormal(s, secs){
 
   let h=`<div style="padding:15mm;font-family:'Segoe UI',Arial,sans-serif;font-size:11px;color:#111;">`;
   h+=`<div class="rpt-header"><div>${logo}<div class="rpt-header-addr">Calle Miguel Hidalgo 61, Oficina 3 | Col. San Jerónimo Lídice, Alcaldía La Magdalena Contreras<br>C.P. 10200 Ciudad de México, México | PBX +52 55 5593-8823 | aasa.mexico@aasa.com.mx</div></div><div><div class="rpt-tipo">${tipoTitulo}</div><div class="rpt-date">${now}</div></div></div>`;
-  h+=`<div class="rpt-atn"><div class="rpt-atn-name">AT´N: &nbsp;${lastInf.destinatario||'_______________________'}</div>${lastInf.jefe_depto?`<div class="rpt-atn-dept">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ${lastInf.jefe_depto}</div>`:''}<div class="rpt-atn-dept">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; PRESENTE</div></div>`;
+  // Enrich destinatario with contact data if id_contacto_dest available
+  const infCont = data.cont.find(co=>co.id===lastInf.id_contacto_dest)||null;
+  const destNombre = lastInf.destinatario||(infCont?infCont.nombre:'')||'_______________________';
+  const destCargo  = lastInf.jefe_depto||(infCont?infCont.cargo:'')||'';
+  h+=`<div class="rpt-atn"><div class="rpt-atn-name">AT´N: &nbsp;${destNombre}</div>${destCargo?`<div class="rpt-atn-dept">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ${destCargo}</div>`:''}<div class="rpt-atn-dept">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; PRESENTE</div></div>`;
 
   if(secs.includes('identificacion')){
     h+=`<table class="id-table">
@@ -3777,6 +3830,9 @@ function buildGNP(s, secs){
   const asdo     = data.asdo.find(a=>a.id===pol.id_asegurado)||{};
   const lastInf  = lastInfParaReporte(s.id);
   const esAct    = lastInf.tipo==='actualizacion';
+  const wCont    = data.cont.find(co=>co.id===lastInf.id_contacto_dest)||null;
+  const wDestN   = lastInf.destinatario||(wCont?wCont.nombre:'')||'';
+  const wDestC   = lastInf.jefe_depto||(wCont?wCont.cargo:'')||'';
   let   rvList   = rvListParaInforme(s.id, lastInf);
   rvList.forEach(r=>{ r.concepto=CONCEPTO_LABEL[r.concepto]||r.concepto||'Cobertura'; });
   const coasRows = data.coas.filter(c=>c.id_siniestro===s.id);
@@ -4734,7 +4790,8 @@ async function descargarWordGNP(){
   const children=[
     pr([tx('Ciudad de México, '+now+'.',{size:19,bold:true})],{sb:0,sa:80}),
     pr([tx(tipoTitulo,{size:24,bold:true})],{sb:0,sa:40}),
-    pr([tx('AT´N.: '+(lastInf.destinatario||''),{size:19,bold:true})],{sb:0,sa:20}),
+    pr([tx('AT´N.: '+wDestN,{size:19,bold:true})],{sb:0,sa:20}),
+    wDestC?pr([tx(wDestC,{size:18,italics:false})],{sb:0,sa:4}):null,
     pr([tx('PRESENTE',{size:19,bold:true})],{sb:0,sa:120}),
     new Table({width:{size:CONTENT_W,type:WidthType.DXA},columnWidths:COLS,rows:idRows}),
     ep(),
@@ -5141,11 +5198,13 @@ function buildFormalGenerico(s, secs, aseg){
   h += `<div class="fecha-doc">${now}</div>`;
 
   // Bloque destinatario
+  const fgCont   = data.cont.find(co=>co.id===lastInf.id_contacto_dest)||null;
+  const fgNombre = lastInf.destinatario||(fgCont?fgCont.nombre:'')||'';
+  const fgCargo  = lastInf.jefe_depto||(fgCont?fgCont.cargo:'')||'Siniestros Daños';
   h += `<div class="destinatario-box no-break">
     <div class="dest-aseg">${aseg.nombre||''}</div>
     <div class="dest-presente">Presente</div>
-    ${lastInf.destinatario?`<div class="dest-nombre">${lastInf.destinatario}</div>
-    <div class="dest-depto">${lastInf.jefe_depto||'Siniestros Daños'}</div>`:''}
+    ${fgNombre?`<div class="dest-nombre">${fgNombre}</div><div class="dest-depto">${fgCargo}</div>`:''}
   </div>`;
 
   // Tabla identificación
