@@ -1347,9 +1347,9 @@ let logoDataUrl = LOGO_AASA_B64, logoMimeType = 'image/jpeg', logoW = 184, logoH
 function tcUSD(){ return parseFloat(document.getElementById('tc-usd').value)||17.5; }
 function tcEUR(){ return parseFloat(document.getElementById('tc-eur').value)||19.2; }
 function toMXN(m, mon, tc){ if(mon==='MXN') return m; if(mon==='USD') return m*tcUSD(); if(mon==='EUR') return m*tcEUR(); return m*(tc||1); }
-function fmt(n, mon){ if(!n&&n!==0) return '—'; return Number(n).toLocaleString('es-MX',{style:'currency',currency:mon||'MXN',maximumFractionDigits:0}); }
+function fmt(n, mon){ if(!n&&n!==0) return '—'; return Number(n).toLocaleString('es-MX',{style:'currency',currency:mon||'MXN',minimumFractionDigits:2,maximumFractionDigits:2}); }
 function fmtD(d){ if(!d) return '—'; const [y,m,day]=d.split('-'); return `${day}/${m}/${y}`; }
-function fmtMXN(n){ return Number(n||0).toLocaleString('es-MX',{style:'currency',currency:'MXN',maximumFractionDigits:0}); }
+function fmtMXN(n){ return Number(n||0).toLocaleString('es-MX',{style:'currency',currency:'MXN',minimumFractionDigits:2,maximumFractionDigits:2}); }
 function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2600); }
 function g(id){ return document.getElementById(id); }
 function v(id){ return (g(id)||{}).value||''; }
