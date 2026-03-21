@@ -903,10 +903,10 @@ Con base en lo anterior y la información inicialmente recabada, presentamos a u
 <!-- Sublímites -->
 <div class="overlay" id="modal-sublim">
 <div class="modal modal-sm">
-  <div class="modal-title">Sublímite de póliza</div>
+  <div class="modal-title">Suma asegurada por cobertura</div>
   <input type="hidden" id="sl-pol-id">
   <div class="form-grid">
-    <div class="fg full"><label>Concepto</label><input type="text" id="sl-concepto" placeholder="ej. Combustión Espontánea, Remoción de Escombros"></div>
+    <div class="fg full"><label>Concepto</label><input type="text" id="sl-concepto" placeholder="ej. Edificio, Contenidos, Maquinaria y Equipo, Remoción de Escombros"></div>
     <div class="fg"><label>Monto</label><input type="number" id="sl-monto" placeholder="0.00"></div>
     <div class="fg"><label>Moneda</label>
       <select id="sl-mon"><option value="MXN">MXN</option><option value="USD">USD</option><option value="EUR">EUR</option></select></div>
@@ -2786,11 +2786,11 @@ function renderPolizas(){
       <td>${asdo.nombre||'—'}</td><td>${aseg.nombre||'—'}</td>
       <td>${RAMOS[p.ramo]||p.ramo||'—'}</td>
       <td>${fmtD(p.vigencia_ini)} – ${fmtD(p.vigencia_fin)}</td>
-      <td>${fmt(p.suma_asegurada,p.moneda)}</td>
+      <td>${(()=>{ const sls=data.sublim.filter(sl=>sl.id_poliza===p.id); if(sls.length){ const tot=sls.reduce((a,s)=>a+(s.monto||0),0); return (sls[0].moneda||p.moneda||'MXN')+' '+fmtMXN(tot)+' <span style=\"font-size:10px;color:var(--text-ter);\">('+sls.length+' coberturas)</span>'; } return fmt(p.suma_asegurada,p.moneda); })()}</td>
       <td><span class="badge ${MON_CLS[p.moneda]||''}">${p.moneda}</span></td>
       <td><div class="td-acts">
         <button class="btn btn-sm" onclick="editarPoliza(${p.id})">Editar</button>
-        <button class="btn btn-sm" onclick="abrirSublimites(${p.id})">Sublímites${nSublim?' ('+nSublim+')':''}</button>
+        <button class="btn btn-sm" onclick="abrirSublimites(${p.id})">Sumas aseg.${nSublim?' ('+nSublim+')':''}</button>
         <button class="btn btn-sm btn-danger" onclick="eliminar('polizas',${p.id})">Eliminar</button>
       </div></td>
     </tr>`;}).join('')||'<tr><td colspan="8" class="empty">Sin pólizas.</td></tr>';
@@ -4553,7 +4553,7 @@ async function descargarWord(){
   portRows.push(fullRow('SALVAMENTO:',salvTxt));
   portRows.push(fullRow('ASESORES:',s.asesores||'No aplican'));
   portRows.push(fullRow('SUMA ASEGURADA:',pol.suma_asegurada?(pol.moneda||'MXN')+' '+fM(pol.suma_asegurada):''));
-  portRows.push(fullRow('SUBLÍMITES:',sublims.length?sublims.map(sl=>sl.concepto+': '+(sl.moneda||'MXN')+' '+fM(sl.monto)).join('   |   '):'No aplica'));
+  portRows.push(fullRow('SUMAS ASEGURADAS:',sublims.length?sublims.map(sl=>sl.concepto+': '+(sl.moneda||'MXN')+' '+fM(sl.monto)).join('   |   ')+(sublims.length>1?'   TOTAL: '+(sublims[0].moneda||'MXN')+' '+fM(sublims.reduce((a,s)=>a+(s.monto||0),0)):''):'No aplica'));
 
   const totReserva=rvList.reduce((acc,r)=>{const p=r.monto_perdida_estimada||r.monto||0,d2=r.deducible||0,c=r.monto_coaseguro||((p-d2)*(r.coaseguro_pct||0)/100),b=r.monto_bajo_seguro||0;return acc+(p-b-d2-c);},0);
   portRows.push(new TableRow({children:[
@@ -4611,7 +4611,7 @@ async function descargarWord(){
     secTitle('8','Procedencia'),
     body2(s.fundamento||'De acuerdo como se dieron los hechos, condiciones contractuales de la póliza y bienes afectados; el siniestro es de carácter '+procTxt.split(' (')[0]+', y al momento no se tiene exclusión alguna aplicable.'),ep(),
     secTitle('9','Póliza de seguro'),
-    ...[['Tipo de Seguro',pol.tipo_seguro||''],['Vigencia del Seguro','Desde las 12:00 hrs. del día '+fD(pol.vigencia_ini)+', hasta las 12:00 hrs. del '+fD(pol.vigencia_fin)+'.'],['Bienes Amparados',(s.bienes_amparados?s.bienes_amparados.replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ').trim():'')],['Bienes Cubiertos',(s.descripcion_danios_html?s.descripcion_danios_html.replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ').trim():s.bienes_danados)||''],['Riesgos Cubiertos',s.riesgo_afectado||''],['Sumas aseguradas',(pol.moneda||'MXN')+' '+fM(pol.suma_asegurada)],['Deducible',dedTxt],['Coaseguro',s.coaseguro?(s.coaseguro_detalle||'Sí'):'N/A']].map(([label,value])=>para2([txt(label+'  ',{bold:true,size:20}),txt(value,{size:20})],{sb:60,sa:60,indent:720})),
+    ...[['Tipo de Seguro',pol.tipo_seguro||''],['Vigencia del Seguro','Desde las 12:00 hrs. del día '+fD(pol.vigencia_ini)+', hasta las 12:00 hrs. del '+fD(pol.vigencia_fin)+'.'],['Bienes Amparados',(s.bienes_amparados?s.bienes_amparados.replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ').trim():'')],['Bienes Cubiertos',(s.descripcion_danios_html?s.descripcion_danios_html.replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ').trim():s.bienes_danados)||''],['Riesgos Cubiertos',s.riesgo_afectado||''],['Sumas aseguradas', sublims.length ? sublims.map(sl=>sl.concepto+': '+(sl.moneda||'MXN')+' '+fM(sl.monto)).join(' | ')+(sublims.length>1?' | TOTAL: '+(sublims[0].moneda||'MXN')+' '+fM(sublims.reduce((a,s)=>a+(s.monto||0),0)):'') : (pol.moneda||'MXN')+' '+fM(pol.suma_asegurada)],['Deducible',dedTxt],['Coaseguro',s.coaseguro?(s.coaseguro_detalle||'Sí'):'N/A']].map(([label,value])=>para2([txt(label+'  ',{bold:true,size:20}),txt(value,{size:20})],{sb:60,sa:60,indent:720})),
     ep(),
     secTitle('10','Determinación de la reserva'),
     para2([txt('10.1  RECLAMACIÓN',{bold:true,size:20,color:BLUE})],{sb:120,sa:60}),
@@ -5387,7 +5387,7 @@ function buildFormalGenerico(s, secs, aseg){
     ${portRow('SALVAMENTO:', SALV_TXT)}
     ${portRow('ASESORES:', s.asesores||'No aplican')}
     ${portRow('SUMA ASEGURADA:', pol.suma_asegurada?`<strong>${pol.moneda||'MXN'} ${fM(pol.suma_asegurada)}</strong>`:'')}
-    ${portRow('SUBLÍMITES:', sublims.length?sublims.map(sl=>`${sl.concepto}: ${sl.moneda||'MXN'} ${fM(sl.monto)}`).join('&nbsp;&nbsp;|&nbsp;&nbsp;'):'No aplica')}
+    ${portRow('SUMAS ASEGURADAS:', sublims.length?sublims.map(sl=>`${sl.concepto}: ${sl.moneda||'MXN'} ${fM(sl.monto)}`).join('&nbsp;&nbsp;|&nbsp;&nbsp;')+(sublims.length>1?'&nbsp;&nbsp;<strong>TOTAL: '+(sublims[0].moneda||'MXN')+' '+fM(sublims.reduce((a,s)=>a+(s.monto||0),0))+'</strong>':''):'No aplica')}
   </table>`;
 
   // Estimación total destacada
@@ -5465,7 +5465,7 @@ function buildFormalGenerico(s, secs, aseg){
       ['Bienes Amparados', s.bienes_amparados||''],
       ['Bienes Cubiertos', s.descripcion_danios_html||s.bienes_danados||''],
       ['Riesgos Cubiertos', s.riesgo_afectado||''],
-      ['Sumas aseguradas', `<strong>${pol.moneda||'MXN'} ${fM(pol.suma_asegurada)}</strong>`],
+      ['Sumas aseguradas', sublims.length?sublims.map(sl=>sl.concepto+': '+(sl.moneda||'MXN')+' '+fM(sl.monto)).join(' | ')+(sublims.length>1?' | TOTAL: '+(sublims[0].moneda||'MXN')+' '+fM(sublims.reduce((a,s)=>a+(s.monto||0),0)):''):`${pol.moneda||'MXN'} ${fM(pol.suma_asegurada)}`],
       ['Deducible', dedTxt],
       ['Coaseguro', s.coaseguro?(s.coaseguro_detalle||'Sí'):'N/A'],
     ];
