@@ -761,7 +761,7 @@ body.modo-lectura .readonly-hidden { display:none !important; }
     <div class="fg"><label>Cargo</label><input type="text" id="s-insp-cargo"></div>
     <div class="fg"><label>Teléfono</label><input type="text" id="s-insp-tel"></div>
     <div class="fg full"><label>Lugar del siniestro</label><input type="text" id="s-lugar-sin" placeholder="Zona específica dentro del inmueble asegurado"></div>
-    <div class="fg full"><label>Domicilio inspeccionado</label><input type="text" id="s-insp-dom"></div>
+    <div class="fg full"><label>Ubicación Afectada</label><input type="text" id="s-insp-dom" placeholder="Domicilio afectado"></div>
   </div>
 
   <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin:12px 0 8px;">Salvamento y Recuperación</div>
@@ -4274,7 +4274,7 @@ function buildFormal(s, secs){
     <table class="cov-table"><tbody>
       <tr><td class="lbl">Fecha y hora de inspección</td><td colspan="3">${fmtD(s.fecha_inspeccion)}${s.hora_primera_visita?' a las '+s.hora_primera_visita.slice(0,5):''}</td></tr>
       <tr><td class="lbl">Persona entrevistada</td><td>${s.inspeccion_persona||''}</td><td class="lbl">Puesto y/o cargo</td><td>${s.inspeccion_cargo||''}</td></tr>
-      <tr><td class="lbl">Domicilio asegurado</td><td colspan="3">${s.inspeccion_domicilio||''}</td></tr>
+      <tr><td class="lbl">Ubicación Afectada</td><td colspan="3">${s.inspeccion_domicilio||''}</td></tr>
       <tr><td class="lbl">Teléfono</td><td colspan="3">${s.inspeccion_telefono||''}</td></tr>
       <tr><td class="lbl">Bienes dañados</td><td colspan="3">${s.descripcion_danios_html||s.bienes_danados||''}</td></tr>
       <tr><td class="lbl">Intervención de autoridades</td><td colspan="3">${s.intervencion_autoridades?'Sí'+(s.intervencion_autoridades_detalle?' — '+s.intervencion_autoridades_detalle:''):'No'}</td></tr>
@@ -4701,7 +4701,7 @@ function buildGNP(s, secs){
           <td class="val">${s.inspeccion_persona||''}${s.inspeccion_cargo?' / '+s.inspeccion_cargo:''}</td></tr>
       <tr><td class="lbl">Domicilio asegurado / Teléfono</td>
           <td class="val">${pol.domicilio_legal||''}${s.inspeccion_tel?' / Tel: '+s.inspeccion_tel:''}</td></tr>
-      <tr><td class="lbl">Lugar de inspección</td>
+      <tr><td class="lbl">Ubicación Afectada</td>
           <td class="val">${s.inspeccion_domicilio||s.lugar_siniestro||''}</td></tr>
       <tr><td class="lbl">Lugar del siniestro</td>
           <td class="val">${s.lugar_siniestro||''}</td></tr>
@@ -5458,7 +5458,7 @@ async function descargarWordGNP(){
       new TableRow({children:[lbl('Fecha y hora de inspección',W2),val((s.fecha_primera_visita?fDL(s.fecha_primera_visita)+(s.hora_primera_visita?' a las '+fT(s.hora_primera_visita)+' horas':''):''),W2)]}),
       new TableRow({children:[lbl('Persona entrevistada / Puesto y/o cargo',W2),val((s.inspeccion_persona||'')+(s.inspeccion_cargo?' / '+s.inspeccion_cargo:''),W2)]}),
       new TableRow({children:[lbl('Domicilio asegurado / Teléfono',W2),val((pol.domicilio_legal||'')+(s.inspeccion_tel?' / '+s.inspeccion_tel:''),W2)]}),
-      new TableRow({children:[lbl('Lugar de inspección',W2),val(s.inspeccion_domicilio||s.lugar_siniestro||'',W2)]}),
+      new TableRow({children:[lbl('Ubicación Afectada',W2),val(s.inspeccion_domicilio||s.lugar_siniestro||'',W2)]}),
       new TableRow({children:[lbl('Lugar del siniestro',W2),val(s.lugar_siniestro||'',W2)]}),
       new TableRow({children:[lbl('Bienes dañados',W2),val(s.bienes_danados||'',W2)]}),
       new TableRow({children:[lbl('Intervención de Autoridades',W2),val(s.intervencion_autoridades?(s.intervencion_autoridades_detalle||'Sí'):'No',W2)]}),
