@@ -881,13 +881,14 @@ Con base en lo anterior y la información inicialmente recabada, presentamos a u
               <th style="padding:6px 10px;text-align:left;color:var(--text-sec);font-weight:600;border-bottom:1px solid var(--border-md);">Cobertura / Concepto</th>
               <th style="padding:6px 10px;text-align:left;color:var(--text-sec);font-weight:600;border-bottom:1px solid var(--border-md);width:110px;">Moneda</th>
               <th style="padding:6px 10px;text-align:right;color:var(--text-sec);font-weight:600;border-bottom:1px solid var(--border-md);width:160px;">Suma Asegurada</th>
+              <th style="padding:6px 10px;text-align:left;color:var(--text-sec);font-weight:600;border-bottom:1px solid var(--border-md);width:220px;">Deducible</th>
               <th style="padding:6px 10px;border-bottom:1px solid var(--border-md);width:36px;"></th>
             </tr>
           </thead>
           <tbody id="pol-cob-tbody"></tbody>
           <tfoot>
             <tr id="pol-cob-total-row" style="display:none;background:var(--surface2);">
-              <td colspan="2" style="padding:6px 10px;font-weight:700;color:var(--text);border-top:2px solid var(--border-hi);">TOTAL</td>
+              <td colspan="3" style="padding:6px 10px;font-weight:700;color:var(--text);border-top:2px solid var(--border-hi);">TOTAL</td>
               <td style="padding:6px 10px;text-align:right;font-weight:700;color:var(--accent-lt);border-top:2px solid var(--border-hi);" id="pol-cob-total"></td>
               <td style="border-top:2px solid var(--border-hi);"></td>
             </tr>
@@ -3195,7 +3196,7 @@ function renderPolCobGrid(){
   if(!tbody) return;
   if(!polCobFilas.length){
     // Show one empty row by default
-    polCobFilas = [{concepto:'', moneda:'MXN', monto:''}];
+    polCobFilas = [{concepto:'', moneda:'MXN', monto:'', deducible:''}];
   }
   tbody.innerHTML = polCobFilas.map((f,i)=>`
     <tr style="border-bottom:1px solid var(--border);">
@@ -3215,6 +3216,11 @@ function renderPolCobGrid(){
           oninput="polCobFilas[${i}].monto=this.value;recalcPolCobTotal()"
           style="width:100%;padding:4px 6px;border:1px solid var(--border-md);border-radius:4px;background:var(--bg2);color:var(--text);font-size:12px;font-family:inherit;text-align:right;">
       </td>
+      <td style="padding:4px 6px;">
+        <input type="text" value="${f.deducible||''}" placeholder="ej. 10% s/daño, mín. USD 5,000"
+          oninput="polCobFilas[${i}].deducible=this.value"
+          style="width:100%;padding:4px 6px;border:1px solid var(--border-md);border-radius:4px;background:var(--bg2);color:var(--text);font-size:12px;font-family:inherit;">
+      </td>
       <td style="padding:4px 6px;text-align:center;">
         <button type="button" class="btn btn-sm btn-danger" onclick="eliminarFilaCobertura(${i})" style="padding:2px 7px;font-size:11px;">✕</button>
       </td>
@@ -3223,13 +3229,13 @@ function renderPolCobGrid(){
 }
 
 function agregarFilaCobertura(){
-  polCobFilas.push({concepto:'', moneda: polCobFilas.length?polCobFilas[0].moneda:'MXN', monto:''});
+  polCobFilas.push({concepto:'', moneda: polCobFilas.length?polCobFilas[0].moneda:'MXN', monto:'', deducible:''});
   renderPolCobGrid();
 }
 
 function eliminarFilaCobertura(i){
   polCobFilas.splice(i,1);
-  if(!polCobFilas.length) polCobFilas = [{concepto:'', moneda:'MXN', monto:''}];
+  if(!polCobFilas.length) polCobFilas = [{concepto:'', moneda:'MXN', monto:'', deducible:''}];
   renderPolCobGrid();
 }
 
@@ -3258,9 +3264,9 @@ function recalcPolCobTotal(){
 function cargarPolCobGrid(polId){
   const sls = data.sublim.filter(s=>s.id_poliza===polId);
   if(sls.length){
-    polCobFilas = sls.map(s=>({concepto:s.concepto||'', moneda:s.moneda||'MXN', monto:s.monto||''}));
+    polCobFilas = sls.map(s=>({concepto:s.concepto||'', moneda:s.moneda||'MXN', monto:s.monto||'', deducible:s.deducible||''}));
   } else {
-    polCobFilas = [{concepto:'', moneda:'MXN', monto:''}];
+    polCobFilas = [{concepto:'', moneda:'MXN', monto:'', deducible:''}];
   }
   renderPolCobGrid();
 }
@@ -3275,6 +3281,7 @@ async function guardarPolCobGrid(polId){
       concepto:  f.concepto.trim()||'Sin concepto',
       monto:     parseFloat(f.monto)||0,
       moneda:    f.moneda||'MXN',
+      deducible: f.deducible||null,
       descripcion: null
     })));
   }
@@ -4742,7 +4749,7 @@ async function descargarWord(){
     secTitle('8','Procedencia'),
     body2(s.fundamento||'De acuerdo como se dieron los hechos, condiciones contractuales de la póliza y bienes afectados; el siniestro es de carácter '+procTxt.split(' (')[0]+', y al momento no se tiene exclusión alguna aplicable.'),ep(),
     secTitle('9','Póliza de seguro'),
-    ...[['Tipo de Seguro',pol.tipo_seguro||''],['Vigencia del Seguro','Desde las 12:00 hrs. del día '+fD(pol.vigencia_ini)+', hasta las 12:00 hrs. del '+fD(pol.vigencia_fin)+'.'],['Bienes Amparados',(s.bienes_amparados?s.bienes_amparados.replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ').trim():'')],['Bienes Cubiertos',(s.descripcion_danios_html?s.descripcion_danios_html.replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ').trim():s.bienes_danados)||''],['Riesgos Cubiertos',s.riesgo_afectado||''],['Sumas aseguradas', sublims.length ? sublims.map(sl=>sl.concepto+': '+(sl.moneda||'MXN')+' '+fM(sl.monto)).join(' | ')+(sublims.length>1?' | TOTAL: '+(sublims[0].moneda||'MXN')+' '+fM(sublims.reduce((a,s)=>a+(s.monto||0),0)):'') : (pol.moneda||'MXN')+' '+fM(pol.suma_asegurada)],['Deducible',dedTxt],['Coaseguro',s.coaseguro?(s.coaseguro_detalle||'Sí'):'N/A']].map(([label,value])=>para2([txt(label+'  ',{bold:true,size:20}),txt(value,{size:20})],{sb:60,sa:60,indent:720})),
+    ...[['Tipo de Seguro',pol.tipo_seguro||''],['Vigencia del Seguro','Desde las 12:00 hrs. del día '+fD(pol.vigencia_ini)+', hasta las 12:00 hrs. del '+fD(pol.vigencia_fin)+'.'],['Bienes Amparados',(s.bienes_amparados?s.bienes_amparados.replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ').trim():'')],['Bienes Cubiertos',(s.descripcion_danios_html?s.descripcion_danios_html.replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ').trim():s.bienes_danados)||''],['Riesgos Cubiertos',s.riesgo_afectado||''],['Sumas aseguradas', sublims.length ? sublims.map(sl=>sl.concepto+': '+(sl.moneda||'MXN')+' '+fM(sl.monto)+(sl.deducible?' (Ded.: '+sl.deducible+')':'')).join(' | ')+(sublims.length>1?' | TOTAL: '+(sublims[0].moneda||'MXN')+' '+fM(sublims.reduce((a,s)=>a+(s.monto||0),0)):'') : (pol.moneda||'MXN')+' '+fM(pol.suma_asegurada)],['Deducible',dedTxt],['Coaseguro',s.coaseguro?(s.coaseguro_detalle||'Sí'):'N/A']].map(([label,value])=>para2([txt(label+'  ',{bold:true,size:20}),txt(value,{size:20})],{sb:60,sa:60,indent:720})),
     ep(),
     secTitle('10','Determinación de la reserva'),
     para2([txt('10.1  RECLAMACIÓN',{bold:true,size:20,color:BLUE})],{sb:120,sa:60}),
@@ -5596,7 +5603,7 @@ function buildFormalGenerico(s, secs, aseg){
       ['Bienes Amparados', s.bienes_amparados||''],
       ['Bienes Cubiertos', s.descripcion_danios_html||s.bienes_danados||''],
       ['Riesgos Cubiertos', s.riesgo_afectado||''],
-      ['Sumas aseguradas', sublims.length?sublims.map(sl=>sl.concepto+': '+(sl.moneda||'MXN')+' '+fM(sl.monto)).join(' | ')+(sublims.length>1?' | TOTAL: '+(sublims[0].moneda||'MXN')+' '+fM(sublims.reduce((a,s)=>a+(s.monto||0),0)):''):`${pol.moneda||'MXN'} ${fM(pol.suma_asegurada)}`],
+      ['Sumas aseguradas', sublims.length?sublims.map(sl=>sl.concepto+': '+(sl.moneda||'MXN')+' '+fM(sl.monto)+(sl.deducible?' (Ded.: '+sl.deducible+')':'')).join(' | ')+(sublims.length>1?' | TOTAL: '+(sublims[0].moneda||'MXN')+' '+fM(sublims.reduce((a,s)=>a+(s.monto||0),0)):''):`${pol.moneda||'MXN'} ${fM(pol.suma_asegurada)}`],
       ['Deducible', dedTxt],
       ['Coaseguro', s.coaseguro?(s.coaseguro_detalle||'Sí'):'N/A'],
     ];
