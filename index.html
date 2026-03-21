@@ -606,6 +606,29 @@ body.modo-lectura .readonly-hidden { display:none !important; }
         <div class="fg"><label>Subramo</label><input type="text" id="sin-new-pol-subramo" placeholder="ej. E.E., Incendio, Robo"></div>
         <div class="fg"><label>Vigencia inicio</label><input type="date" id="sin-new-pol-vini"></div>
         <div class="fg"><label>Vigencia fin</label><input type="date" id="sin-new-pol-vfin"></div>
+        <div class="fg full" id="sin-desc-aseg-wrap" style="display:none;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+            <label style="margin-bottom:0;">Descripción del Asegurado
+              <span style="font-size:10px;color:var(--text-ter);font-weight:400;">— editable, se guarda en la póliza</span>
+            </label>
+          </div>
+          <div class="rte-wrap">
+            <div class="rte-toolbar">
+              <button type="button" onclick="rteCmdSinDescAseg('bold')"               title="Negrita"><strong>N</strong></button>
+              <button type="button" onclick="rteCmdSinDescAseg('italic')"             title="Cursiva"><em>K</em></button>
+              <button type="button" onclick="rteCmdSinDescAseg('underline')"          title="Subrayado"><u>S</u></button>
+              <span class="rte-sep"></span>
+              <button type="button" onclick="rteCmdSinDescAseg('insertUnorderedList')" title="Lista con viñetas">≡•</button>
+              <button type="button" onclick="rteCmdSinDescAseg('insertOrderedList')"   title="Lista numerada">≡1</button>
+              <span class="rte-sep"></span>
+              <button type="button" onclick="rteCmdSinDescAseg('removeFormat')"       title="Quitar formato">✕</button>
+            </div>
+            <div id="sin-desc-aseg-rte" class="rte-editor" contenteditable="true"
+              data-placeholder="Describa al Asegurado: historia, giro, actividad principal, características del riesgo..."
+              oninput="syncSinDescAseg()" style="min-height:90px;"></div>
+            <textarea id="sin-desc-aseg" style="display:none;"></textarea>
+          </div>
+        </div>
         <div class="fg"><label>Suma asegurada</label><input type="number" id="sin-new-pol-sa" placeholder="0.00"></div>
         <div class="fg"><label>Moneda</label>
           <select id="sin-new-pol-mon"><option value="MXN">MXN</option><option value="USD">USD</option><option value="EUR">EUR</option></select></div>
@@ -1054,6 +1077,31 @@ body.modo-lectura .readonly-hidden { display:none !important; }
     <div class="fg full"><label>Domicilio legal del asegurado</label><input type="text" id="p-dom-legal" placeholder="Domicilio fiscal según póliza"></div>
     <div class="fg full"><label>Ubicación del riesgo asegurado</label><input type="text" id="p-ubic-riesgo" placeholder="Ubicación física donde está el riesgo"></div>
 
+    <div class="fg full">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+        <label style="margin-bottom:0;">Descripción del Asegurado
+          <span style="font-size:10px;color:var(--text-ter);font-weight:400;">
+            — Breve historia, giro, a qué se dedica, características relevantes del riesgo
+          </span>
+        </label>
+      </div>
+      <div class="rte-wrap">
+        <div class="rte-toolbar">
+          <button type="button" onclick="rteCmdPol2('bold')"               title="Negrita"><strong>N</strong></button>
+          <button type="button" onclick="rteCmdPol2('italic')"             title="Cursiva"><em>K</em></button>
+          <button type="button" onclick="rteCmdPol2('underline')"          title="Subrayado"><u>S</u></button>
+          <span class="rte-sep"></span>
+          <button type="button" onclick="rteCmdPol2('insertUnorderedList')" title="Lista con viñetas">≡•</button>
+          <button type="button" onclick="rteCmdPol2('insertOrderedList')"   title="Lista numerada">≡1</button>
+          <span class="rte-sep"></span>
+          <button type="button" onclick="rteCmdPol2('removeFormat')"       title="Quitar formato">✕</button>
+        </div>
+        <div id="p-desc-aseg-rte" class="rte-editor" contenteditable="true"
+          data-placeholder="Describa brevemente al Asegurado: historia de la empresa o persona, giro comercial o actividad principal, antigüedad, características del riesgo asegurado, contexto relevante para el ajuste..."
+          oninput="syncPolDescAseg()" style="min-height:100px;"></div>
+        <textarea id="p-desc-aseg" style="display:none;"></textarea>
+      </div>
+    </div>
     <div class="fg full"><label>Interés asegurado</label><textarea id="p-interes" style="min-height:70px;" placeholder="Descripción del interés asegurado según póliza..."></textarea></div>
 
     <div class="fg full"><label>Condiciones especiales aplicables</label><textarea id="p-condiciones" style="min-height:80px;" placeholder="Cláusulas y condiciones especiales de la póliza..."></textarea></div>
@@ -1900,6 +1948,7 @@ function seleccionarPolizaSin(polId, numero, asegId){
     g('s-aseg-direct').value = asegId;
     actualizarCamposAseg(); // this rebuilds s-poliza — so set value AFTER
     poblarFuncionarioDestSin(asegId);
+    mostrarDescAsegSin(polId);
   }
   // Ensure polId option exists and is selected (actualizarCamposAseg may have rebuilt the list)
   if(!g('s-poliza').querySelector(`option[value="${polId}"]`)){
@@ -3100,6 +3149,7 @@ function abrirModal(id){
     loadRteSin('bienes-amparados','');
     // Reset all RTE fields
     ['desc-riesgo','introduccion','inspeccion-narrativa','desc','estrategias','observaciones','actividades'].forEach(s=>loadRteSin(s,''));
+    loadSinDescAseg(''); if(g('sin-desc-aseg-wrap'))g('sin-desc-aseg-wrap').style.display='none';
     delete g('s-inspeccion-narrativa-rte')?.dataset.editado;
     loadRteSin('introduccion', 'El presente informe preliminar se elabora en seguimiento de la designaci\u00f3n de [Compa\u00f1\u00eda], por parte de su apreciable [Funcionario], relativa a la atenci\u00f3n de la p\u00e9rdida sufrida por el Asegurado por [Describir el tipo de da\u00f1os y bienes afectados], hechos ocurridos el [Fecha del Siniestro] en su domicilio sito en [Direcci\u00f3n donde ocurrieron los da\u00f1os].\n\nSiguiendo las instrucciones de asignaci\u00f3n, de inmediato procedimos a contactar a [Persona de Contacto], quien nos [Detallar acuerdo para la inspecci\u00f3n, fecha, hora, etc.].\n\nComo acordado, el [Fecha de inspecci\u00f3n] a las [Hora], nos presentamos en [Sitio de la inspecci\u00f3n], lugar en el que fuimos atendidos por [Persona que atendi\u00f3] quien nos mostr\u00f3 los da\u00f1os sufridos.\n\nCon base en lo anterior y la informaci\u00f3n inicialmente recabada, presentamos a ustedes el presente Informe Preliminar.');
     g('s-aseg-direct').value='';
@@ -3285,6 +3335,11 @@ async function guardarSiniestro(){
   };
   if(id){ await db.from('siniestros').update(d2).eq('id',id); toast('Expediente actualizado.'); }
   else { await db.from('siniestros').insert(d2); toast('Expediente creado.'); }
+  // Persist descripcion_asegurado edits back to poliza
+  const polIdUpd=parseInt(v('s-poliza'))||null;
+  if(polIdUpd && g('sin-desc-aseg') && g('sin-desc-aseg-wrap')?.style.display!=='none'){
+    await db.from('polizas').update({descripcion_asegurado:v('sin-desc-aseg')||null}).eq('id',polIdUpd);
+  }
   cerrarModal('modal-sin'); await loadAll(); if(currentSin) renderDetalle();
 }
 
@@ -3299,6 +3354,7 @@ function editarSiniestro(id){
   if(g('s-dest-cargo'))  g('s-dest-cargo').value=s.destinatario_cargo||'';
   loadRteSin('desc', s.descripcion||'');
   loadRteSin('desc-riesgo', s.descripcion_riesgo||'');
+  mostrarDescAsegSin(s.id_poliza);
   loadRteSin('introduccion', s.introduccion||'');
   loadRteSin('inspeccion-narrativa', s.inspeccion_narrativa||'');
   g('s-notas').value=s.notas||'';
@@ -3499,6 +3555,44 @@ async function guardarPolCobGrid(polId){
   }
 }
 
+// ── DESCRIPCIÓN DEL ASEGURADO — póliza ──────────────────────────────
+function rteCmdPol2(cmd){
+  document.execCommand(cmd, false, null);
+  const rte = g('p-desc-aseg-rte'); if(rte) rte.focus();
+  syncPolDescAseg();
+}
+function syncPolDescAseg(){
+  const rte=g('p-desc-aseg-rte'), ta=g('p-desc-aseg');
+  if(rte&&ta) ta.value=rte.innerHTML;
+}
+function loadPolDescAseg(html){
+  const rte=g('p-desc-aseg-rte'), ta=g('p-desc-aseg');
+  if(rte) rte.innerHTML=html||'';
+  if(ta)  ta.value=html||'';
+}
+// ── DESCRIPCIÓN DEL ASEGURADO — modal-sin ───────────────────────────
+function rteCmdSinDescAseg(cmd){
+  document.execCommand(cmd, false, null);
+  const rte=g('sin-desc-aseg-rte'); if(rte) rte.focus();
+  syncSinDescAseg();
+}
+function syncSinDescAseg(){
+  const rte=g('sin-desc-aseg-rte'), ta=g('sin-desc-aseg');
+  if(rte&&ta) ta.value=rte.innerHTML;
+}
+function loadSinDescAseg(html){
+  const rte=g('sin-desc-aseg-rte'), ta=g('sin-desc-aseg');
+  if(rte) rte.innerHTML=html||'';
+  if(ta)  ta.value=html||'';
+}
+function mostrarDescAsegSin(polId){
+  const wrap=g('sin-desc-aseg-wrap'); if(!wrap) return;
+  if(!polId){ wrap.style.display='none'; return; }
+  const pol=data.pol.find(p=>p.id===parseInt(polId));
+  wrap.style.display = pol ? 'block' : 'none';
+  if(pol) loadSinDescAseg(pol.descripcion_asegurado||'');
+}
+
 async function guardarPoliza(){
   const id=v('p-id');
   const ramoSel=v('p-ramo');
@@ -3520,6 +3614,7 @@ async function guardarPoliza(){
     domicilio_legal:v('p-dom-legal')||null,
     ubicacion_riesgo:v('p-ubic-riesgo')||null,
     interes_asegurado:v('p-interes')||null,
+    descripcion_asegurado:v('p-desc-aseg')||null,
     condiciones_especiales:v('p-condiciones')||null,
     notas:v('p-notas')
   };
@@ -3555,6 +3650,7 @@ function editarPoliza(id){
   g('p-dom-legal').value=p.domicilio_legal||'';
   g('p-ubic-riesgo').value=p.ubicacion_riesgo||'';
   g('p-interes').value=p.interes_asegurado||'';
+  loadPolDescAseg(p.descripcion_asegurado||'');
   g('p-condiciones').value=p.condiciones_especiales||'';
   g('p-notas').value=p.notas||'';
   const ramoOpt=g('p-ramo').querySelector(`option[value="${p.ramo}"]`);
