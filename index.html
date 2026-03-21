@@ -1687,7 +1687,7 @@ const RAMOS = {
 const MON_CLS = {MXN:'b-mxn', USD:'b-usd', EUR:'b-eur'};
 const HON_EST = {pactado:'b-pactado', parcial:'b-parcial', pagado:'b-pagado'};
 
-let data = { sin:[], pol:[], aseg:[], asdo:[], cont:[], res:[], pag:[], hon:[], viat:[], act:[], doc:[], tc:[], bit:[], inf:[], sublim:[], coas:[], ajust:[], ofic:[], sinajust:[] };
+let data = { sin:[], pol:[], aseg:[], asdo:[], cont:[], res:[], pag:[], hon:[], viat:[], act:[], doc:[], tc:[], bit:[], inf:[], sublim:[], coas:[], ajust:[], ofic:[], sinajust:[], graf:[] };
 let currentSin = null;
 const LOGO_AASA_B64 = 'data:image/jpeg;base64,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';
 let logoDataUrl = LOGO_AASA_B64, logoMimeType = 'image/jpeg', logoW = 184, logoH = 48;
@@ -1732,7 +1732,7 @@ function mostrarApp(email){
 
 /* ── DATA LOAD ── */
 async function loadAll(){
-  const [sin,pol,aseg,asdo,cont,res,pag,hon,viat,act,doc,tc,bit,inf,sublim,coas,ajust,ofic,sinajust,todos] = await Promise.all([
+  const [sin,pol,aseg,asdo,cont,res,pag,hon,viat,act,doc,tc,bit,inf,sublim,coas,ajust,ofic,sinajust,todos,graf] = await Promise.all([
     db.from('siniestros').select('*').order('id',{ascending:false}),
     db.from('polizas').select('*').order('id',{ascending:false}),
     db.from('aseguradoras').select('*').order('nombre'),
@@ -1748,6 +1748,7 @@ async function loadAll(){
     db.from('bitacora_ajustador').select('*').order('fecha',{ascending:false}),
     db.from('informes').select('*').order('fecha_envio',{ascending:false}),
     db.from('sublimites').select('*').order('id'),
+    db.from('graficos_expediente').select('*').order('created_at'),
     db.from('coaseguradoras').select('*').order('porcentaje',{ascending:false}),
     db.from('ajustadores').select('*,id_oficina(nombre,ciudad)').order('nombre'),
     db.from('oficinas').select('*').order('nombre'),
@@ -2649,6 +2650,7 @@ function renderDetalle(){
     <button class="tab-btn" onclick="switchTab2('t-coas',this)">Coaseguro</button>
     <button class="tab-btn" onclick="switchTab2('t-ajust-sin',this)">Ajustadores</button>
     <button class="tab-btn" onclick="switchTab2('t-doc',this)">Documentos</button>
+    <button class="tab-btn" onclick="switchTab2('t-graf',this)">📷 Gráficos</button>
   </div>
 
   <div id="t-res" class="tab-pane active" style="overflow-y:auto;max-height:calc(100vh - 420px);">
@@ -2711,6 +2713,37 @@ function renderDetalle(){
     <div class="tbl-wrap"><table><thead><tr><th>Tipo</th><th>Versión</th><th>Archivo</th><th>Fecha</th><th></th></tr></thead>
     <tbody>${renderSubTable(data.doc.filter(d=>d.id_siniestro===s.id),'doc',['tipo','numero_version','nombre_archivo','fecha'])}</tbody></table></div>
   </div>
+  <div id="t-graf" class="tab-pane">
+    <div style="padding:10px 0;">
+      <!-- Upload zone -->
+      <div id="graf-upload-area" style="border:2px dashed var(--border-hi);border-radius:var(--r);padding:20px 24px;text-align:center;margin-bottom:14px;transition:border-color .2s,background .2s;"
+        ondragover="event.preventDefault();this.style.borderColor='var(--accent-lt)';this.style.background='rgba(100,160,255,.05)'"
+        ondragleave="this.style.borderColor='var(--border-hi)';this.style.background=''"
+        ondrop="grafOnDrop(event)">
+        <div style="font-size:24px;margin-bottom:6px;">📷</div>
+        <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px;">Agregar imagen al expediente</div>
+        <div style="font-size:11px;color:var(--text-ter);margin-bottom:10px;">
+          Arrastra imágenes aquí o usa el botón. Puedes seleccionar varias a la vez.<br>
+          Deberás indicar el <strong>tipo</strong> y una <strong>descripción</strong> para cada imagen antes de subir.
+        </div>
+        <button type="button" class="btn btn-primary btn-sm" onclick="g('graf-file-input').click()">Seleccionar imagen(es)…</button>
+        <input type="file" id="graf-file-input" accept="image/jpeg,image/png,image/jpg,image/gif" multiple style="display:none" onchange="grafOnFileSelect(this)">
+      </div>
+      <!-- Queue -->
+      <div id="graf-queue" style="display:none;margin-bottom:16px;"></div>
+      <!-- Filter bar -->
+      <div id="graf-filter-bar" style="display:none;display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">
+        <button type="button" class="btn btn-sm" id="graf-f-all"    onclick="grafFiltrar('all')"             style="font-size:11px;">Todos</button>
+        <button type="button" class="btn btn-sm" id="graf-f-loc"    onclick="grafFiltrar('localizacion')"     style="font-size:11px;">🗺 Localización</button>
+        <button type="button" class="btn btn-sm" id="graf-f-insp"   onclick="grafFiltrar('foto_inspeccion')"  style="font-size:11px;">🔍 Inspección</button>
+        <button type="button" class="btn btn-sm" id="graf-f-aseg"   onclick="grafFiltrar('foto_asegurado')"   style="font-size:11px;">👤 Asegurado</button>
+        <button type="button" class="btn btn-sm" id="graf-f-bien"   onclick="grafFiltrar('foto_bien')"        style="font-size:11px;">📦 Bien asegurado</button>
+      </div>
+      <!-- Gallery -->
+      <div id="graf-gallery" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px;"></div>
+      <div id="graf-empty" style="display:none;font-size:12px;color:var(--text-ter);padding:8px 0;">Sin imágenes registradas para este expediente.</div>
+    </div>
+  </div>
   <div id="t-ajust-sin" class="tab-pane">
     <div class="toolbar"><button class="btn btn-primary" onclick="abrirModal('modal-sin-ajust')">+ Asignar ajustador</button></div>
     <div class="tbl-wrap"><table><thead><tr>
@@ -2723,6 +2756,7 @@ function renderDetalle(){
   // Render ToDos grid
   const todoWrap = g('todo-grid-'+s.id);
   if(todoWrap) renderTodoGrid(data.todos.filter(t=>t.id_siniestro===s.id), todoWrap);
+  renderGrafGallery(s.id);
 }
 
 function renderSubTable(rows,type,cols){
@@ -3943,6 +3977,260 @@ function calcBajoSeguro(){
   } else {
     field.value = '0';
   }
+}
+
+
+// ── GRÁFICOS DE UBICACIÓN ────────────────────────────────────────────
+const GRAF_BUCKET = 'graficos-expediente';
+const GRAF_TIPOS = {
+  localizacion:    { label:'Localización',        icon:'🗺',  color:'#4a9eff',
+    hint:'Vista satelital o aérea del predio/zona — Google Maps, Google Earth. Incluir nombre de calle, colonia y orientación (Norte).' },
+  foto_inspeccion: { label:'Foto Inspección',     icon:'🔍', color:'#f0a030',
+    hint:'Fotos tomadas por el Ajustador durante inspección física. Indicar: área fotografiada y relevancia para el ajuste.' },
+  foto_asegurado:  { label:'Foto Asegurado',      icon:'👤', color:'#5cc87a',
+    hint:'Fotos proporcionadas por el Asegurado o su representante. Indicar: quién las proporcionó, fecha aproximada y qué muestran.' },
+  foto_bien:       { label:'Foto Bien Asegurado', icon:'📦', color:'#e06070',
+    hint:'Fotos de bienes afectados o de referencia. Indicar: nombre del bien, estado y propósito de la foto.' },
+};
+let grafFiltroActivo = 'all';
+
+function renderGrafGallery(sinId){
+  const gallery = g('graf-gallery');
+  const empty   = g('graf-empty');
+  const fbar    = g('graf-filter-bar');
+  if(!gallery) return;
+  const all = data.graf.filter(x=>x.id_siniestro===sinId);
+  const items = grafFiltroActivo==='all' ? all : all.filter(x=>x.tipo===grafFiltroActivo);
+  if(fbar) fbar.style.display = all.length ? 'flex' : 'none';
+  if(!items.length){
+    gallery.innerHTML='';
+    if(empty) empty.style.display = all.length ? 'block' : 'block';
+    empty.textContent = all.length && grafFiltroActivo!=='all'
+      ? 'Sin imágenes de este tipo.' : 'Sin imágenes registradas para este expediente.';
+    return;
+  }
+  if(empty) empty.style.display='none';
+  gallery.innerHTML='';
+  items.forEach(it=>{
+    const meta = GRAF_TIPOS[it.tipo]||GRAF_TIPOS.localizacion;
+    const card = document.createElement('div');
+    card.style.cssText='background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;display:flex;flex-direction:column;';
+
+    // Type badge + image
+    const imgWrap = document.createElement('div');
+    imgWrap.style.cssText='position:relative;aspect-ratio:4/3;background:var(--surface3);overflow:hidden;cursor:pointer;';
+    imgWrap.addEventListener('click', ()=>grafVerImagen(it.url||''));
+    if(it.url){
+      const img=document.createElement('img');
+      img.src=it.url; img.loading='lazy';
+      img.style.cssText='width:100%;height:100%;object-fit:cover;';
+      img.onerror=()=>{ imgWrap.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-ter);font-size:11px;">No disponible</div>'; };
+      imgWrap.appendChild(img);
+    } else {
+      imgWrap.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-ter);font-size:11px;">Sin vista previa</div>';
+    }
+    // Badge
+    const badge=document.createElement('div');
+    badge.style.cssText=`position:absolute;top:6px;left:6px;background:${meta.color};color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;`;
+    badge.textContent=meta.icon+' '+meta.label;
+    imgWrap.appendChild(badge);
+    card.appendChild(imgWrap);
+
+    // Info panel
+    const info=document.createElement('div');
+    info.style.cssText='padding:8px 10px;flex:1;display:flex;flex-direction:column;gap:6px;';
+
+    // Type selector
+    const sel=document.createElement('select');
+    sel.style.cssText='width:100%;padding:4px 6px;border:1px solid var(--border-md);border-radius:4px;background:var(--bg2);color:var(--text);font-size:11px;font-family:inherit;';
+    Object.entries(GRAF_TIPOS).forEach(([k,v])=>{
+      const o=document.createElement('option'); o.value=k; o.textContent=v.icon+' '+v.label;
+      if(k===it.tipo) o.selected=true;
+      sel.appendChild(o);
+    });
+    sel.addEventListener('change',()=>grafActualizar(it.id,{tipo:sel.value}));
+    info.appendChild(sel);
+
+    // Label input
+    const inp=document.createElement('input');
+    inp.type='text'; inp.value=it.etiqueta||'';
+    inp.placeholder=(GRAF_TIPOS[it.tipo]||GRAF_TIPOS.localizacion).hint;
+    inp.style.cssText='width:100%;padding:4px 6px;border:1px solid var(--border-md);border-radius:4px;background:var(--bg2);color:var(--text);font-size:11px;font-family:inherit;box-sizing:border-box;';
+    inp.addEventListener('change',()=>grafActualizar(it.id,{etiqueta:inp.value||null}));
+    info.appendChild(inp);
+
+    // Filename + delete
+    const foot=document.createElement('div');
+    foot.style.cssText='display:flex;justify-content:space-between;align-items:center;';
+    const fname=document.createElement('span');
+    fname.style.cssText='font-size:10px;color:var(--text-ter);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px;';
+    fname.textContent=it.nombre_archivo||'';
+    const del=document.createElement('button');
+    del.type='button'; del.textContent='Eliminar'; del.className='btn btn-sm btn-danger';
+    del.style.cssText='padding:2px 7px;font-size:11px;flex-shrink:0;';
+    del.addEventListener('click',()=>grafEliminar(it.id, it.storage_path||''));
+    foot.appendChild(fname); foot.appendChild(del);
+    info.appendChild(foot);
+
+    card.appendChild(info);
+    gallery.appendChild(card);
+  });
+}
+
+function grafFiltrar(tipo){
+  grafFiltroActivo=tipo;
+  // Update filter button styles
+  ['all','localizacion','foto_inspeccion','foto_asegurado','foto_bien'].forEach(t=>{
+    const btn=g('graf-f-'+(t==='all'?'all':t==='localizacion'?'loc':t==='foto_inspeccion'?'insp':t==='foto_asegurado'?'aseg':'bien'));
+    if(btn) btn.style.background = t===tipo ? 'var(--accent)' : '';
+  });
+  if(currentSin) renderGrafGallery(currentSin.id);
+}
+
+function grafOnFileSelect(input){
+  const files=Array.from(input.files||[]); if(!files.length) return;
+  grafMostrarQueue(files); input.value='';
+}
+
+function grafOnDrop(e){
+  e.preventDefault();
+  const area=g('graf-upload-area');
+  if(area){area.style.borderColor='var(--border-hi)';area.style.background='';}
+  const files=Array.from(e.dataTransfer.files).filter(f=>f.type.startsWith('image/'));
+  if(files.length) grafMostrarQueue(files);
+}
+
+let grafQueue=[];
+function grafMostrarQueue(files){
+  grafQueue=files.map(f=>({file:f,tipo:'localizacion',etiqueta:'',previewUrl:URL.createObjectURL(f)}));
+  const qEl=g('graf-queue'); if(!qEl) return;
+  qEl.style.display='block';
+  qEl.innerHTML='';
+
+  const hdr=document.createElement('div');
+  hdr.style.cssText='font-size:12px;font-weight:600;color:var(--text-sec);margin-bottom:10px;';
+  hdr.textContent=grafQueue.length+' imagen(es) — selecciona tipo y agrega descripción a cada una:';
+  qEl.appendChild(hdr);
+
+  grafQueue.forEach((q,i)=>{
+    const row=document.createElement('div');
+    row.style.cssText='display:flex;gap:10px;margin-bottom:10px;background:var(--surface2);padding:10px;border-radius:var(--r);align-items:flex-start;';
+
+    // Thumbnail
+    const thumb=document.createElement('img');
+    thumb.src=q.previewUrl; thumb.style.cssText='width:72px;height:54px;object-fit:cover;border-radius:4px;flex-shrink:0;';
+    row.appendChild(thumb);
+
+    const fields=document.createElement('div');
+    fields.style.cssText='flex:1;display:flex;flex-direction:column;gap:6px;min-width:0;';
+
+    // Type selector
+    const selWrap=document.createElement('div');
+    const selLabel=document.createElement('label');
+    selLabel.style.cssText='font-size:10px;color:var(--text-ter);display:block;margin-bottom:2px;';
+    selLabel.textContent='Tipo de imagen *';
+    const sel=document.createElement('select');
+    sel.style.cssText='width:100%;padding:4px 6px;border:1px solid var(--border-md);border-radius:4px;background:var(--bg2);color:var(--text);font-size:12px;font-family:inherit;';
+    Object.entries(GRAF_TIPOS).forEach(([k,v])=>{
+      const o=document.createElement('option'); o.value=k; o.textContent=v.icon+' '+v.label; sel.appendChild(o);
+    });
+    sel.value='localizacion';
+    sel.addEventListener('change',()=>{
+      grafQueue[i].tipo=sel.value;
+      inp.placeholder=GRAF_TIPOS[sel.value].hint;
+    });
+    selWrap.appendChild(selLabel); selWrap.appendChild(sel);
+    fields.appendChild(selWrap);
+
+    // Description
+    const inpWrap=document.createElement('div');
+    const inpLabel=document.createElement('label');
+    inpLabel.style.cssText='font-size:10px;color:var(--text-ter);display:block;margin-bottom:2px;';
+    inpLabel.textContent='Descripción *';
+    const inp=document.createElement('input');
+    inp.type='text'; inp.placeholder=GRAF_TIPOS.localizacion.hint;
+    inp.style.cssText='width:100%;padding:4px 6px;border:1px solid var(--border-md);border-radius:4px;background:var(--bg2);color:var(--text);font-size:11px;font-family:inherit;box-sizing:border-box;';
+    inp.addEventListener('input',()=>grafQueue[i].etiqueta=inp.value);
+    inpWrap.appendChild(inpLabel); inpWrap.appendChild(inp);
+    fields.appendChild(inpWrap);
+
+    // Filename
+    const fn=document.createElement('div');
+    fn.style.cssText='font-size:10px;color:var(--text-ter);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+    fn.textContent=q.file.name;
+    fields.appendChild(fn);
+
+    row.appendChild(fields);
+    qEl.appendChild(row);
+  });
+
+  const btns=document.createElement('div');
+  btns.style.cssText='display:flex;gap:8px;margin-top:4px;';
+  const upload=document.createElement('button'); upload.type='button'; upload.className='btn btn-primary btn-sm';
+  upload.innerHTML='⬆ Subir '+grafQueue.length+' imagen'+(grafQueue.length>1?'es':'');
+  upload.id='graf-upload-btn';
+  upload.addEventListener('click',grafSubirQueue);
+  const cancel=document.createElement('button'); cancel.type='button'; cancel.className='btn btn-sm';
+  cancel.textContent='Cancelar'; cancel.addEventListener('click',grafCancelarQueue);
+  btns.appendChild(upload); btns.appendChild(cancel);
+  qEl.appendChild(btns);
+}
+
+async function grafSubirQueue(){
+  if(!currentSin||!grafQueue.length) return;
+  const btn=g('graf-upload-btn');
+  if(btn){btn.disabled=true;btn.textContent='Subiendo…';}
+  for(const q of grafQueue){
+    try{
+      const ext=q.file.name.split('.').pop()||'jpg';
+      const path=`${currentSin.id}/${q.tipo}_${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+      const {error:upErr}=await db.storage.from(GRAF_BUCKET).upload(path,q.file,{contentType:q.file.type,upsert:false});
+      if(upErr) throw upErr;
+      const {data:urlData}=db.storage.from(GRAF_BUCKET).getPublicUrl(path);
+      await db.from('graficos_expediente').insert({
+        id_siniestro:currentSin.id, tipo:q.tipo,
+        etiqueta:q.etiqueta||null, storage_path:path,
+        url:urlData?.publicUrl||null, nombre_archivo:q.file.name
+      });
+    } catch(err){ toast('Error al subir '+q.file.name+': '+(err.message||err)); }
+  }
+  grafCancelarQueue();
+  await loadAll();
+  renderGrafGallery(currentSin.id);
+  toast('Imagen(es) subida(s).');
+}
+
+function grafCancelarQueue(){
+  grafQueue.forEach(q=>URL.revokeObjectURL(q.previewUrl));
+  grafQueue=[];
+  const qEl=g('graf-queue'); if(qEl){qEl.style.display='none';qEl.innerHTML='';}
+}
+
+async function grafActualizar(id,fields){
+  await db.from('graficos_expediente').update(fields).eq('id',id);
+  const rec=data.graf.find(x=>x.id===id);
+  if(rec) Object.assign(rec,fields);
+  if(currentSin) renderGrafGallery(currentSin.id);
+}
+
+async function grafEliminar(id,path){
+  if(!confirm('¿Eliminar esta imagen? Esta acción no se puede deshacer.')) return;
+  if(path) await db.storage.from(GRAF_BUCKET).remove([path]);
+  await db.from('graficos_expediente').delete().eq('id',id);
+  await loadAll();
+  renderGrafGallery(currentSin.id);
+  toast('Imagen eliminada.');
+}
+
+function grafVerImagen(url){
+  if(!url) return;
+  const ov=document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:zoom-out;';
+  ov.addEventListener('click',()=>document.body.removeChild(ov));
+  const img=document.createElement('img');
+  img.src=url; img.style.cssText='max-width:92vw;max-height:92vh;border-radius:4px;box-shadow:0 8px 40px rgba(0,0,0,.6);';
+  img.addEventListener('click',e=>e.stopPropagation());
+  ov.appendChild(img); document.body.appendChild(ov);
 }
 
 // ── MODAL RESERVA — coberturas desde póliza ─────────────────────────
