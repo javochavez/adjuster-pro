@@ -867,10 +867,38 @@ Con base en lo anterior y la información inicialmente recabada, presentamos a u
     <div class="fg"><label>Agente</label><input type="text" id="p-agente" placeholder="Nombre del agente"></div>
     <div class="fg"><label>Vigencia inicio</label><input type="date" id="p-vini"></div>
     <div class="fg"><label>Vigencia fin</label><input type="date" id="p-vfin"></div>
-    <div class="fg"><label>Suma asegurada</label><input type="number" id="p-suma" placeholder="0.00"></div>
-    <div class="fg"><label>Moneda</label>
+    <div class="fg"><label>Moneda principal</label>
       <select id="p-mon"><option value="MXN">MXN</option><option value="USD">USD</option><option value="EUR">EUR</option></select></div>
     <div class="fg"><label>Tipo de cambio</label><input type="number" id="p-tc" value="1" step="0.01"></div>
+    <input type="hidden" id="p-suma">
+
+    <!-- ── GRID DE COBERTURAS / SUMAS ASEGURADAS ── -->
+    <div style="grid-column:1/-1;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin:10px 0 6px;">
+        <label style="font-size:12px;font-weight:600;color:var(--text);">Coberturas y Sumas Aseguradas</label>
+        <button type="button" class="btn btn-sm" onclick="agregarFilaCobertura()">+ Agregar cobertura</button>
+      </div>
+      <div style="border:1px solid var(--border-md);border-radius:var(--r);overflow:hidden;">
+        <table style="width:100%;border-collapse:collapse;font-size:12px;">
+          <thead>
+            <tr style="background:var(--surface2);">
+              <th style="padding:6px 10px;text-align:left;color:var(--text-sec);font-weight:600;border-bottom:1px solid var(--border-md);">Cobertura / Concepto</th>
+              <th style="padding:6px 10px;text-align:left;color:var(--text-sec);font-weight:600;border-bottom:1px solid var(--border-md);width:120px;">Moneda</th>
+              <th style="padding:6px 10px;text-align:right;color:var(--text-sec);font-weight:600;border-bottom:1px solid var(--border-md);width:160px;">Suma Asegurada</th>
+              <th style="padding:6px 10px;border-bottom:1px solid var(--border-md);width:40px;"></th>
+            </tr>
+          </thead>
+          <tbody id="pol-cob-tbody"></tbody>
+          <tfoot>
+            <tr id="pol-cob-total-row" style="display:none;background:var(--surface2);">
+              <td colspan="2" style="padding:6px 10px;font-weight:700;color:var(--text);border-top:2px solid var(--border-hi);">TOTAL</td>
+              <td style="padding:6px 10px;text-align:right;font-weight:700;color:var(--accent-lt);border-top:2px solid var(--border-hi);" id="pol-cob-total"></td>
+              <td style="border-top:2px solid var(--border-hi);"></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
     <div class="fg"><label>Límite máx. responsabilidad</label><input type="number" id="p-lim-max" placeholder="0.00"></div>
     <div class="fg"><label>Moneda límite</label>
       <select id="p-lim-mon"><option value="MXN">MXN</option><option value="USD">USD</option><option value="EUR">EUR</option></select></div>
@@ -2936,6 +2964,7 @@ function abrirModal(id){
     g('p-suma').value=''; g('p-mon').value='MXN'; g('p-tc').value='1';
     g('p-ramo').value='incendio';
     g('ramo-otro-wrap').style.display='none';
+    polCobFilas=[{concepto:'',moneda:'MXN',monto:''}]; renderPolCobGrid();
   }
   if(id==='modal-tc')  g('tc-fecha').value=today;
   if(id==='modal-hon') g('ho-fpacto').value=today;
@@ -3157,6 +3186,99 @@ g('s-insp-dom').value=s.inspeccion_domicilio||'';
   g('modal-sin').classList.add('open');
 }
 
+// ── GRID COBERTURAS PÓLIZA ─────────────────────────────────────────
+let polCobFilas = []; // [{concepto, moneda, monto}]
+
+function renderPolCobGrid(){
+  const tbody = g('pol-cob-tbody');
+  if(!tbody) return;
+  if(!polCobFilas.length){
+    // Show one empty row by default
+    polCobFilas = [{concepto:'', moneda:'MXN', monto:''}];
+  }
+  tbody.innerHTML = polCobFilas.map((f,i)=>`
+    <tr style="border-bottom:1px solid var(--border);">
+      <td style="padding:4px 6px;">
+        <input type="text" value="${f.concepto}" placeholder="ej. Edificio, Contenidos, Maquinaria"
+          oninput="polCobFilas[${i}].concepto=this.value"
+          style="width:100%;padding:4px 6px;border:1px solid var(--border-md);border-radius:4px;background:var(--bg2);color:var(--text);font-size:12px;font-family:inherit;">
+      </td>
+      <td style="padding:4px 6px;">
+        <select onchange="polCobFilas[${i}].moneda=this.value;recalcPolCobTotal()"
+          style="width:100%;padding:4px 6px;border:1px solid var(--border-md);border-radius:4px;background:var(--bg2);color:var(--text);font-size:12px;font-family:inherit;">
+          ${['MXN','USD','EUR'].map(m=>`<option value="${m}" ${f.moneda===m?'selected':''}>${m}</option>`).join('')}
+        </select>
+      </td>
+      <td style="padding:4px 6px;">
+        <input type="number" value="${f.monto}" placeholder="0.00" step="0.01"
+          oninput="polCobFilas[${i}].monto=this.value;recalcPolCobTotal()"
+          style="width:100%;padding:4px 6px;border:1px solid var(--border-md);border-radius:4px;background:var(--bg2);color:var(--text);font-size:12px;font-family:inherit;text-align:right;">
+      </td>
+      <td style="padding:4px 6px;text-align:center;">
+        <button type="button" class="btn btn-sm btn-danger" onclick="eliminarFilaCobertura(${i})" style="padding:2px 7px;font-size:11px;">✕</button>
+      </td>
+    </tr>`).join('');
+  recalcPolCobTotal();
+}
+
+function agregarFilaCobertura(){
+  polCobFilas.push({concepto:'', moneda: polCobFilas.length?polCobFilas[0].moneda:'MXN', monto:''});
+  renderPolCobGrid();
+}
+
+function eliminarFilaCobertura(i){
+  polCobFilas.splice(i,1);
+  if(!polCobFilas.length) polCobFilas = [{concepto:'', moneda:'MXN', monto:''}];
+  renderPolCobGrid();
+}
+
+function recalcPolCobTotal(){
+  const filas = polCobFilas.filter(f=>parseFloat(f.monto)>0);
+  const totalRow = g('pol-cob-total-row');
+  const totalCell = g('pol-cob-total');
+  if(filas.length>1 && totalRow && totalCell){
+    totalRow.style.display='';
+    // Group by moneda
+    const byMon = {};
+    filas.forEach(f=>{ const m=f.moneda||'MXN'; byMon[m]=(byMon[m]||0)+parseFloat(f.monto); });
+    totalCell.textContent = Object.entries(byMon).map(([m,t])=>m+' '+fmtMXN(t)).join('  /  ');
+    // Update hidden p-suma with first currency total
+    const firstMon = Object.keys(byMon)[0];
+    if(g('p-suma')) g('p-suma').value = byMon[firstMon];
+    if(g('p-mon'))  g('p-mon').value  = firstMon;
+  } else {
+    if(totalRow) totalRow.style.display='none';
+    const monto = parseFloat(filas[0]?.monto)||0;
+    if(g('p-suma')) g('p-suma').value = monto||'';
+    if(filas[0]?.moneda && g('p-mon')) g('p-mon').value = filas[0].moneda;
+  }
+}
+
+function cargarPolCobGrid(polId){
+  const sls = data.sublim.filter(s=>s.id_poliza===polId);
+  if(sls.length){
+    polCobFilas = sls.map(s=>({concepto:s.concepto||'', moneda:s.moneda||'MXN', monto:s.monto||''}));
+  } else {
+    polCobFilas = [{concepto:'', moneda:'MXN', monto:''}];
+  }
+  renderPolCobGrid();
+}
+
+async function guardarPolCobGrid(polId){
+  // Delete existing sublimites for this poliza and re-insert
+  await db.from('sublimites').delete().eq('id_poliza', polId);
+  const filas = polCobFilas.filter(f=>f.concepto.trim()||parseFloat(f.monto));
+  if(filas.length){
+    await db.from('sublimites').insert(filas.map(f=>({
+      id_poliza: polId,
+      concepto:  f.concepto.trim()||'Sin concepto',
+      monto:     parseFloat(f.monto)||0,
+      moneda:    f.moneda||'MXN',
+      descripcion: null
+    })));
+  }
+}
+
 async function guardarPoliza(){
   const id=v('p-id');
   const ramoSel=v('p-ramo');
@@ -3181,8 +3303,15 @@ async function guardarPoliza(){
     condiciones_especiales:v('p-condiciones')||null,
     notas:v('p-notas')
   };
-  if(id){ await db.from('polizas').update(d2).eq('id',id); toast('Póliza actualizada.'); }
-  else { await db.from('polizas').insert(d2); toast('Póliza creada.'); }
+  if(id){
+    await db.from('polizas').update(d2).eq('id',id);
+    await guardarPolCobGrid(parseInt(id));
+    toast('Póliza actualizada.');
+  } else {
+    const {data:ins} = await db.from('polizas').insert(d2).select('id').single();
+    if(ins?.id) await guardarPolCobGrid(ins.id);
+    toast('Póliza creada.');
+  }
   cerrarModal('modal-pol'); await loadAll();
 }
 
@@ -3211,6 +3340,7 @@ function editarPoliza(id){
   const ramoOpt=g('p-ramo').querySelector(`option[value="${p.ramo}"]`);
   if(ramoOpt){ g('p-ramo').value=p.ramo; g('ramo-otro-wrap').style.display='none'; }
   else{ g('p-ramo').value='__otro__'; g('p-ramo-otro').value=p.ramo||''; g('ramo-otro-wrap').style.display='block'; }
+  cargarPolCobGrid(p.id);
   g('modal-pol').classList.add('open');
 }
 
