@@ -2713,7 +2713,7 @@ function renderDetalle(){
     <div class="tbl-wrap"><table><thead><tr><th>Tipo</th><th>Versión</th><th>Archivo</th><th>Fecha</th><th></th></tr></thead>
     <tbody>${renderSubTable(data.doc.filter(d=>d.id_siniestro===s.id),'doc',['tipo','numero_version','nombre_archivo','fecha'])}</tbody></table></div>
   </div>
-  <div id="t-graf" class="tab-pane">
+  <div id="t-graf" class="tab-pane" style="overflow-y:auto;max-height:calc(100vh - 420px);">
     <div style="padding:10px 0;">
       <!-- Upload zone -->
       <div id="graf-upload-area" style="border:2px dashed var(--border-hi);border-radius:var(--r);padding:20px 24px;text-align:center;margin-bottom:14px;transition:border-color .2s,background .2s;"
@@ -4110,6 +4110,7 @@ function grafMostrarQueue(files){
   const hdr=document.createElement('div');
   hdr.style.cssText='font-size:12px;font-weight:600;color:var(--text-sec);margin-bottom:10px;';
   hdr.textContent=grafQueue.length+' imagen(es) — selecciona tipo y agrega descripción a cada una:';
+  setTimeout(()=>{ qEl.scrollIntoView({behavior:'smooth',block:'start'}); },80);
   qEl.appendChild(hdr);
 
   grafQueue.forEach((q,i)=>{
