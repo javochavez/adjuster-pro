@@ -1060,12 +1060,21 @@ Con base en lo anterior y la información inicialmente recabada, presentamos a u
 
 <!-- Reserva -->
 <div class="overlay" id="modal-res">
-<div class="modal modal-sm">
-  <div class="modal-title">Cobertura / Reserva</div>
+<div class="modal" style="width:min(780px,96vw);">
+  <div class="modal-title">Nueva cobertura / Reserva</div>
   <input type="hidden" id="res-id">
+
+  <!-- Coberturas de la póliza -->
+  <div id="res-pol-coberturas-wrap" style="margin-bottom:14px;">
+    <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">Coberturas disponibles en la póliza</div>
+    <div id="res-pol-coberturas-list" style="display:flex;flex-direction:column;gap:6px;"></div>
+    <div id="res-pol-coberturas-empty" style="display:none;font-size:12px;color:var(--text-ter);padding:6px 0;">
+      Esta póliza no tiene coberturas registradas. Capture la cobertura manualmente abajo.
+    </div>
+  </div>
+
   <div class="form-grid">
-    <div class="modal-title" style="color:var(--text-ter);font-size:10px;font-weight:400;margin-bottom:4px;">Cobertura 1 de 4 — use "Nueva cobertura" para agregar más</div>
-    <div class="fg full"><label>Cobertura / Sección</label>
+    <div class="fg full"><label>Cobertura / Sección <span style="font-size:10px;color:var(--text-ter);font-weight:400;">(se llena al seleccionar arriba, o capture manualmente)</span></label>
       <input type="text" id="res-concepto" list="res-concepto-list" placeholder="ej. Edificio, Contenidos, Maquinaria y Equipo…">
       <datalist id="res-concepto-list">
         <option value="Edificio / Estructura">
@@ -1079,24 +1088,52 @@ Con base en lo anterior y la información inicialmente recabada, presentamos a u
         <option value="Incendio y/o Rayo">
         <option value="Cobertura Adicional">
       </datalist></div>
-    <div class="fg"><label>Reserva bruta</label><input type="number" id="res-monto" placeholder="0.00"></div>
-    <div class="fg"><label>Depreciación %</label><input type="number" id="res-dep-pct" value="0" step="0.01" placeholder="0.00"></div>
-    <div class="fg"><label>Monto pérdida estimada</label><input type="number" id="res-perdida" placeholder="0.00" oninput="calcBajoSeguro()"></div>
-    <div class="fg"><label>Deducible (monto)</label><input type="number" id="res-deducible" placeholder="0.00"></div>
-    <div class="fg"><label>Deducible %</label><input type="number" id="res-ded-pct" value="0" step="0.01" placeholder="0.00"></div>
-    <div class="fg"><label>Coaseguro %</label><input type="number" id="res-coas-pct" value="0" step="0.01" placeholder="ej. 20"></div>
-    <!-- Bajo Seguro: regla proporcional -->
-    <div style="font-size:10px;color:#ffcc80;background:rgba(255,204,128,.07);border-left:3px solid #ffcc80;padding:5px 10px;margin:8px 0 4px;border-radius:0 4px 4px 0;">
-      Bajo Seguro = Pérdida × (1 − Suma Asegurada / Valor a Riesgo). Se calcula automáticamente.
-    </div>
-    <div class="fg"><label>Valor a Riesgo</label><input type="number" id="res-valor-real" value="0" step="0.01" placeholder="0.00" oninput="calcBajoSeguro()"></div>
-    <div class="fg"><label>Suma asegurada cobertura</label><input type="number" id="res-suma-aseg-cob" value="0" step="0.01" placeholder="0.00" oninput="calcBajoSeguro()"></div>
-    <div class="fg"><label>Bajo Seguro (calculado)</label><input type="number" id="res-bajo-seguro" value="0" step="0.01" placeholder="0.00" style="background:rgba(255,204,128,.08);color:var(--text);" readonly title="Calculado automáticamente: Pérdida × (1 − SA/VR)"></div>
+
     <div class="fg"><label>Moneda</label>
       <select id="res-mon"><option value="MXN">MXN</option><option value="USD">USD</option><option value="EUR">EUR</option></select></div>
     <div class="fg"><label>Tipo de cambio</label><input type="number" id="res-tc" value="1" step="0.0001"></div>
+    <div class="fg"><label>Suma asegurada cobertura <span style="font-size:10px;color:var(--text-ter);">(referencia)</span></label>
+      <input type="number" id="res-suma-aseg-cob" value="0" step="0.01" placeholder="0.00" oninput="calcBajoSeguro()"></div>
     <div class="fg"><label>Fecha</label><input type="date" id="res-fecha"></div>
-    <div class="fg full"><label>Bases para determinar la reserva</label><textarea id="res-bases" style="min-height:60px;" placeholder="ej. Valor estimado de equipo similar (USD 250,000) y deducible 2% sobre valor de reposición"></textarea></div>
+
+    <div style="grid-column:1/-1;border-top:1px solid var(--border);padding-top:10px;margin-top:4px;font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.06em;">Importe de la reserva</div>
+
+    <div class="fg"><label>Reserva bruta</label><input type="number" id="res-monto" placeholder="0.00"></div>
+    <div class="fg"><label>Depreciación %</label><input type="number" id="res-dep-pct" value="0" step="0.01" placeholder="0.00"></div>
+    <div class="fg"><label>Monto pérdida estimada</label><input type="number" id="res-perdida" placeholder="0.00" oninput="calcBajoSeguro();calcResNeta()"></div>
+
+    <div style="grid-column:1/-1;font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.06em;margin-top:6px;">Deducible</div>
+    <div class="fg"><label>Descripción del deducible</label>
+      <input type="text" id="res-ded-desc" placeholder="ej. 2% sobre SA, mínimo USD 5,000" style="font-size:12px;"></div>
+    <div class="fg"><label>Deducible % (aplicado)</label><input type="number" id="res-ded-pct" value="0" step="0.01" placeholder="0.00" oninput="calcResNeta()"></div>
+    <div class="fg"><label>Deducible (monto)</label><input type="number" id="res-deducible" placeholder="0.00" oninput="calcResNeta()"></div>
+
+    <div style="grid-column:1/-1;font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.06em;margin-top:6px;">Coaseguro a cargo del Asegurado</div>
+    <div class="fg" id="res-coas-pct-wrap">
+      <label>Coaseguro % <span id="res-coas-pct-label" style="font-size:10px;color:var(--accent-lt);font-weight:400;"></span></label>
+      <input type="number" id="res-coas-pct" value="0" step="0.01" placeholder="0.00" oninput="calcResNeta()">
+    </div>
+    <div class="fg">
+      <label>Monto coaseguro</label>
+      <input type="number" id="res-coas-monto-display" placeholder="0.00" readonly style="background:var(--surface2);color:var(--text-sec);" title="Calculado: (Pérdida − Deducible) × Coaseguro %">
+    </div>
+
+    <!-- Bajo Seguro -->
+    <div style="grid-column:1/-1;font-size:10px;color:#ffcc80;background:rgba(255,204,128,.07);border-left:3px solid #ffcc80;padding:5px 10px;margin:6px 0 4px;border-radius:0 4px 4px 0;">
+      Bajo Seguro = Pérdida × (1 − Suma Asegurada / Valor a Riesgo)
+    </div>
+    <div class="fg"><label>Valor a Riesgo</label><input type="number" id="res-valor-real" value="0" step="0.01" placeholder="0.00" oninput="calcBajoSeguro();calcResNeta()"></div>
+    <div class="fg"><label>Bajo Seguro (calculado)</label>
+      <input type="number" id="res-bajo-seguro" value="0" step="0.01" readonly style="background:rgba(255,204,128,.08);color:var(--text);" oninput="calcResNeta()"></div>
+
+    <!-- Reserva Neta calculada -->
+    <div style="grid-column:1/-1;background:var(--surface2);border:1px solid var(--border-hi);border-radius:var(--r);padding:10px 14px;display:flex;justify-content:space-between;align-items:center;margin-top:6px;">
+      <span style="font-size:13px;font-weight:600;color:var(--text);">Reserva Neta = Pérdida − Bajo Seguro − Deducible − Coaseguro</span>
+      <span id="res-neta-display" style="font-size:16px;font-weight:700;color:var(--accent-lt);">—</span>
+    </div>
+
+    <div class="fg full"><label>Bases para determinar la reserva</label>
+      <textarea id="res-bases" style="min-height:60px;" placeholder="ej. Valor estimado de equipo similar (USD 250,000) y deducible 2% sobre valor de reposición"></textarea></div>
     <div class="fg full"><label>Notas</label><textarea id="res-notas" style="min-height:40px;"></textarea></div>
   </div>
   <div class="modal-footer">
@@ -2888,11 +2925,15 @@ function abrirModal(id){
     const fids={'modal-res':'res-fecha','modal-pago':'pg-fecha','modal-viat':'vt-fecha','modal-act':'ac-fecha','modal-doc':'dc-fecha'};
     if(fids[id]) g(fids[id]).value=today;
     if(id==='modal-res'){
-      ['res-concepto','res-monto','res-perdida','res-deducible','res-bases','res-notas'].forEach(f=>{if(g(f))g(f).value='';});
+      ['res-concepto','res-monto','res-perdida','res-deducible','res-ded-desc','res-bases','res-notas'].forEach(f=>{if(g(f))g(f).value='';});
       ['res-dep-pct','res-ded-pct','res-coas-pct','res-bajo-seguro','res-valor-real','res-suma-aseg-cob'].forEach(f=>{if(g(f))g(f).value='0';});
       if(g('res-tc'))g('res-tc').value='1';
       if(g('res-mon'))g('res-mon').value='MXN';
       if(g('res-id'))g('res-id').value='';
+      if(g('res-coas-monto-display'))g('res-coas-monto-display').value='';
+      if(g('res-neta-display'))g('res-neta-display').textContent='—';
+      if(g('res-coas-pct-label'))g('res-coas-pct-label').textContent='';
+      poblarResPolCoberturas();
     }
   }
   if(id==='modal-sin'){
@@ -3660,9 +3701,88 @@ function calcBajoSeguro(){
     const ratio = sumaAseg / valReal;          // proporción cubierta
     const bajo  = perdida * (1 - ratio);       // lo que no cubre la póliza
     field.value = Math.max(0, bajo).toFixed(2);
+  calcResNeta();
   } else {
     field.value = '0';
   }
+}
+
+// ── MODAL RESERVA — coberturas desde póliza ─────────────────────────
+function poblarResPolCoberturas(){
+  const listEl  = g('res-pol-coberturas-list');
+  const emptyEl = g('res-pol-coberturas-empty');
+  if(!listEl || !currentSin) return;
+  const pol    = data.pol.find(p=>p.id===currentSin.id_poliza)||{};
+  const sublims= data.sublim.filter(s=>s.id_poliza===pol.id);
+  listEl.innerHTML='';
+  if(!sublims.length){
+    if(emptyEl) emptyEl.style.display='block';
+    return;
+  }
+  if(emptyEl) emptyEl.style.display='none';
+  sublims.forEach(sl=>{
+    const fila = document.createElement('div');
+    fila.style.cssText='display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);cursor:pointer;';
+    fila.addEventListener('mouseenter',()=>fila.style.borderColor='var(--accent)');
+    fila.addEventListener('mouseleave',()=>fila.style.borderColor='var(--border)');
+
+    const chk = document.createElement('input'); chk.type='checkbox'; chk.style.cssText='width:16px;height:16px;cursor:pointer;accent-color:var(--accent-lt);flex-shrink:0;';
+    const info= document.createElement('div'); info.style.cssText='flex:1;';
+
+    const nom = document.createElement('div'); nom.style.cssText='font-size:13px;font-weight:600;color:var(--text);';
+    nom.textContent = sl.concepto||'Sin concepto';
+    const det = document.createElement('div'); det.style.cssText='font-size:11px;color:var(--text-sec);margin-top:2px;';
+    const parts = [(sl.moneda||'MXN')+' '+fmtMXN(sl.monto||0)];
+    if(sl.deducible) parts.push('Ded.: '+sl.deducible);
+    if(sl.coaseguro_pct) parts.push('Coas.: '+sl.coaseguro_pct+'%');
+    else parts.push('Coas.: No aplica');
+    det.textContent = parts.join('  ·  ');
+
+    info.appendChild(nom); info.appendChild(det);
+    fila.appendChild(chk); fila.appendChild(info);
+
+    // Click on row selects/deselects checkbox and fills fields
+    fila.addEventListener('click', (e)=>{
+      if(e.target!==chk) chk.checked=!chk.checked;
+      if(chk.checked){
+        // Deselect all others
+        listEl.querySelectorAll('input[type=checkbox]').forEach(c=>{ if(c!==chk){ c.checked=false; c.closest('div').style.background='var(--surface2)'; }});
+        fila.style.background='rgba(100,160,255,.08)';
+        seleccionarResCobertura(sl);
+      } else {
+        fila.style.background='var(--surface2)';
+      }
+    });
+
+    listEl.appendChild(fila);
+  });
+}
+
+function seleccionarResCobertura(sl){
+  if(g('res-concepto'))    g('res-concepto').value   = sl.concepto||'';
+  if(g('res-mon'))         g('res-mon').value         = sl.moneda||'MXN';
+  if(g('res-suma-aseg-cob'))g('res-suma-aseg-cob').value = sl.monto||0;
+  // Deducible from poliza
+  if(g('res-ded-desc'))    g('res-ded-desc').value    = sl.deducible||'';
+  // Coaseguro %
+  const coasPct = parseFloat(sl.coaseguro_pct)||0;
+  if(g('res-coas-pct'))    g('res-coas-pct').value    = coasPct||'0';
+  const lbl = g('res-coas-pct-label');
+  if(lbl) lbl.textContent = coasPct>0 ? '('+coasPct+'% — de la póliza)' : '(No aplica en póliza)';
+  calcResNeta();
+}
+
+function calcResNeta(){
+  const perdida   = parseFloat(v('res-perdida'))||0;
+  const ded       = parseFloat(v('res-deducible'))||0;
+  const coasPct   = parseFloat(v('res-coas-pct'))||0;
+  const bajo      = parseFloat(v('res-bajo-seguro'))||0;
+  const coasMonto = (perdida - ded) * (coasPct / 100);
+  const neta      = perdida - bajo - ded - coasMonto;
+  const moneda    = v('res-mon')||'MXN';
+  if(g('res-coas-monto-display')) g('res-coas-monto-display').value = coasMonto.toFixed(2);
+  const disp = g('res-neta-display');
+  if(disp) disp.textContent = isNaN(neta)||perdida===0 ? '—' : moneda+' '+fmtMXN(neta);
 }
 
 async function guardarReserva(){
@@ -3684,7 +3804,8 @@ async function guardarReserva(){
     coaseguro_pct:coasPct, monto_coaseguro:coasMonto,
     moneda:v('res-mon'), tipo_cambio_mxn:parseFloat(v('res-tc'))||1,
     fecha:v('res-fecha')||new Date().toISOString().slice(0,10),
-    bases_determinacion:v('res-bases')||null, notas:v('res-notas')
+    bases_determinacion:v('res-bases')||null, notas:v('res-notas'),
+    deducible_descripcion:v('res-ded-desc')||null
   };
 
   // Try with v9b columns first, fall back to base if they don't exist
