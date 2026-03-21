@@ -789,21 +789,72 @@ body.modo-lectura .readonly-hidden { display:none !important; }
 
   <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin:12px 0 8px;">Narrativa (Informe genérico)</div>
   <div class="form-grid">
-    <div class="fg full"><label>Descripción general del riesgo asegurado</label><textarea id="s-desc-riesgo" style="min-height:70px;" placeholder="Descripción física del bien o instalación asegurada, características generales, uso y ocupación..."></textarea></div>
-    <div class="fg full" id="s-introduccion-wrap" style="overflow:visible;"><label>Introducción del informe</label><textarea id="s-introduccion" style="min-height:160px;resize:both;min-width:100%;width:100%;box-sizing:border-box;">El presente informe preliminar se elabora en seguimiento de la designación de [Compañía], por parte de su apreciable [Funcionario], relativa a la atención de la pérdida sufrida por el Asegurado por [Describir el tipo de daños y bienes afectados], hechos ocurridos el [Fecha del Siniestro] en su domicilio sito en [Dirección donde ocurrieron los daños].
-
-Siguiendo las instrucciones de asignación, de inmediato procedimos a contactar a [Persona de Contacto], quien nos [Detallar acuerdo para la inspección, fecha, hora, etc.].
-
-Como acordado, el [Fecha de inspección] a las [Hora], nos presentamos en [Sitio de la inspección], lugar en el que fuimos atendidos por [Persona que atendió] quien nos mostró los daños sufridos.
-
-Con base en lo anterior y la información inicialmente recabada, presentamos a ustedes el presente Informe Preliminar.</textarea></div>
+    <div class="fg full">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+        <label style="margin-bottom:0;">Descripción general del riesgo asegurado</label>
+      </div>
+      <div class="rte-wrap">
+      <div class="rte-toolbar">
+          <button type="button" onclick="rteCmdSin('desc-riesgo','bold')" title="Negrita"><strong>N</strong></button>
+          <button type="button" onclick="rteCmdSin('desc-riesgo','italic')" title="Cursiva"><em>K</em></button>
+          <button type="button" onclick="rteCmdSin('desc-riesgo','underline')" title="Subrayado"><u>S</u></button>
+          <span class="rte-sep"></span>
+          <button type="button" onclick="rteCmdSin('desc-riesgo','insertUnorderedList')" title="Lista con viñetas">≡•</button>
+          <button type="button" onclick="rteCmdSin('desc-riesgo','insertOrderedList')" title="Lista numerada">≡1</button>
+          <span class="rte-sep"></span>
+          <button type="button" onclick="rteCmdSin('desc-riesgo','removeFormat')" title="Quitar formato">✕</button>
+          
+        </div>
+        <div id="s-desc-riesgo-rte" class="rte-editor" contenteditable="true"
+          data-placeholder="Descripción física del bien o instalación asegurada, características generales, uso y ocupación..." oninput="syncRteSin('desc-riesgo')"
+          style="min-height:70px;"></div>
+        <textarea id="s-desc-riesgo" style="display:none;"></textarea>
+      </div>
+    </div>
+    <div class="fg full" id="s-introduccion-wrap" style="overflow:visible;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+        <label style="margin-bottom:0;">Introducción del informe</label>
+      </div>
+      <div class="rte-wrap" style="resize:both;overflow:auto;">
+      <div class="rte-toolbar">
+          <button type="button" onclick="rteCmdSin('introduccion','bold')" title="Negrita"><strong>N</strong></button>
+          <button type="button" onclick="rteCmdSin('introduccion','italic')" title="Cursiva"><em>K</em></button>
+          <button type="button" onclick="rteCmdSin('introduccion','underline')" title="Subrayado"><u>S</u></button>
+          <span class="rte-sep"></span>
+          <button type="button" onclick="rteCmdSin('introduccion','insertUnorderedList')" title="Lista con viñetas">≡•</button>
+          <button type="button" onclick="rteCmdSin('introduccion','insertOrderedList')" title="Lista numerada">≡1</button>
+          <span class="rte-sep"></span>
+          <button type="button" onclick="rteCmdSin('introduccion','removeFormat')" title="Quitar formato">✕</button>
+          
+        </div>
+        <div id="s-introduccion-rte" class="rte-editor" contenteditable="true"
+          data-placeholder="Texto de apertura del informe: contexto, alcance del ajuste, propósito del documento..." oninput="syncRteSin('introduccion')"
+          style="min-height:160px;"></div>
+        <textarea id="s-introduccion" style="display:none;"></textarea>
+      </div>
+    </div>
 
     <div class="fg full">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
         <label style="margin-bottom:0;">Inspección del siniestro</label>
-        <button type="button" class="btn btn-sm" onclick="generarTextoInspeccion()" title="Genera el texto usando fecha de primera visita, domicilio y persona entrevistada">✦ Generar texto</button>
       </div>
-      <textarea id="s-inspeccion-narrativa" style="min-height:100px;" placeholder="Capture la fecha de primera visita y el domicilio inspeccionado, luego use ✦ Generar texto..." oninput="this.dataset.editado='1'"></textarea>
+      <div class="rte-wrap">
+      <div class="rte-toolbar">
+          <button type="button" onclick="rteCmdSin('inspeccion-narrativa','bold')" title="Negrita"><strong>N</strong></button>
+          <button type="button" onclick="rteCmdSin('inspeccion-narrativa','italic')" title="Cursiva"><em>K</em></button>
+          <button type="button" onclick="rteCmdSin('inspeccion-narrativa','underline')" title="Subrayado"><u>S</u></button>
+          <span class="rte-sep"></span>
+          <button type="button" onclick="rteCmdSin('inspeccion-narrativa','insertUnorderedList')" title="Lista con viñetas">≡•</button>
+          <button type="button" onclick="rteCmdSin('inspeccion-narrativa','insertOrderedList')" title="Lista numerada">≡1</button>
+          <span class="rte-sep"></span>
+          <button type="button" onclick="rteCmdSin('inspeccion-narrativa','removeFormat')" title="Quitar formato">✕</button>
+          <span class="rte-sep"></span><button type="button" class="btn btn-sm" onclick="generarTextoInspeccion()" title="Genera el texto usando fecha, domicilio y persona entrevistada" style="font-size:11px;">✦ Generar texto</button>
+        </div>
+        <div id="s-inspeccion-narrativa-rte" class="rte-editor" contenteditable="true"
+          data-placeholder="Capture la fecha de primera visita y el domicilio inspeccionado, luego use ✦ Generar texto..." oninput="syncRteSin('inspeccion-narrativa');this.dataset.editado='1'"
+          style="min-height:100px;"></div>
+        <textarea id="s-inspeccion-narrativa" style="display:none;"></textarea>
+      </div>
     </div>
     <div class="fg"><label>Procedencia del reclamo</label>
       <select id="s-procedencia">
@@ -821,8 +872,50 @@ Con base en lo anterior y la información inicialmente recabada, presentamos a u
 
   <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin:12px 0 8px;">Narrativa</div>
   <div class="form-grid">
-    <div class="fg full"><label>Narración de los hechos</label><textarea id="s-desc" style="min-height:70px;" placeholder="Cómo ocurrió el siniestro, circunstancias, descripción del evento..."></textarea></div>
-    <div class="fg full"><label>Estrategias, observaciones y actividades a realizar</label><textarea id="s-estrategias" style="min-height:120px;" placeholder="Documentos solicitados, observaciones técnicas, estrategia de ajuste, actividades pendientes, comentarios finales del informe..."></textarea></div>
+    <div class="fg full">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+        <label style="margin-bottom:0;">Narración de los hechos</label>
+      </div>
+      <div class="rte-wrap">
+      <div class="rte-toolbar">
+          <button type="button" onclick="rteCmdSin('desc','bold')" title="Negrita"><strong>N</strong></button>
+          <button type="button" onclick="rteCmdSin('desc','italic')" title="Cursiva"><em>K</em></button>
+          <button type="button" onclick="rteCmdSin('desc','underline')" title="Subrayado"><u>S</u></button>
+          <span class="rte-sep"></span>
+          <button type="button" onclick="rteCmdSin('desc','insertUnorderedList')" title="Lista con viñetas">≡•</button>
+          <button type="button" onclick="rteCmdSin('desc','insertOrderedList')" title="Lista numerada">≡1</button>
+          <span class="rte-sep"></span>
+          <button type="button" onclick="rteCmdSin('desc','removeFormat')" title="Quitar formato">✕</button>
+          
+        </div>
+        <div id="s-desc-rte" class="rte-editor" contenteditable="true"
+          data-placeholder="Cómo ocurrió el siniestro, circunstancias, descripción del evento..." oninput="syncRteSin('desc')"
+          style="min-height:70px;"></div>
+        <textarea id="s-desc" style="display:none;"></textarea>
+      </div>
+    </div>
+    <div class="fg full">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+        <label style="margin-bottom:0;">Estrategias, observaciones y actividades a realizar</label>
+      </div>
+      <div class="rte-wrap">
+      <div class="rte-toolbar">
+          <button type="button" onclick="rteCmdSin('estrategias','bold')" title="Negrita"><strong>N</strong></button>
+          <button type="button" onclick="rteCmdSin('estrategias','italic')" title="Cursiva"><em>K</em></button>
+          <button type="button" onclick="rteCmdSin('estrategias','underline')" title="Subrayado"><u>S</u></button>
+          <span class="rte-sep"></span>
+          <button type="button" onclick="rteCmdSin('estrategias','insertUnorderedList')" title="Lista con viñetas">≡•</button>
+          <button type="button" onclick="rteCmdSin('estrategias','insertOrderedList')" title="Lista numerada">≡1</button>
+          <span class="rte-sep"></span>
+          <button type="button" onclick="rteCmdSin('estrategias','removeFormat')" title="Quitar formato">✕</button>
+          
+        </div>
+        <div id="s-estrategias-rte" class="rte-editor" contenteditable="true"
+          data-placeholder="Documentos solicitados, observaciones técnicas, estrategia de ajuste, actividades pendientes, comentarios finales del informe..." oninput="syncRteSin('estrategias')"
+          style="min-height:120px;"></div>
+        <textarea id="s-estrategias" style="display:none;"></textarea>
+      </div>
+    </div>
     <div class="fg full"><label>Notas internas</label><textarea id="s-notas" style="min-height:50px;"></textarea></div>
   </div>
   </div><!-- /seccion-institucional -->
@@ -2134,10 +2227,9 @@ function generarTextoInspeccion(){
 
   const texto = `El ${fechaLarga} nos presentamos en el domicilio afectado, sito en ${domicilio}, lugar en el que fuimos atendidos por ${persona}, quien nos mostró los daños, observando, lo siguiente:`;
 
-  if(g('s-inspeccion-narrativa')){
-    g('s-inspeccion-narrativa').value = texto;
-    delete g('s-inspeccion-narrativa').dataset.editado;
-  }
+  loadRteSin('inspeccion-narrativa', texto);
+  const rteEl = g('s-inspeccion-narrativa-rte');
+  if(rteEl) delete rteEl.dataset.editado;
   toast('Texto de inspección generado.');
 }
 
@@ -2941,7 +3033,7 @@ function abrirModal(id){
     g('s-id').value='';
     resetBuscadorSinModal();
     ['s-exp','s-numsin','s-subramo','s-causa','s-riesgo',
-     's-clave-ajust','s-dest-nombre','s-dest-cargo','s-giro','s-desc','s-desc-riesgo','s-introduccion','s-inspeccion-narrativa','s-notas','s-estrategias',
+     's-clave-ajust','s-dest-nombre','s-dest-cargo','s-giro','s-notas',
      's-tramite-gnp','s-ot','s-fsin','s-hora-ocurr','s-finsp','s-finf',
      's-hora-asig','s-f1cont','s-h1cont','s-f1vis','s-h1vis',
      's-insp-persona','s-insp-cargo','s-insp-tel','s-insp-dom',
@@ -2963,7 +3055,10 @@ function abrirModal(id){
     // Default text for Introducción (only for new expediente)
     loadBienesRte('');
     loadRteSin('bienes-amparados','');
-    if(g('s-introduccion')) g('s-introduccion').value=`El presente informe preliminar se elabora en seguimiento de la designación de [Compañía], por parte de su apreciable [Funcionario], relativa a la atención de la pérdida sufrida por el Asegurado por [Describir el tipo de daños y bienes afectados], hechos ocurridos el [Fecha del Siniestro] en su domicilio sito en [Dirección donde ocurrieron los daños].\n\nSiguiendo las instrucciones de asignación, de inmediato procedimos a contactar a [Persona de Contacto], quien nos [Detallar acuerdo para la inspección, fecha, hora, etc.].\n\nComo acordado, el [Fecha de inspección] a las [Hora], nos presentamos en [Sitio de la inspección], lugar en el que fuimos atendidos por [Persona que atendió] quien nos mostró los daños sufridos.\n\nCon base en lo anterior y la información inicialmente recabada, presentamos a ustedes el presente Informe Preliminar.`;
+    // Reset all RTE fields
+    ['desc-riesgo','introduccion','inspeccion-narrativa','desc','estrategias'].forEach(s=>loadRteSin(s,''));
+    delete g('s-inspeccion-narrativa-rte')?.dataset.editado;
+    loadRteSin('introduccion', 'El presente informe preliminar se elabora en seguimiento de la designaci\u00f3n de [Compa\u00f1\u00eda], por parte de su apreciable [Funcionario], relativa a la atenci\u00f3n de la p\u00e9rdida sufrida por el Asegurado por [Describir el tipo de da\u00f1os y bienes afectados], hechos ocurridos el [Fecha del Siniestro] en su domicilio sito en [Direcci\u00f3n donde ocurrieron los da\u00f1os].\n\nSiguiendo las instrucciones de asignaci\u00f3n, de inmediato procedimos a contactar a [Persona de Contacto], quien nos [Detallar acuerdo para la inspecci\u00f3n, fecha, hora, etc.].\n\nComo acordado, el [Fecha de inspecci\u00f3n] a las [Hora], nos presentamos en [Sitio de la inspecci\u00f3n], lugar en el que fuimos atendidos por [Persona que atendi\u00f3] quien nos mostr\u00f3 los da\u00f1os sufridos.\n\nCon base en lo anterior y la informaci\u00f3n inicialmente recabada, presentamos a ustedes el presente Informe Preliminar.');
     g('s-aseg-direct').value='';
     g('seccion-gnp').style.display='none'; g('seccion-atlas').style.display='none';
     if(g('s-modo-captura-lbl')) g('s-modo-captura-lbl').textContent='Modo: Institucional';
@@ -3156,11 +3251,12 @@ function editarSiniestro(id){
   g('s-giro').value=s.giro_asegurado||'';
   if(g('s-dest-nombre')) g('s-dest-nombre').value=s.destinatario_nombre||'';
   if(g('s-dest-cargo'))  g('s-dest-cargo').value=s.destinatario_cargo||'';
-  g('s-desc').value=s.descripcion||''; g('s-desc-riesgo').value=s.descripcion_riesgo||''; if(g('s-introduccion'))g('s-introduccion').value=s.introduccion||''; g('s-notas').value=s.notas||'';
-  g('s-estrategias').value=(()=>{
-    const parts=[s.estrategias_observaciones,s.actividades_realizar,s.comentarios].filter(Boolean);
-    return parts.join('\n\n');
-  })();
+  loadRteSin('desc', s.descripcion||'');
+  loadRteSin('desc-riesgo', s.descripcion_riesgo||'');
+  loadRteSin('introduccion', s.introduccion||'');
+  loadRteSin('inspeccion-narrativa', s.inspeccion_narrativa||'');
+  g('s-notas').value=s.notas||'';
+  loadRteSin('estrategias', s.estrategias_observaciones||'');
   g('s-est').value=s.estatus||'asignado';
   g('s-fsin').value=s.fecha_siniestro||''; g('s-hora-ocurr').value=s.hora_ocurrencia||'';
   g('s-fasig').value=s.fecha_asignacion||''; g('s-hora-asig').value=s.hora_asignacion||'';
