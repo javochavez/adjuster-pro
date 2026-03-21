@@ -687,7 +687,7 @@ body.modo-lectura .readonly-hidden { display:none !important; }
     <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin:12px 0 8px;">Siniestro</div>
   <div class="form-grid">
     <div class="fg"><label>Tipo de siniestro</label><input type="text" id="s-tipo" placeholder="Incendio, robo, etc."></div>
-    <div class="fg"><label>Subramo</label><input type="text" id="s-subramo" placeholder="ej. Rotura de Maquinaria"></div>
+    <div class="fg"><label>Cobertura <span style="font-size:10px;color:var(--text-ter);font-weight:400;">(cobertura que aplica al siniestro)</span></label><input type="text" id="s-subramo" placeholder="ej. Rotura de Maquinaria, Incendio, Robo con violencia"></div>
     <div class="fg"><label>Causa</label><input type="text" id="s-causa"></div>
     <div class="fg"><label>Comentario de causa</label><input type="text" id="s-causa-com" placeholder="ej. En análisis de causa"></div>
     <div class="fg"><label>Riesgo afectado</label><input type="text" id="s-riesgo" placeholder="ej. b) Corto Circuito"></div>
@@ -3708,7 +3708,7 @@ function buildFormal(s, secs){
       <tr><td class="lbl">No. Siniestro</td><td class="val">${s.numero_siniestro||''}</td><td class="lbl">Jefe Depto</td><td colspan="3" class="val">${lastInf.jefe_depto||''}</td></tr>
       <tr><td class="lbl">OT / Trámite</td><td class="val">${s.ot||s.tramite_gnp||''}</td><td class="lbl">Oficina</td><td class="val">${pol.oficina||lastInf.oficina_cia||''}</td><td class="lbl">Póliza</td><td class="val">${pol.numero||''}</td></tr>
       ${(s.ot||s.tramite_gnp)?`<tr><td class="lbl">OT / No. Trámite</td><td class="val" colspan="3">${s.ot||s.tramite_gnp||''}</td></tr>`:''}
-      <tr><td class="lbl">Ramo</td><td class="val">${RAMOS[pol.ramo]||pol.ramo||''}</td><td class="lbl">Subramo</td><td class="val">${pol.subramo||s.subramo||''}</td><td class="lbl">Vigencia</td><td class="val">Del ${fmtD(pol.vigencia_ini)} Al ${fmtD(pol.vigencia_fin)}</td></tr>
+      <tr><td class="lbl">Ramo</td><td class="val">${RAMOS[pol.ramo]||pol.ramo||''}</td><td class="lbl">Cobertura</td><td class="val">${s.subramo||pol.subramo||''}</td><td class="lbl">Vigencia</td><td class="val">Del ${fmtD(pol.vigencia_ini)} Al ${fmtD(pol.vigencia_fin)}</td></tr>
       <tr><td class="lbl">Fecha de siniestro</td><td class="val">${fmtD(s.fecha_siniestro)}</td><td class="lbl">Agente</td><td colspan="3" class="val">${pol.agente||''}</td></tr>
       <tr><td class="lbl">Asegurado</td><td colspan="3" class="val">${asdo.nombre||''}</td><td class="lbl">Referencia Asegurado</td><td class="val">${s.referencia_asegurado||''}</td></tr>
       <tr><td class="lbl">Importe reclamado</td><td class="val">${perdidaEst?fmtMXN(perdidaEst):'Pendiente'}</td><td class="lbl">Moneda</td><td class="val">${moneda}</td><td class="lbl">Clave ajustador</td><td class="val">${s.clave_ajustador_cia||''}</td></tr>
@@ -3720,7 +3720,7 @@ function buildFormal(s, secs){
 
   if(secs.includes('estimacion')){
     h+=`<div class="sec"><div class="sec-title">1&nbsp;&nbsp;Estimación por coberturas y secciones</div>`;
-    h+=`<table class="cov-table"><thead><tr><th style="text-align:left;">Coberturas o secciones</th><th>${pol.subramo||s.subramo||'Cobertura 1'}</th><th>N/A – ${moneda}</th><th>Estimación total – ${moneda}</th></tr></thead><tbody>`;
+    h+=`<table class="cov-table"><thead><tr><th style="text-align:left;">Coberturas o secciones</th><th>${s.subramo||pol.subramo||'Cobertura 1'}</th><th>N/A – ${moneda}</th><th>Estimación total – ${moneda}</th></tr></thead><tbody>`;
     h+=`<tr><td class="lbl">Reserva bruta</td><td>${fmtMXN(reservaBruta)}</td><td></td><td>${fmtMXN(reservaBruta)}</td></tr>`;
     h+=`<tr><td class="lbl" style="font-style:italic;font-weight:400;">Depreciación ${depPct}% promedio</td><td></td><td></td><td></td></tr>`;
     h+=`<tr><td class="lbl" style="font-weight:700;">Monto Pérdida Estimada</td><td style="font-weight:700;">${fmtMXN(perdidaEst)}</td><td>–</td><td style="font-weight:700;">${fmtMXN(perdidaEst)}</td></tr>`;
@@ -3823,7 +3823,7 @@ function buildInterno(s, secs){
     </div>
     <div class="int-card"><div class="int-card-title">Póliza</div>
       <div class="int-row"><span class="int-lbl">Número</span><span class="int-val">${pol.numero||'—'}</span></div>
-      <div class="int-row"><span class="int-lbl">Ramo / Subramo</span><span class="int-val">${RAMOS[pol.ramo]||pol.ramo||'—'} / ${pol.subramo||s.subramo||'—'}</span></div>
+      <div class="int-row"><span class="int-lbl">Ramo / Cobertura</span><span class="int-val">${RAMOS[pol.ramo]||pol.ramo||'—'} / ${s.subramo||pol.subramo||'—'}</span></div>
       <div class="int-row"><span class="int-lbl">Vigencia</span><span class="int-val">${fmtD(pol.vigencia_ini)} – ${fmtD(pol.vigencia_fin)}</span></div>
       <div class="int-row"><span class="int-lbl">Agente</span><span class="int-val">${pol.agente||'—'}</span></div>
     </div></div>`;
@@ -4059,7 +4059,7 @@ function buildGNP(s, secs){
     </tr>
     <tr>
       <td class="lbl">Ramo</td><td class="val">${pol.ramo||''}</td>
-      <td class="lbl">Subramo</td><td class="val">${pol.subramo||s.subramo||''}</td>
+      <td class="lbl">Cobertura</td><td class="val">${s.subramo||pol.subramo||''}</td>
       <td class="lbl">Vigencia</td><td class="val">${vigStr}</td>
     </tr>
     <tr>
@@ -4537,7 +4537,7 @@ async function descargarWord(){
   portRows.push(fullRow('SEGURO',pol.tipo_seguro||''));
   portRows.push(fullRow('CAUSA PRÓXIMA DEL EVENTO',s.causa||''));
   portRows.push(fullRow('DAÑOS OCURRIDOS',s.bienes_danados||''));
-  portRows.push(dataRow('RAMO',pol.ramo||'','SUB-RAMO',pol.subramo||s.subramo||''));
+  portRows.push(dataRow('RAMO',pol.ramo||'','COBERTURA',s.subramo||pol.subramo||''));
   portRows.push(fullRow('RIESGO AFECTADO',s.riesgo_afectado||''));
   const dedTxt=rvList.map(r=>r.bases_determinacion).filter(Boolean).join('. ');
   portRows.push(fullRow('DEDUCIBLE',dedTxt));
@@ -4808,10 +4808,10 @@ async function descargarWordGNP(){
       id6lbl('Oficina',C3),     id6val(s.gnp_oficina||'',C4),
       id6lbl('Póliza',C5),      id6val(pol.numero||'',C6),
     ]}),
-    // Fila 3: Ramo | val | Subramo | val | Vigencia | val
+    // Fila 3: Ramo | val | Cobertura | val | Vigencia | val
     new TableRow({children:[
       id6lbl('Ramo',C1),      id6val(pol.ramo||'',C2),
-      id6lbl('Subramo',C3),   id6val(pol.subramo||s.subramo||'',C4),
+      id6lbl('Cobertura',C3),   id6val(pol.subramo||s.subramo||'',C4),
       id6lbl('Vigencia',C5),  id6val(vigStr,C6),
     ]}),
     // Fila 4: Fecha siniestro | val | Agente | val(span 3)
@@ -5374,7 +5374,7 @@ function buildFormalGenerico(s, secs, aseg){
     ${portRow('SEGURO', pol.tipo_seguro||'')}
     ${portRow('CAUSA PRÓXIMA DEL EVENTO', s.causa||'')}
     ${portRow('DAÑOS OCURRIDOS', s.bienes_danados||'')}
-    ${portRow2('RAMO', pol.ramo||'', 'SUB-RAMO', pol.subramo||s.subramo||'')}
+    ${portRow2('RAMO', pol.ramo||'', 'COBERTURA', s.subramo||pol.subramo||'')}
     ${portRow('RIESGO AFECTADO', s.riesgo_afectado||'')}
     ${portRow('DEDUCIBLE', dedTxt)}
     ${portRow('COASEGURO', s.coaseguro?(s.coaseguro_detalle||'Sí'):'N/A')}
