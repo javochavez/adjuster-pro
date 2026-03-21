@@ -3196,42 +3196,61 @@ function renderPolCobGrid(){
   const tbody = g('pol-cob-tbody');
   if(!tbody) return;
   if(!polCobFilas.length){
-    // Show one empty row by default
     polCobFilas = [{concepto:'', moneda:'MXN', monto:'', deducible:'', coaseguro_pct:''}];
   }
-  tbody.innerHTML = polCobFilas.map((f,i)=>`
-    <tr style="border-bottom:1px solid var(--border);">
-      <td style="padding:4px 6px;">
-        <input type="text" value="${f.concepto}" placeholder="ej. Edificio, Contenidos, Maquinaria"
-          oninput="polCobFilas[${i}].concepto=this.value"
-          style="width:100%;padding:4px 6px;border:1px solid var(--border-md);border-radius:4px;background:var(--bg2);color:var(--text);font-size:12px;font-family:inherit;">
-      </td>
-      <td style="padding:4px 6px;">
-        <select onchange="polCobFilas[${i}].moneda=this.value;recalcPolCobTotal()"
-          style="width:100%;padding:4px 6px;border:1px solid var(--border-md);border-radius:4px;background:var(--bg2);color:var(--text);font-size:12px;font-family:inherit;">
-          ${['MXN','USD','EUR'].map(m=>`<option value="${m}" ${f.moneda===m?'selected':''}>${m}</option>`).join('')}
-        </select>
-      </td>
-      <td style="padding:4px 6px;">
-        <input type="number" value="${f.monto}" placeholder="0.00" step="0.01"
-          oninput="polCobFilas[${i}].monto=this.value;recalcPolCobTotal()"
-          style="width:100%;padding:4px 6px;border:1px solid var(--border-md);border-radius:4px;background:var(--bg2);color:var(--text);font-size:12px;font-family:inherit;text-align:right;">
-      </td>
-      <td style="padding:4px 6px;">
-        <input type="text" value="${f.deducible||''}" placeholder="ej. 10% s/daño, mín. USD 5,000"
-          oninput="polCobFilas[${i}].deducible=this.value"
-          style="width:100%;padding:4px 6px;border:1px solid var(--border-md);border-radius:4px;background:var(--bg2);color:var(--text);font-size:12px;font-family:inherit;">
-      </td>
-      <td style="padding:4px 6px;text-align:center;">
-        <input type="number" value="${f.coaseguro_pct||''}" placeholder="0" min="0" max="100" step="0.01"
-          oninput="polCobFilas[${i}].coaseguro_pct=this.value"
-          style="width:70px;padding:4px 6px;border:1px solid var(--border-md);border-radius:4px;background:var(--bg2);color:var(--text);font-size:12px;font-family:inherit;text-align:center;">
-        <span style="font-size:11px;color:var(--text-ter);">%</span>
-      </td>
-      <td style="padding:4px 6px;text-align:center;">
-        <button type="button" class="btn btn-sm btn-danger" onclick="eliminarFilaCobertura(${i})" style="padding:2px 7px;font-size:11px;">✕</button>
-      </td>
-    </tr>`).join('');
+  tbody.innerHTML = '';
+  const inpStyle = 'width:100%;padding:4px 6px;border:1px solid var(--border-md);border-radius:4px;background:var(--bg2);color:var(--text);font-size:12px;font-family:inherit;box-sizing:border-box;';
+
+  polCobFilas.forEach((f, i) => {
+    const tr = document.createElement('tr');
+    tr.style.borderBottom = '1px solid var(--border)';
+
+    // Concepto
+    const tdC = document.createElement('td'); tdC.style.padding='4px 6px';
+    const inpC = document.createElement('input'); inpC.type='text'; inpC.value=f.concepto||'';
+    inpC.placeholder='ej. Edificio, Contenidos, Maquinaria'; inpC.style.cssText=inpStyle;
+    inpC.addEventListener('input', ()=>{ polCobFilas[i].concepto=inpC.value; });
+    tdC.appendChild(inpC); tr.appendChild(tdC);
+
+    // Moneda
+    const tdM = document.createElement('td'); tdM.style.padding='4px 6px';
+    const sel = document.createElement('select'); sel.style.cssText=inpStyle;
+    ['MXN','USD','EUR'].forEach(m=>{ const o=document.createElement('option'); o.value=m; o.textContent=m; if(f.moneda===m) o.selected=true; sel.appendChild(o); });
+    sel.addEventListener('change', ()=>{ polCobFilas[i].moneda=sel.value; recalcPolCobTotal(); });
+    tdM.appendChild(sel); tr.appendChild(tdM);
+
+    // Suma asegurada
+    const tdS = document.createElement('td'); tdS.style.padding='4px 6px';
+    const inpS = document.createElement('input'); inpS.type='number'; inpS.value=f.monto||'';
+    inpS.placeholder='0.00'; inpS.step='0.01'; inpS.style.cssText=inpStyle+'text-align:right;';
+    inpS.addEventListener('input', ()=>{ polCobFilas[i].monto=inpS.value; recalcPolCobTotal(); });
+    tdS.appendChild(inpS); tr.appendChild(tdS);
+
+    // Deducible
+    const tdD = document.createElement('td'); tdD.style.padding='4px 6px';
+    const inpD = document.createElement('input'); inpD.type='text'; inpD.value=f.deducible||'';
+    inpD.placeholder='ej. 10% s/daño, mín. USD 5,000'; inpD.style.cssText=inpStyle;
+    inpD.addEventListener('input', ()=>{ polCobFilas[i].deducible=inpD.value; });
+    tdD.appendChild(inpD); tr.appendChild(tdD);
+
+    // Coaseguro %
+    const tdCo = document.createElement('td'); tdCo.style.cssText='padding:4px 6px;text-align:center;white-space:nowrap;';
+    const inpCo = document.createElement('input'); inpCo.type='number'; inpCo.value=f.coaseguro_pct||'';
+    inpCo.placeholder='0'; inpCo.min='0'; inpCo.max='100'; inpCo.step='0.01';
+    inpCo.style.cssText='width:65px;padding:4px 6px;border:1px solid var(--border-md);border-radius:4px;background:var(--bg2);color:var(--text);font-size:12px;font-family:inherit;text-align:center;box-sizing:border-box;';
+    inpCo.addEventListener('input', ()=>{ polCobFilas[i].coaseguro_pct=inpCo.value; });
+    const pct = document.createElement('span'); pct.textContent='%'; pct.style.cssText='font-size:11px;color:var(--text-ter);margin-left:2px;';
+    tdCo.appendChild(inpCo); tdCo.appendChild(pct); tr.appendChild(tdCo);
+
+    // Eliminar
+    const tdX = document.createElement('td'); tdX.style.cssText='padding:4px 6px;text-align:center;';
+    const btn = document.createElement('button'); btn.type='button'; btn.textContent='✕';
+    btn.className='btn btn-sm btn-danger'; btn.style.cssText='padding:2px 7px;font-size:11px;';
+    btn.addEventListener('click', ()=>{ eliminarFilaCobertura(i); });
+    tdX.appendChild(btn); tr.appendChild(tdX);
+
+    tbody.appendChild(tr);
+  });
   recalcPolCobTotal();
 }
 
