@@ -896,7 +896,7 @@ body.modo-lectura .readonly-hidden { display:none !important; }
     </div>
     <div class="fg full">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-        <label style="margin-bottom:0;">Estrategias, observaciones y actividades a realizar</label>
+        <label style="margin-bottom:0;">Estrategias de ajuste</label>
       </div>
       <div class="rte-wrap">
       <div class="rte-toolbar">
@@ -908,12 +908,53 @@ body.modo-lectura .readonly-hidden { display:none !important; }
           <button type="button" onclick="rteCmdSin('estrategias','insertOrderedList')" title="Lista numerada">≡1</button>
           <span class="rte-sep"></span>
           <button type="button" onclick="rteCmdSin('estrategias','removeFormat')" title="Quitar formato">✕</button>
-          
         </div>
         <div id="s-estrategias-rte" class="rte-editor" contenteditable="true"
-          data-placeholder="Documentos solicitados, observaciones técnicas, estrategia de ajuste, actividades pendientes, comentarios finales del informe..." oninput="syncRteSin('estrategias')"
-          style="min-height:120px;"></div>
+          data-placeholder="Plan de ajuste, acciones a seguir, documentos solicitados, estrategia técnica..."
+          oninput="syncRteSin('estrategias')" style="min-height:100px;"></div>
         <textarea id="s-estrategias" style="display:none;"></textarea>
+      </div>
+    </div>
+    <div class="fg full">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+        <label style="margin-bottom:0;">Observaciones</label>
+      </div>
+      <div class="rte-wrap">
+      <div class="rte-toolbar">
+          <button type="button" onclick="rteCmdSin('observaciones','bold')" title="Negrita"><strong>N</strong></button>
+          <button type="button" onclick="rteCmdSin('observaciones','italic')" title="Cursiva"><em>K</em></button>
+          <button type="button" onclick="rteCmdSin('observaciones','underline')" title="Subrayado"><u>S</u></button>
+          <span class="rte-sep"></span>
+          <button type="button" onclick="rteCmdSin('observaciones','insertUnorderedList')" title="Lista con viñetas">≡•</button>
+          <button type="button" onclick="rteCmdSin('observaciones','insertOrderedList')" title="Lista numerada">≡1</button>
+          <span class="rte-sep"></span>
+          <button type="button" onclick="rteCmdSin('observaciones','removeFormat')" title="Quitar formato">✕</button>
+        </div>
+        <div id="s-observaciones-rte" class="rte-editor" contenteditable="true"
+          data-placeholder="Comentarios técnicos, notas al informe, aspectos a destacar, reservas técnicas..."
+          oninput="syncRteSin('observaciones')" style="min-height:90px;"></div>
+        <textarea id="s-observaciones" style="display:none;"></textarea>
+      </div>
+    </div>
+    <div class="fg full">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+        <label style="margin-bottom:0;">Actividades a realizar</label>
+      </div>
+      <div class="rte-wrap">
+      <div class="rte-toolbar">
+          <button type="button" onclick="rteCmdSin('actividades','bold')" title="Negrita"><strong>N</strong></button>
+          <button type="button" onclick="rteCmdSin('actividades','italic')" title="Cursiva"><em>K</em></button>
+          <button type="button" onclick="rteCmdSin('actividades','underline')" title="Subrayado"><u>S</u></button>
+          <span class="rte-sep"></span>
+          <button type="button" onclick="rteCmdSin('actividades','insertUnorderedList')" title="Lista con viñetas">≡•</button>
+          <button type="button" onclick="rteCmdSin('actividades','insertOrderedList')" title="Lista numerada">≡1</button>
+          <span class="rte-sep"></span>
+          <button type="button" onclick="rteCmdSin('actividades','removeFormat')" title="Quitar formato">✕</button>
+        </div>
+        <div id="s-actividades-rte" class="rte-editor" contenteditable="true"
+          data-placeholder="Tareas pendientes concretas, visitas programadas, gestiones en proceso..."
+          oninput="syncRteSin('actividades')" style="min-height:80px;"></div>
+        <textarea id="s-actividades" style="display:none;"></textarea>
       </div>
     </div>
     <div class="fg full"><label>Notas internas</label><textarea id="s-notas" style="min-height:50px;"></textarea></div>
@@ -1439,7 +1480,9 @@ body.modo-lectura .readonly-hidden { display:none !important; }
     <div class="fg"><label>Oficina (compañía)</label><input type="text" id="inf-oficina" placeholder="ej. Veracruz"></div>
     <div class="fg full"><label>Asunto</label><input type="text" id="inf-asunto" placeholder="Asunto del correo o documento"></div>
     <div class="fg full"><label>Narración del siniestro / Desarrollo</label><textarea id="inf-desarrollo" style="min-height:80px;" placeholder="Narrativa detallada del evento según inspección..."></textarea></div>
-    <div class="fg full"><label>Estrategias, observaciones y actividades a realizar</label><textarea id="inf-estrategias" style="min-height:70px;" placeholder="Lista de documentos solicitados y observaciones técnicas..."></textarea></div>
+    <div class="fg full"><label>Estrategias</label><textarea id="inf-estrategias" style="min-height:60px;" placeholder="Plan de ajuste, documentos solicitados..."></textarea></div>
+    <div class="fg full"><label>Observaciones</label><textarea id="inf-observaciones" style="min-height:60px;" placeholder="Comentarios técnicos, reservas, notas al informe..."></textarea></div>
+    <div class="fg full"><label>Actividades a realizar</label><textarea id="inf-actividades" style="min-height:50px;" placeholder="Tareas pendientes, gestiones en proceso..."></textarea></div>
     <div class="fg full"><label>Notas internas</label><textarea id="inf-notas" style="min-height:40px;"></textarea></div>
   </div>
 
@@ -3056,7 +3099,7 @@ function abrirModal(id){
     loadBienesRte('');
     loadRteSin('bienes-amparados','');
     // Reset all RTE fields
-    ['desc-riesgo','introduccion','inspeccion-narrativa','desc','estrategias'].forEach(s=>loadRteSin(s,''));
+    ['desc-riesgo','introduccion','inspeccion-narrativa','desc','estrategias','observaciones','actividades'].forEach(s=>loadRteSin(s,''));
     delete g('s-inspeccion-narrativa-rte')?.dataset.editado;
     loadRteSin('introduccion', 'El presente informe preliminar se elabora en seguimiento de la designaci\u00f3n de [Compa\u00f1\u00eda], por parte de su apreciable [Funcionario], relativa a la atenci\u00f3n de la p\u00e9rdida sufrida por el Asegurado por [Describir el tipo de da\u00f1os y bienes afectados], hechos ocurridos el [Fecha del Siniestro] en su domicilio sito en [Direcci\u00f3n donde ocurrieron los da\u00f1os].\n\nSiguiendo las instrucciones de asignaci\u00f3n, de inmediato procedimos a contactar a [Persona de Contacto], quien nos [Detallar acuerdo para la inspecci\u00f3n, fecha, hora, etc.].\n\nComo acordado, el [Fecha de inspecci\u00f3n] a las [Hora], nos presentamos en [Sitio de la inspecci\u00f3n], lugar en el que fuimos atendidos por [Persona que atendi\u00f3] quien nos mostr\u00f3 los da\u00f1os sufridos.\n\nCon base en lo anterior y la informaci\u00f3n inicialmente recabada, presentamos a ustedes el presente Informe Preliminar.');
     g('s-aseg-direct').value='';
@@ -3203,6 +3246,9 @@ async function guardarSiniestro(){
     recuperacion_detalle:v('s-rec-det')||null,
     coaseguro:v('s-coaseguro')==='1', coaseguro_detalle:v('s-coas-det')||null,
     reaseguro_clausula_control:v('s-reaseguro')==='1', reaseguro_corredor:v('s-reas-corredor')||null,
+    estrategias:v('s-estrategias')||null,
+    observaciones:v('s-observaciones')||null,
+    actividades:v('s-actividades')||null,
     estrategias_observaciones:(()=>{
       const e=v('s-estrategias')||'';
       return e||null;
@@ -3256,7 +3302,9 @@ function editarSiniestro(id){
   loadRteSin('introduccion', s.introduccion||'');
   loadRteSin('inspeccion-narrativa', s.inspeccion_narrativa||'');
   g('s-notas').value=s.notas||'';
-  loadRteSin('estrategias', s.estrategias_observaciones||'');
+  loadRteSin('estrategias',   s.estrategias||s.estrategias_observaciones||'');
+  loadRteSin('observaciones', s.observaciones||'');
+  loadRteSin('actividades',   s.actividades||'');
   g('s-est').value=s.estatus||'asignado';
   g('s-fsin').value=s.fecha_siniestro||''; g('s-hora-ocurr').value=s.hora_ocurrencia||'';
   g('s-fasig').value=s.fecha_asignacion||''; g('s-hora-asig').value=s.hora_asignacion||'';
@@ -4152,7 +4200,7 @@ function buildFormal(s, secs){
   }
 
   if(secs.includes('estrategias')){
-    const estrat=lastInf.estrategias||s.estrategias_observaciones||'';
+    const estrat=lastInf.estrategias||s.estrategias||s.estrategias_observaciones||'';
     h+=`<div class="sec"><div class="sec-title">9&nbsp;&nbsp;Estrategias y observaciones</div><div class="narrative">${estrat||'Pendiente.'}</div></div>`;
   }
 
@@ -4942,7 +4990,8 @@ async function descargarWord(){
     new TableCell({columnSpan:4,borders:allB,shading:{fill:BLUE,type:ShadingType.CLEAR},
       margins:{top:100,bottom:100,left:120,right:120},
       children:[para2([txt('ESTIMACION: '+(pol.moneda||'MXN')+' '+fM(totReserva),{bold:true,size:22,color:WHITE}),txt('  100% neto de Deducible',{size:18,color:WHITE})],{sb:20,sa:20})]})]}));
-  if(s.estrategias_observaciones) portRows.push(fullRow('OBSERVACIONES:',s.estrategias_observaciones));
+  const obsPortada=[s.observaciones,s.estrategias,s.actividades].filter(Boolean).join('\n')||s.estrategias_observaciones||'';
+  if(obsPortada) portRows.push(fullRow('OBSERVACIONES:',obsPortada));
 
   // Tabla estimación
   let tablaEstim=null;
@@ -5354,7 +5403,7 @@ async function descargarWordGNP(){
     ]}),
     ep(),
     secTitle('9','Estrategias y observaciones'),
-    pr([tx(campoDesdInf(lastInf,'estrategias',s,'estrategias_observaciones'),{size:18})],{sb:60,sa:60}),
+    pr([tx([s.estrategias,s.observaciones,s.actividades].filter(Boolean).join('\n\n')||campoDesdInf(lastInf,'estrategias',s,'estrategias_observaciones')||'',{size:18})],{sb:60,sa:60}),
     ...(s.documentos_faltantes?[
       pr([tx('DOCUMENTOS SOLICITADOS FALTANTES',{bold:true,size:18})],{sb:80,sa:40}),
       pr([tx(s.documentos_faltantes,{size:18})],{sb:0,sa:60}),
@@ -5778,8 +5827,9 @@ function buildFormalGenerico(s, secs, aseg){
     <span style="font-weight:400;font-size:9px;margin-left:8px;">100% neto de Deducible</span>
   </div>`;
 
-  if(s.estrategias_observaciones){
-    h += `<table class="port-table"><tr><td class="lbl">OBSERVACIONES:</td><td class="val">${s.estrategias_observaciones}</td></tr></table>`;
+  const obsPG=[s.observaciones,s.estrategias,s.actividades].filter(Boolean).join('<br>')||s.estrategias_observaciones||'';
+  if(obsPG){
+    h += `<table class="port-table"><tr><td class="lbl">OBSERVACIONES:</td><td class="val">${obsPG}</td></tr></table>`;
   }
 
   // Pie de página 1
@@ -5876,7 +5926,7 @@ function buildFormalGenerico(s, secs, aseg){
 
   if(secs.includes('estrategias')||secs.includes('desarrollo')){
     h += `<div class="sec-title">12 &nbsp; Observaciones y actividades a realizar</div>
-    <div class="narrative">${s.estrategias_observaciones||'De momento ninguna.'}</div>`;
+    <div class="narrative">${[s.estrategias,s.observaciones,s.actividades].filter(Boolean).join('<br><br>')||s.estrategias_observaciones||'De momento ninguna.'}</div>`;
   }
 
   // ── FIRMAS ─────────────────────────────────────────────────────────
