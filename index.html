@@ -5692,7 +5692,7 @@ async function descargarWord(){
   const sinAjusts=data.sinajust.filter(a=>a.id_siniestro===s.id);
   const ajusts = sinAjusts.map(sa=>data.ajust.find(a=>a.id===sa.id_ajustador)).filter(Boolean);
   const tipoTitulo=infTitulo(lastInf);
-  const esFinal = tipoInf === 'final';
+  const esFinal = (lastInf?.tipo === 'final');
 
   // ── Helpers ───────────────────────────────────────────────────────
   const fDL=(d)=>{ if(!d)return ''; const[y,m,dy]=d.split('-');
