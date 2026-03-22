@@ -5816,20 +5816,25 @@ async function descargarWord(){
     const xmlEscLocal=(s)=>String(s||'')
       .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
-    // First, temporarily mask <w:txbxContent>...</w:txbxContent> blocks
-    // so their inner <w:p> elements are not processed
-    const txbxPlaceholders=[];
-    const masked=xml.replace(/<w:txbxContent>[\s\S]*?<\/w:txbxContent>/g, m=>{
-      const idx=txbxPlaceholders.length;
-      txbxPlaceholders.push(m);
-      return `||TXBX${idx}||`;
+    // Mask text boxes so inner <w:p> elements are not touched
+    const txbxStore=[];
+    const masked=xml.replace(/<w:txbxContent>[\s\S]*?<\/w:txbxContent>/g,m=>{
+      txbxStore.push(m);
+      return `||TXBX${txbxStore.length-1}||`;
     });
 
+    // For each paragraph: if its concatenated text contains a marker,
+    // collapse all <w:t> into the first one and clear the rest —
+    // this preserves ALL surrounding <w:r><w:rPr>...</w:rPr> structure
     const result=masked.replace(/<w:p[ >][\s\S]*?<\/w:p>/g, para=>{
-      const texts=[];
-      para.replace(/<w:t[^>]*>([^<]*)<\/w:t>/g,(_,t)=>{ texts.push(t); });
-      const full=texts.join('');
-      let matched=false, newFull=full;
+      // Get all <w:t> matches with positions
+      const tMatches=[...para.matchAll(/<w:t([^>]*)>([^<]*)<\/w:t>/g)];
+      if(!tMatches.length) return para;
+      const full=tMatches.map(m=>m[2]).join('');
+
+      // Check for any marker
+      let newFull=full;
+      let matched=false;
       for(const [ph,val] of Object.entries(fields)){
         const marker='['+ph+']';
         if(full.includes(marker)){
@@ -5838,18 +5843,26 @@ async function descargarWord(){
         }
       }
       if(!matched) return para;
-      const pPr=para.match(/<w:pPr>[\s\S]*?<\/w:pPr>/)?.[0]||'';
-      const boldPara=/<w:b\/>/.test(para);
-      const szM=para.match(/<w:sz w:val="(\d+)"/);
-      const sz=szM?szM[1]:'24';
-      const openTag=para.match(/^<w:p[^>]*>/)?.[0]||'<w:p>';
-      const space=(newFull!==newFull.trim()||newFull.includes('  '))?' xml:space="preserve"':'';
-      const newRun=`<w:r><w:rPr><w:rFonts w:ascii="Courier New" w:hAnsi="Courier New"/>${boldPara?'<w:b/><w:bCs/>':''}<w:sz w:val="${sz}"/><w:szCs w:val="${sz}"/></w:rPr><w:t${space}>${xmlEscLocal(newFull)}</w:t></w:r>`;
-      return `${openTag}${pPr}${newRun}</w:p>`;
+
+      // Rebuild: put entire new text in FIRST <w:t>, blank the rest
+      // This preserves all <w:r><w:rPr> structure exactly as-is
+      let first=true;
+      return para.replace(/<w:t([^>]*)>[^<]*<\/w:t>/g, (_,attrs)=>{
+        if(first){
+          first=false;
+          const space=(newFull!==newFull.trim()||newFull.includes('  '))?
+            ' xml:space="preserve"':'';
+          // Keep existing attrs but add space if needed
+          const finalAttrs=attrs.includes('xml:space')?attrs:
+            (space?` xml:space="preserve"`:attrs);
+          return `<w:t${finalAttrs}>${xmlEscLocal(newFull)}</w:t>`;
+        }
+        return '<w:t></w:t>';
+      });
     });
 
-    // Restore masked text boxes
-    return result.replace(/\|\|TXBX(\d+)\|\|/g,(_,i)=>txbxPlaceholders[parseInt(i)]);
+    // Restore text boxes
+    return result.replace(/\|\|TXBX(\d+)\|\|/g,(_,i)=>txbxStore[parseInt(i)]);
   }
 
 
