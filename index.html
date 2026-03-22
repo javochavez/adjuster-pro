@@ -5864,11 +5864,20 @@ async function descargarWord(){
 
 
   // Fill all XML files
+  console.log('Fill loop start');
   for(const fname of ['word/document.xml','word/header1.xml','word/header2.xml',
                        'word/footer1.xml','word/footer2.xml']){
-    const f=zip.file(fname); if(!f) continue;
-    zip.file(fname, fillXml(await f.async('string')));
+    const fobj=zip.file(fname);
+    if(!fobj){ console.log('skip:',fname); continue; }
+    try{
+      const xml=await fobj.async('string');
+      console.log('read:',fname,xml.length);
+      const filled=fillXml(xml);
+      console.log('filled:',fname);
+      zip.file(fname, filled);
+    }catch(fe){ console.error('fill error:',fname,fe.message,fe.stack?.slice(0,200)); }
   }
+  console.log('Fill loop done');
 
   // ── Replace localización images ───────────────────────────────────
   const grafLoc=(data.graf||[]).filter(g=>g.id_siniestro===s.id&&g.tipo==='localizacion'&&g.url);
