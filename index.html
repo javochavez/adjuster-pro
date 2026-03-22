@@ -818,6 +818,29 @@ body.modo-lectura .readonly-hidden { display:none !important; }
     </div>
     <div class="fg full">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+        <label style="margin-bottom:0;">Límite máximo de responsabilidad
+          <span style="font-size:10px;color:var(--text-ter);font-weight:400;">— editable, se guarda en la póliza</span>
+        </label>
+      </div>
+      <div class="rte-wrap">
+        <div class="rte-toolbar">
+          <button type="button" onclick="rteCmdSinLim('bold')"               title="Negrita"><strong>N</strong></button>
+          <button type="button" onclick="rteCmdSinLim('italic')"             title="Cursiva"><em>K</em></button>
+          <button type="button" onclick="rteCmdSinLim('underline')"          title="Subrayado"><u>S</u></button>
+          <span class="rte-sep"></span>
+          <button type="button" onclick="rteCmdSinLim('insertUnorderedList')" title="Lista con viñetas">≡•</button>
+          <button type="button" onclick="rteCmdSinLim('insertOrderedList')"   title="Lista numerada">≡1</button>
+          <span class="rte-sep"></span>
+          <button type="button" onclick="rteCmdSinLim('removeFormat')"       title="Quitar formato">✕</button>
+        </div>
+        <div id="sin-lim-texto-rte" class="rte-editor" contenteditable="true"
+          data-placeholder="Límite máximo de responsabilidad según póliza..."
+          oninput="syncSinLimTexto()" style="min-height:70px;"></div>
+        <textarea id="sin-lim-texto" style="display:none;"></textarea>
+      </div>
+    </div>
+    <div class="fg full">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
         <label style="margin-bottom:0;">Descripción del Asegurado
           <span style="font-size:10px;color:var(--text-ter);font-weight:400;">— se guarda en la póliza, disponible en todos sus siniestros</span>
         </label>
@@ -1116,9 +1139,32 @@ body.modo-lectura .readonly-hidden { display:none !important; }
       <select id="p-mon"><option value="MXN">MXN</option><option value="USD">USD</option><option value="EUR">EUR</option></select></div>
     <div class="fg"><label>Tipo de cambio</label><input type="number" id="p-tc" value="1" step="0.01"></div>
     <input type="hidden" id="p-suma">
-    <div class="fg"><label>Límite máx. responsabilidad</label><input type="number" id="p-lim-max" placeholder="0.00"></div>
-    <div class="fg"><label>Moneda límite</label>
-      <select id="p-lim-mon"><option value="MXN">MXN</option><option value="USD">USD</option><option value="EUR">EUR</option></select></div>
+    <input type="hidden" id="p-lim-max">
+    <input type="hidden" id="p-lim-mon" value="MXN">
+
+    <div class="fg full">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+        <label style="margin-bottom:0;">Límite máximo de responsabilidad
+          <span style="font-size:10px;color:var(--text-ter);font-weight:400;">(texto enriquecido)</span>
+        </label>
+      </div>
+      <div class="rte-wrap">
+        <div class="rte-toolbar">
+          <button type="button" onclick="rteCmdPolLim('bold')"               title="Negrita"><strong>N</strong></button>
+          <button type="button" onclick="rteCmdPolLim('italic')"             title="Cursiva"><em>K</em></button>
+          <button type="button" onclick="rteCmdPolLim('underline')"          title="Subrayado"><u>S</u></button>
+          <span class="rte-sep"></span>
+          <button type="button" onclick="rteCmdPolLim('insertUnorderedList')" title="Lista con viñetas">≡•</button>
+          <button type="button" onclick="rteCmdPolLim('insertOrderedList')"   title="Lista numerada">≡1</button>
+          <span class="rte-sep"></span>
+          <button type="button" onclick="rteCmdPolLim('removeFormat')"       title="Quitar formato">✕</button>
+        </div>
+        <div id="p-lim-texto-rte" class="rte-editor" contenteditable="true"
+          data-placeholder="ej. USD 500,000 por evento, con límite agregado anual de USD 2,000,000. Sujeto a deducible del 2% sobre el valor del daño, mínimo USD 5,000. No aplica para daños catastróficos."
+          oninput="syncPolLimTexto()" style="min-height:80px;"></div>
+        <textarea id="p-lim-texto" style="display:none;"></textarea>
+      </div>
+    </div>
 
     <div style="grid-column:1/-1;font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.06em;margin-top:6px;">Valores declarados totales (póliza)</div>
     <div class="fg"><label>Edificio total</label><input type="number" id="p-val-tot-edif" placeholder="0.00"></div>
@@ -3460,7 +3506,7 @@ function abrirModal(id){
     loadRteSin('bienes-amparados','');
     // Reset all RTE fields
     ['desc-riesgo','riesgos-cubiertos','introduccion','inspeccion-narrativa','desc','estrategias','observaciones','actividades'].forEach(s=>loadRteSin(s,''));
-    loadSinGiroAseg(''); loadSinDescAseg('');
+    loadSinLimTexto(''); loadSinGiroAseg(''); loadSinDescAseg('');
     delete g('s-inspeccion-narrativa-rte')?.dataset.editado;
     loadRteSin('introduccion', 'El presente informe preliminar se elabora en seguimiento de la designaci\u00f3n de [Compa\u00f1\u00eda], por parte de su apreciable [Funcionario], relativa a la atenci\u00f3n de la p\u00e9rdida sufrida por el Asegurado por [Describir el tipo de da\u00f1os y bienes afectados], hechos ocurridos el [Fecha del Siniestro] en su domicilio sito en [Direcci\u00f3n donde ocurrieron los da\u00f1os].\n\nSiguiendo las instrucciones de asignaci\u00f3n, de inmediato procedimos a contactar a [Persona de Contacto], quien nos [Detallar acuerdo para la inspecci\u00f3n, fecha, hora, etc.].\n\nComo acordado, el [Fecha de inspecci\u00f3n] a las [Hora], nos presentamos en [Sitio de la inspecci\u00f3n], lugar en el que fuimos atendidos por [Persona que atendi\u00f3] quien nos mostr\u00f3 los da\u00f1os sufridos.\n\nCon base en lo anterior y la informaci\u00f3n inicialmente recabada, presentamos a ustedes el presente Informe Preliminar.');
     g('s-aseg-direct').value='';
@@ -3651,6 +3697,7 @@ async function guardarSiniestro(){
   const polIdUpd=parseInt(v('s-poliza'))||null;
   if(polIdUpd){
     const polUpd={};
+    if(g('sin-lim-texto')) polUpd.limite_max_texto=v('sin-lim-texto')||null;
     if(g('sin-giro-aseg')) polUpd.giro_asegurado=v('sin-giro-aseg')||null;
     if(g('sin-desc-aseg')) polUpd.descripcion_asegurado=v('sin-desc-aseg')||null;
     if(Object.keys(polUpd).length) await db.from('polizas').update(polUpd).eq('id',polIdUpd);
@@ -3878,6 +3925,37 @@ async function guardarPolCobGrid(polId){
   }
 }
 
+// ── LÍMITE MÁXIMO RESPONSABILIDAD — póliza ───────────────────────────
+function rteCmdPolLim(cmd){
+  document.execCommand(cmd,false,null);
+  const rte=g('p-lim-texto-rte'); if(rte) rte.focus();
+  syncPolLimTexto();
+}
+function syncPolLimTexto(){
+  const rte=g('p-lim-texto-rte'),ta=g('p-lim-texto');
+  if(rte&&ta) ta.value=rte.innerHTML;
+}
+function loadPolLimTexto(html){
+  const rte=g('p-lim-texto-rte'),ta=g('p-lim-texto');
+  if(rte) rte.innerHTML=html||'';
+  if(ta)  ta.value=html||'';
+}
+// ── LÍMITE MÁXIMO RESPONSABILIDAD — modal-sin ─────────────────────────
+function rteCmdSinLim(cmd){
+  document.execCommand(cmd,false,null);
+  const rte=g('sin-lim-texto-rte'); if(rte) rte.focus();
+  syncSinLimTexto();
+}
+function syncSinLimTexto(){
+  const rte=g('sin-lim-texto-rte'),ta=g('sin-lim-texto');
+  if(rte&&ta) ta.value=rte.innerHTML;
+}
+function loadSinLimTexto(html){
+  const rte=g('sin-lim-texto-rte'),ta=g('sin-lim-texto');
+  if(rte) rte.innerHTML=html||'';
+  if(ta)  ta.value=html||'';
+}
+
 // ── GIRO ASEGURADO — póliza ──────────────────────────────────────────
 function rteCmdPolGiro(cmd){
   document.execCommand(cmd,false,null);
@@ -3942,7 +4020,7 @@ function loadSinDescAseg(html){
 function mostrarDescAsegSin(polId){
   if(!polId) return;
   const pol=data.pol.find(p=>p.id===parseInt(polId));
-  if(pol){ loadSinGiroAseg(pol.giro_asegurado||''); loadSinDescAseg(pol.descripcion_asegurado||''); }
+  if(pol){ loadSinLimTexto(pol.limite_max_texto||''); loadSinGiroAseg(pol.giro_asegurado||''); loadSinDescAseg(pol.descripcion_asegurado||''); }
 }
 
 async function guardarPoliza(){
@@ -3967,6 +4045,7 @@ async function guardarPoliza(){
     ubicacion_riesgo:v('p-ubic-riesgo')||null,
     interes_asegurado:v('p-interes')||null,
     giro_asegurado:v('p-giro-aseg')||null,
+    limite_max_texto:v('p-lim-texto')||null,
     descripcion_asegurado:v('p-desc-aseg')||null,
     condiciones_especiales:v('p-condiciones')||null,
     notas:v('p-notas')
@@ -4003,6 +4082,7 @@ function editarPoliza(id){
   g('p-dom-legal').value=p.domicilio_legal||'';
   g('p-ubic-riesgo').value=p.ubicacion_riesgo||'';
   g('p-interes').value=p.interes_asegurado||'';
+  loadPolLimTexto(p.limite_max_texto||'');
   loadPolGiroAseg(p.giro_asegurado||'');
   loadPolDescAseg(p.descripcion_asegurado||'');
   g('p-condiciones').value=p.condiciones_especiales||'';
@@ -5823,7 +5903,7 @@ async function descargarWord(){
     secTitle('8','Procedencia'),
     body2(s.fundamento||'De acuerdo como se dieron los hechos, condiciones contractuales de la póliza y bienes afectados; el siniestro es de carácter '+procTxt.split(' (')[0]+', y al momento no se tiene exclusión alguna aplicable.'),ep(),
     secTitle('9','Póliza de seguro'),
-    ...[['Tipo de Seguro',pol.tipo_seguro||''],['Vigencia del Seguro','Desde las 12:00 hrs. del día '+fD(pol.vigencia_ini)+', hasta las 12:00 hrs. del '+fD(pol.vigencia_fin)+'.'],['Bienes Amparados',(s.bienes_amparados?s.bienes_amparados.replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ').trim():'')],['Bienes Cubiertos',(s.descripcion_danios_html?s.descripcion_danios_html.replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ').trim():s.bienes_danados)||''],['Riesgos Cubiertos',(s.riesgos_cubiertos?s.riesgos_cubiertos.replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ').trim():s.riesgo_afectado)||''],['Sumas aseguradas', sublims.length ? sublims.map(sl=>sl.concepto+': '+(sl.moneda||'MXN')+' '+fM(sl.monto)+(sl.deducible?' (Ded.: '+sl.deducible+')':'')+(sl.coaseguro_pct?', Coas.: '+sl.coaseguro_pct+'%':'')).join(' | ')+(sublims.length>1?' | TOTAL: '+(sublims[0].moneda||'MXN')+' '+fM(sublims.reduce((a,s)=>a+(s.monto||0),0)):'') : (pol.moneda||'MXN')+' '+fM(pol.suma_asegurada)],['Deducible',dedTxt],['Coaseguro',s.coaseguro?(s.coaseguro_detalle||'Sí'):'N/A']].map(([label,value])=>para2([txt(label+'  ',{bold:true,size:20}),txt(value,{size:20})],{sb:60,sa:60,indent:720})),
+    ...[['Tipo de Seguro',pol.tipo_seguro||''],['Vigencia del Seguro','Desde las 12:00 hrs. del día '+fD(pol.vigencia_ini)+', hasta las 12:00 hrs. del '+fD(pol.vigencia_fin)+'.'],['Bienes Amparados',(s.bienes_amparados?s.bienes_amparados.replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ').trim():'')],['Bienes Cubiertos',(s.descripcion_danios_html?s.descripcion_danios_html.replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ').trim():s.bienes_danados)||''],['Riesgos Cubiertos',(s.riesgos_cubiertos?s.riesgos_cubiertos.replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ').trim():s.riesgo_afectado)||''],['Sumas aseguradas', sublims.length ? sublims.map(sl=>sl.concepto+': '+(sl.moneda||'MXN')+' '+fM(sl.monto)+(sl.deducible?' (Ded.: '+sl.deducible+')':'')+(sl.coaseguro_pct?', Coas.: '+sl.coaseguro_pct+'%':'')).join(' | ')+(sublims.length>1?' | TOTAL: '+(sublims[0].moneda||'MXN')+' '+fM(sublims.reduce((a,s)=>a+(s.monto||0),0)):'') : (pol.moneda||'MXN')+' '+fM(pol.suma_asegurada)],['Límite máx. responsabilidad',(pol.limite_max_texto?pol.limite_max_texto.replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ').trim():'')],['Deducible',dedTxt],['Coaseguro',s.coaseguro?(s.coaseguro_detalle||'Sí'):'N/A']].map(([label,value])=>para2([txt(label+'  ',{bold:true,size:20}),txt(value,{size:20})],{sb:60,sa:60,indent:720})),
     ep(),
     secTitle('10','Determinación de la reserva'),
     para2([txt('10.1  RECLAMACIÓN',{bold:true,size:20,color:BLUE})],{sb:120,sa:60}),
@@ -6678,6 +6758,7 @@ function buildFormalGenerico(s, secs, aseg){
       ['Bienes Amparados', s.bienes_amparados||''],
       ['Bienes Cubiertos', s.descripcion_danios_html||s.bienes_danados||''],
       ['Riesgos Cubiertos', s.riesgos_cubiertos||s.riesgo_afectado||''],
+      ['Límite máx. responsabilidad', pol.limite_max_texto||''],
       ['Sumas aseguradas', sublims.length?sublims.map(sl=>sl.concepto+': '+(sl.moneda||'MXN')+' '+fM(sl.monto)+(sl.deducible?' (Ded.: '+sl.deducible+')':'')+(sl.coaseguro_pct?', Coas.: '+sl.coaseguro_pct+'%':'')).join(' | ')+(sublims.length>1?' | TOTAL: '+(sublims[0].moneda||'MXN')+' '+fM(sublims.reduce((a,s)=>a+(s.monto||0),0)):''):`${pol.moneda||'MXN'} ${fM(pol.suma_asegurada)}`],
       ['Deducible', dedTxt],
       ['Coaseguro', s.coaseguro?(s.coaseguro_detalle||'Sí'):'N/A'],
