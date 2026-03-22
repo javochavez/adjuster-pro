@@ -5822,4 +5822,1076 @@ async function descargarWord(){
     const masked=xml.replace(/<w:txbxContent>[\s\S]*?<\/w:txbxContent>/g, m=>{
       const idx=txbxPlaceholders.length;
       txbxPlaceholders.push(m);
-      return `
+      return `||TXBX${idx}||`;
+    });
+
+    const result=masked.replace(/<w:p[ >][\s\S]*?<\/w:p>/g, para=>{
+      const texts=[];
+      para.replace(/<w:t[^>]*>([^<]*)<\/w:t>/g,(_,t)=>{ texts.push(t); });
+      const full=texts.join('');
+      let matched=false, newFull=full;
+      for(const [ph,val] of Object.entries(fields)){
+        const marker='['+ph+']';
+        if(full.includes(marker)){
+          newFull=newFull.replace(marker,String(val||''));
+          matched=true;
+        }
+      }
+      if(!matched) return para;
+      const pPr=para.match(/<w:pPr>[\s\S]*?<\/w:pPr>/)?.[0]||'';
+      const boldPara=/<w:b\/>/.test(para);
+      const szM=para.match(/<w:sz w:val="(\d+)"/);
+      const sz=szM?szM[1]:'24';
+      const openTag=para.match(/^<w:p[^>]*>/)?.[0]||'<w:p>';
+      const space=(newFull!==newFull.trim()||newFull.includes('  '))?' xml:space="preserve"':'';
+      const newRun=`<w:r><w:rPr><w:rFonts w:ascii="Courier New" w:hAnsi="Courier New"/>${boldPara?'<w:b/><w:bCs/>':''}<w:sz w:val="${sz}"/><w:szCs w:val="${sz}"/></w:rPr><w:t${space}>${xmlEscLocal(newFull)}</w:t></w:r>`;
+      return `${openTag}${pPr}${newRun}</w:p>`;
+    });
+
+    // Restore masked text boxes
+    return result.replace(/\|\|TXBX(\d+)\|\|/g,(_,i)=>txbxPlaceholders[parseInt(i)]);
+  }
+
+
+  // Fill all XML files
+  console.log('Fill loop start');
+  for(const fname of ['word/document.xml','word/header1.xml','word/header2.xml',
+                       'word/footer1.xml','word/footer2.xml']){
+    const fobj=zip.file(fname);
+    if(!fobj){ console.log('skip:',fname); continue; }
+    try{
+      const xml=await fobj.async('string');
+      console.log('read:',fname,xml.length);
+      const filled=fillXml(xml);
+      console.log('filled:',fname);
+      zip.file(fname, filled);
+    }catch(fe){ console.error('fill error:',fname,fe.message,fe.stack?.slice(0,200)); }
+  }
+  console.log('Fill loop done');
+  console.log('Generating ZIP output...');
+
+  // ── Replace localización images ───────────────────────────────────
+  const grafLoc=(data.graf||[]).filter(g=>g.id_siniestro===s.id&&g.tipo==='localizacion'&&g.url);
+  if(grafLoc.length){
+    // Replace image1.png with first localización image
+    try{
+      const r0=await fetch(grafLoc[0].url);
+      if(r0.ok){
+        const ab=await r0.arrayBuffer();
+        zip.file('word/media/image1.png',ab);
+      }
+    }catch(e){/*skip*/}
+    if(grafLoc.length>1){
+      try{
+        const r1=await fetch(grafLoc[1].url);
+        if(r1.ok){
+          const ab=await r1.arrayBuffer();
+          zip.file('word/media/image2.jpeg',ab);
+        }
+      }catch(e){/*skip*/}
+    }
+  }
+
+  // ── Generate and download ─────────────────────────────────────────
+  let outBytes, blob;
+  try {
+    outBytes=await zip.generateAsync({type:'uint8array',compression:'DEFLATE'});
+    console.log('generateAsync OK, size:',outBytes.length);
+    blob=new Blob([outBytes],{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
+    console.log('Blob OK, size:',blob.size);
+  } catch(ge){
+    console.error('generateAsync FAILED:',ge.message,ge.stack?.slice(0,300));
+    toast('Error generando ZIP: '+ge.message);
+    return;
+  }
+  const tipoStr=(lastInf.tipo||'preliminar').toUpperCase().replace(/\s+/g,'_');
+  const filename=(s.numero_exp||'INFORME')+'_'+tipoStr+'.docx';
+
+  if(window.showSaveFilePicker){
+    try{
+      const fh=await window.showSaveFilePicker({
+        suggestedName:filename,
+        types:[{description:'Documento Word',accept:{'application/vnd.openxmlformats-officedocument.wordprocessingml.document':['.docx']}}]
+      });
+      const w=await fh.createWritable();
+      await w.write(blob); await w.close();
+      toast('Informe guardado.'); return;
+    }catch(e){ if(e.name==='AbortError') return; }
+  }
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download=filename; a.style.display='none';
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{ document.body.removeChild(a); URL.revokeObjectURL(url); },1000);
+  toast('Informe '+tipoStr+' descargado.');
+  } catch(globalErr){
+    console.error('descargarWord ERROR:', globalErr.message, globalErr.stack);
+    toast('Error: '+globalErr.message);
+  }
+}
+
+
+async function descargarWordGNP(){
+  const id=parseInt(v('r-caso'));
+  if(!id){ toast('Selecciona un expediente primero.'); return; }
+  const s=data.sin.find(x=>x.id===id); if(!s) return;
+  toast('Generando informe Word GNP…');
+
+  const { Document, Packer, Paragraph, Table, TableRow, TableCell, TextRun, ImageRun,
+          AlignmentType, WidthType, BorderStyle, ShadingType, VerticalAlign,
+          Header, Footer, LevelFormat, PageBreak, PageNumber } = docx;
+
+  const pol      = data.pol.find(p=>p.id===s.id_poliza)||{};
+  const asdo     = data.asdo.find(a=>a.id===pol.id_asegurado)||{};
+  const lastInf  = lastInfParaReporte(s.id);
+  const tipoTitulo = infTitulo(lastInf);
+  let rvList = rvListParaInforme(s.id, lastInf);
+  rvList.forEach(r=>{ r.concepto=CONCEPTO_LABEL[r.concepto]||r.concepto||'Cobertura'; });
+  const coasRows = data.coas.filter(c=>c.id_siniestro===s.id);
+  const sinAjusts= data.sinajust.filter(a=>a.id_siniestro===s.id);
+  const ajusts   = sinAjusts.map(sa=>data.ajust.find(a=>a.id===sa.id_ajustador)).filter(Boolean);
+  const now      = new Date().toLocaleDateString('es-MX',{day:'2-digit',month:'long',year:'numeric'});
+
+  const fD = d=>{ if(!d) return ''; const[y,m,dy]=d.split('-'); return dy+'/'+m+'/'+y; };
+  const fDL= d=>{ if(!d) return ''; const ms=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre']; const[y,m,dy]=d.split('-'); return parseInt(dy)+' de '+ms[parseInt(m)-1]+' de '+y; };
+  const fT = t=>t?t.slice(0,5):'';
+  const fM = n=>{ if(!n&&n!==0) return '—'; return new Intl.NumberFormat('es-MX',{minimumFractionDigits:2}).format(n); };
+
+  const cob1       = rvList[0]||{};
+  const res_bruta  = rvList.reduce((a,r)=>a+(r.monto||0),0);
+  const dep_pct    = rvList.length?(rvList.reduce((a,r)=>a+(r.depreciacion_pct||0),0)/rvList.length):0;
+  const p_ajustada = rvList.reduce((a,r)=>a+(r.monto_perdida_estimada||r.monto||0),0);
+  const deducible  = rvList.reduce((a,r)=>a+(r.deducible||0),0);
+  const p_indemniz = p_ajustada - deducible;
+  const coas_aseg  = rvList.reduce((a,r)=>a+(r.monto_coaseguro||0),0);
+  const bajo_seg   = rvList.reduce((a,r)=>a+(r.monto_bajo_seguro||0),0);
+  const res_neta   = p_indemniz - bajo_seg - coas_aseg;
+  const bases_det  = rvList.map(r=>r.bases_determinacion).filter(Boolean).join(' ');
+  const monedaStr  = pol.moneda||'MXN';
+
+  // ── Helpers ─────────────────────────────────────────────────────────
+  const BLUE='1F3864', GRAY='F2F2F2', BLACK='000000', WHITE='FFFFFF';
+  const bThin={style:BorderStyle.SINGLE,size:4,color:'999999'};
+  const bNone={style:BorderStyle.NONE,size:0,color:'FFFFFF'};
+  const allB={top:bThin,bottom:bThin,left:bThin,right:bThin};
+  const noB ={top:bNone,bottom:bNone,left:bNone,right:bNone};
+  const PAGE_W=12240, CONTENT_W=9639; // letter, margins from original
+
+  const tx=(text,o={})=>new TextRun({text:String(text??''),font:'Arial',
+    size:o.size||18,bold:o.bold||false,color:o.color||BLACK,italics:o.italics||false});
+  const pr=(children,o={})=>new Paragraph({
+    children:Array.isArray(children)?children:[children],
+    alignment:o.align||AlignmentType.LEFT,
+    spacing:{before:o.sb??40,after:o.sa??40},
+    border:o.border,
+  });
+  const ep=()=>pr([tx('')],{sb:20,sa:20});
+
+  const mkC=(content,o={})=>new TableCell({
+    width:o.w?{size:o.w,type:WidthType.DXA}:undefined,
+    columnSpan:o.span,
+    shading:o.bg?{fill:o.bg,type:ShadingType.CLEAR}:undefined,
+    borders:o.borders??allB,
+    margins:{top:60,bottom:60,left:100,right:100},
+    verticalAlign:o.va||VerticalAlign.TOP,
+    children:Array.isArray(content)?content:[
+      pr([tx(String(content??''),{bold:o.bold,size:o.size||18,color:o.color||BLACK})],
+         {align:o.align||AlignmentType.LEFT,sb:20,sa:20})
+    ],
+  });
+  const lbl=(t,w)=>mkC(t,{w,bold:true,size:17,bg:'F0F0F0'});
+  const val=(t,w,sp)=>mkC(t,{w,size:17,span:sp});
+  const secTitle=(num,text)=>pr(
+    [tx(num+'. '+text.toUpperCase(),{bold:true,size:19})],
+    {sb:180,sa:80,border:{bottom:{style:BorderStyle.SINGLE,size:4,color:'999999',space:2}}}
+  );
+
+  // ── Banner GNP (ImageRun) ────────────────────────────────────────────
+  let bannerRun=null;
+  try{
+    const b64str = GNP_BANNER_B64.split(',')[1];
+    const byteArr= Uint8Array.from(atob(b64str),c=>c.charCodeAt(0));
+    // Ancho exacto del área de contenido (entre márgenes): 9639 twips → 643px
+    bannerRun = new ImageRun({data:byteArr,transformation:{width:643,height:64},type:'jpg'});
+  }catch(e){ bannerRun=null; }
+
+  const makeHeader=()=>new Header({children:[
+    bannerRun
+      ? new Paragraph({children:[bannerRun],spacing:{before:0,after:0}})
+      : new Paragraph({children:[new TextRun({text:'GNP / ALMARAZ AJUSTADORES, S.A.',bold:true,size:20,color:BLUE,font:'Arial'})],spacing:{before:0,after:0}}),
+  ]});
+  const makeFooter=()=>new Footer({children:[
+    new Table({
+      width:{size:CONTENT_W,type:WidthType.DXA},
+      columnWidths:[CONTENT_W-2000,2000],
+      borders:{top:{style:BorderStyle.SINGLE,size:2,color:'CCCCCC',space:2},
+               bottom:bNone,left:bNone,right:bNone,insideH:bNone,insideV:bNone},
+      rows:[new TableRow({children:[
+        new TableCell({width:{size:CONTENT_W-2000,type:WidthType.DXA},borders:noB,
+          margins:{top:60,bottom:0,left:0,right:120},
+          children:[pr([tx(asdo.nombre||'',{size:16,color:'4472C4'}),tx('  '+(s.tramite_gnp||s.numero_siniestro||''),{size:16,color:'4472C4'})],{sb:0,sa:0})]}),
+        new TableCell({width:{size:2000,type:WidthType.DXA},borders:noB,
+          margins:{top:60,bottom:0,left:0,right:0},verticalAlign:VerticalAlign.CENTER,
+          children:[pr([
+            new TextRun({text:'Página ',size:16,color:'4472C4',font:'Arial'}),
+            new TextRun({children:[PageNumber.CURRENT],size:16,color:'4472C4',font:'Arial'}),
+            new TextRun({text:' de ',size:16,color:'4472C4',font:'Arial'}),
+            new TextRun({children:[PageNumber.TOTAL_PAGES],size:16,color:'4472C4',font:'Arial'}),
+          ],{align:AlignmentType.RIGHT,sb:0,sa:0})]}),
+      ]})]
+    }),
+  ]});
+
+  // ── TABLA DE IDENTIFICACIÓN ──────────────────────────────────────────
+  const vigStr = pol.vigencia_ini
+    ? fD(pol.vigencia_ini)+' al '+fD(pol.vigencia_fin) : '';
+
+  // Anchos auxiliares usados en el resto de secciones
+  const W2=Math.floor(CONTENT_W/2);
+
+  // 6 columnas calibradas al contenido real (suma = CONTENT_W = 9639)
+  // C1=lbl  C2=val  C3=lbl  C4=val  C5=lbl  C6=val
+  const C1=1480, C2=2200, C3=1380, C4=1600, C5=1100;
+  const C6=CONTENT_W-C1-C2-C3-C4-C5; // 1879
+  const COLS=[C1,C2,C3,C4,C5,C6];
+
+  // helpers con ancho explícito
+  const id6lbl=(t,w,sp)=>mkC(t,{w,bold:true,size:17,bg:'F0F0F0',span:sp});
+  const id6val=(t,w,sp)=>mkC(t,{w,size:17,span:sp});
+
+  const idRows=[
+    // Fila 1: No.Siniestro | val | Jefe Depto | val(span 3)
+    new TableRow({children:[
+      id6lbl('No. Siniestro',C1), id6val(s.numero_siniestro||'',C2),
+      id6lbl('Jefe Depto',C3),    id6val(s.gnp_jefe_depto||'',C4+C5+C6,3),
+    ]}),
+    // Fila 2: No.Trámite | val | Oficina | val | Póliza | val
+    new TableRow({children:[
+      id6lbl('No. Trámite',C1), id6val(s.tramite_gnp||'',C2),
+      id6lbl('Oficina',C3),     id6val(s.gnp_oficina||'',C4),
+      id6lbl('Póliza',C5),      id6val(pol.numero||'',C6),
+    ]}),
+    // Fila 3: Ramo | val | Cobertura | val | Vigencia | val
+    new TableRow({children:[
+      id6lbl('Ramo',C1),      id6val(pol.ramo||'',C2),
+      id6lbl('Cobertura',C3),   id6val(pol.subramo||s.subramo||'',C4),
+      id6lbl('Vigencia',C5),  id6val(vigStr,C6),
+    ]}),
+    // Fila 4: Fecha siniestro | val | Agente | val(span 3)
+    new TableRow({children:[
+      id6lbl('Fecha de siniestro',C1), id6val(fD(s.fecha_siniestro),C2),
+      id6lbl('Agente',C3),             id6val(pol.agente||'',C4+C5+C6,3),
+    ]}),
+    // Fila 5: Asegurado | val(span 2) | Referencia Asegurado | val(span 2)
+    new TableRow({children:[
+      id6lbl('Asegurado',C1),              id6val(asdo.nombre||'',C2+C3,2),
+      id6lbl('Referencia Asegurado',C4),   id6val(s.referencia_asegurado||'',C5+C6,2),
+    ]}),
+    // Fila 6: Importe reclamado | val | Moneda | val(span 3)
+    new TableRow({children:[
+      id6lbl('Importe reclamado',C1), id6val(fM(p_ajustada),C2),
+      id6lbl('Moneda',C3),
+      id6val('MXN '+(monedaStr==='MXN'?'(X)':'( )')+'   USD '+(monedaStr==='USD'?'(X)':'( )'),C4+C5+C6,3),
+    ]}),
+    // Fila 7: Clave ajustador | val | Referencia ajustador | val(span 3)
+    new TableRow({children:[
+      id6lbl('Clave ajustador GNP',C1), id6val(s.gnp_clave_ajustador||'',C2),
+      id6lbl('Ref. AASA',C3), id6val(s.numero_exp||'',C4+C5+C6,3),
+    ]}),
+    // Fila 8: Giro — ancho completo (span 5)
+    new TableRow({children:[
+      id6lbl('Giro del asegurado',C1), id6val(s.giro_asegurado||'',C2+C3+C4+C5+C6,5),
+    ]}),
+    // Fila 9: Causa | val | Comentario causa | val(span 3)
+    new TableRow({children:[
+      id6lbl('Causa del siniestro',C1), id6val(s.causa||'',C2),
+      id6lbl('Comentario de la causa',C3), id6val(s.causa_comentario||'',C4+C5+C6,3),
+    ]}),
+    // Fila 10: Clave evento | val | Riesgo afectado | val(span 3)
+    new TableRow({children:[
+      id6lbl('Clave evento (catastrófico)',C1), id6val(s.clave_evento_catastrofico||'',C2),
+      id6lbl('Riesgo afectado',C3), id6val(s.riesgo_afectado||'',C4+C5+C6,3),
+    ]}),
+  ];
+
+  // ── ESTIMACIÓN COBERTURAS (tabla 3 cols) ─────────────────────────────
+  const bHdr={style:BorderStyle.SINGLE,size:4,color:'1F3864'};
+  const cobW=[CONTENT_W-4400,2200,2200];
+  const cobHdr=(t,w)=>mkC(t,{w,bold:true,size:17,bg:'1F3864',color:'FFFFFF',align:AlignmentType.CENTER});
+  const cobLbl=(t)=>mkC(t,{w:cobW[0],size:17,bg:'E8EDF5',bold:true});
+  const cobVal=(t,idx)=>mkC(t,{w:cobW[idx],size:17,align:AlignmentType.RIGHT});
+  const cob1Bajo=(cob1.monto_bajo_seguro||0);
+  const cob1Perdida=(cob1.monto_perdida_estimada||cob1.monto||0);
+  const cob1MPA=cob1Perdida-(cob1.deducible||0);  // Monto Pérdida Indemnizable = Pérdida − Deducible
+  const cobRows=[
+    new TableRow({children:[cobHdr('Coberturas o secciones',cobW[0]),cobHdr('Cobertura 1  '+(cob1.concepto||''),cobW[1]),cobHdr('Estimación Total',cobW[2])]}),
+    new TableRow({children:[cobLbl('Reserva bruta'),cobVal(monedaStr+' '+fM(cob1.monto||0),1),cobVal(monedaStr+' '+fM(res_bruta),2)]}),
+    new TableRow({children:[cobLbl('Depreciación '+dep_pct.toFixed(2)+'% promedio'),mkC('',{w:cobW[1]}),mkC('',{w:cobW[2]})]}),
+    new TableRow({children:[cobLbl('Monto Pérdida Ajustada'),cobVal(monedaStr+' '+fM(cob1.monto_perdida_estimada||cob1.monto||0),1),cobVal(monedaStr+' '+fM(p_ajustada),2)]}),
+    new TableRow({children:[cobLbl('Deducible'),cobVal(monedaStr+' '+fM(cob1.deducible||0),1),cobVal(monedaStr+' '+fM(deducible),2)]}),
+    new TableRow({children:[cobLbl('Monto Pérdida Indemnizable'),cobVal(monedaStr+' '+fM(cob1MPA),1),cobVal(monedaStr+' '+fM(p_indemniz),2)]}),
+    new TableRow({children:[cobLbl(cob1.coaseguro_pct?'Coaseguro a cargo del Asegurado ('+cob1.coaseguro_pct.toFixed(2)+'% s/MPA-Ded.)':'Coaseguro a cargo del Asegurado'),cobVal(cob1.coaseguro_pct?monedaStr+' '+fM(cob1.monto_coaseguro||0):'N/A',1),cobVal(coas_aseg?monedaStr+' '+fM(coas_aseg):'N/A',2)]}),
+    new TableRow({children:[cobLbl('Bajo Seguro'),cobVal(cob1Bajo?monedaStr+' '+fM(cob1Bajo):'N/A',1),cobVal(bajo_seg?monedaStr+' '+fM(bajo_seg):'N/A',2)]}),
+    new TableRow({children:[cobLbl('Reserva Neta'),cobVal(monedaStr+' '+fM(cob1MPA-cob1Bajo-(cob1.monto_coaseguro||0)),1),cobVal(monedaStr+' '+fM(res_neta),2)]}),
+    new TableRow({children:[new TableCell({columnSpan:3,borders:allB,width:{size:CONTENT_W,type:WidthType.DXA},shading:{fill:'FAFBFC',type:ShadingType.CLEAR},margins:{top:60,bottom:60,left:100,right:100},children:[pr([tx('Especificar las bases que se tomaron para determinar la reserva:',{bold:true,size:17})],{sb:0,sa:20}),pr([tx(bases_det,{size:17,italics:true})],{sb:0,sa:0})]})]}),
+    new TableRow({children:[cobLbl('Honorarios ajustador'),mkC('',{w:cobW[1]}),mkC('',{w:cobW[2]})]}),
+    new TableRow({children:[cobLbl('Honorarios perito y/o asesor'),mkC('',{w:cobW[1]}),mkC('',{w:cobW[2]})]}),
+    new TableRow({children:[cobLbl('Gastos ajuste'),mkC('',{w:cobW[1]}),mkC('',{w:cobW[2]})]}),
+    new TableRow({children:[cobLbl('Gastos perito y/o asesor'),mkC('',{w:cobW[1]}),mkC('',{w:cobW[2]})]}),
+  ];
+
+  // ── COASEGURO tabla ───────────────────────────────────────────────────
+  const coasHdr=(t,w)=>mkC(t,{w,bold:true,size:17,bg:'1F3864',color:'FFFFFF',align:AlignmentType.CENTER});
+  const coasW=[CONTENT_W-5400,1800,1800,1800];
+  const coasDataRows=coasRows.length?coasRows.map(c=>new TableRow({children:[val(c.nombre||'',coasW[0]),val(c.referencia||'',coasW[1]),val(c.porcentaje?c.porcentaje+'%':'',coasW[2]),val('',coasW[3])]})):
+    [1,2,3,4].map(()=>new TableRow({children:[val('',coasW[0]),val('',coasW[1]),val('',coasW[2]),val('',coasW[3])]}));
+  const coasTableRows=[
+    new TableRow({children:[coasHdr('Nombre de Compañía Coaseguradora',coasW[0]),coasHdr('Referencia (Acuse de recibo)',coasW[1]),coasHdr('Distribución de pérdida',coasW[2]),coasHdr('Distribución de honorarios',coasW[3])]}),
+    ...coasDataRows,
+  ];
+
+  // ── CRONOLOGÍA ────────────────────────────────────────────────────────
+  const crW=Math.floor(CONTENT_W/4);
+  const crHdr=(t)=>mkC(t,{w:crW,bold:true,size:17,bg:'F0F0F0',align:AlignmentType.CENTER});
+  const crVal=(t)=>mkC(t,{w:crW,size:17,align:AlignmentType.CENTER});
+  const cronoRows=[
+    new TableRow({children:[crHdr('Fecha ocurrencia'),crHdr('Fecha asignación'),crHdr('Fecha 1er. contacto'),crHdr('Fecha 1ª visita')]}),
+    new TableRow({children:[crVal(fD(s.fecha_siniestro)),crVal(fD(s.fecha_asignacion)),crVal(fD(s.fecha_primer_contacto)),crVal(fD(s.fecha_primera_visita))]}),
+    new TableRow({children:[crHdr('Hora ocurrencia'),crHdr('Hora asignación'),crHdr('Hora 1er. contacto'),crHdr('Hora 1ª visita')]}),
+    new TableRow({children:[crVal(fT(s.hora_ocurrencia)),crVal(fT(s.hora_asignacion)),crVal(fT(s.hora_primer_contacto)),crVal(fT(s.hora_primera_visita))]}),
+  ];
+
+  // ── FIRMAS ────────────────────────────────────────────────────────────
+  const firmList=ajusts.length?ajusts:[{nombre:'Javier Chávez Á.',cnsf:'C34388'},{nombre:'Ernesto Almaraz Ll.',cnsf:'C15979'}];
+  const fW=Math.floor(CONTENT_W/firmList.length);
+  const sigCells=firmList.map(aj=>new TableCell({width:{size:fW,type:WidthType.DXA},borders:noB,margins:{top:0,bottom:0,left:80,right:80},children:[
+    pr([tx('',{size:18})],{sb:0,sa:60,border:{top:{style:BorderStyle.SINGLE,size:4,color:BLACK,space:2}}}),
+    pr([tx(aj.nombre||'',{bold:true,size:18})],{align:AlignmentType.CENTER,sb:40,sa:20}),
+    pr([tx('Cédula CNSF: '+(aj.cnsf||''),{size:16,color:'555555'})],{align:AlignmentType.CENTER,sb:0,sa:0}),
+  ]}));
+
+  // ── DOCUMENT BODY ─────────────────────────────────────────────────────
+  const children=[
+    pr([tx('Ciudad de México, '+now+'.',{size:19,bold:true})],{sb:0,sa:80}),
+    pr([tx(tipoTitulo,{size:24,bold:true})],{sb:0,sa:40}),
+    pr([tx('AT´N.: '+wDestN,{size:19,bold:true})],{sb:0,sa:20}),
+    wDestC?pr([tx(wDestC,{size:18,italics:false})],{sb:0,sa:4}):null,
+    pr([tx('PRESENTE',{size:19,bold:true})],{sb:0,sa:120}),
+    new Table({width:{size:CONTENT_W,type:WidthType.DXA},columnWidths:COLS,rows:idRows}),
+    ep(),
+    secTitle('1','Estimación por coberturas y secciones'),
+    new Table({width:{size:CONTENT_W,type:WidthType.DXA},columnWidths:cobW,rows:cobRows}),
+    ep(),
+    secTitle('2','Coaseguro'),
+    new Table({width:{size:CONTENT_W,type:WidthType.DXA},columnWidths:coasW,rows:coasTableRows}),
+    ep(),
+    secTitle('3','Reaseguro'),
+    new Table({width:{size:CONTENT_W,type:WidthType.DXA},columnWidths:[W2,W2],rows:[
+      new TableRow({children:[lbl('Existe cláusula de control o cooperación de reclamos',W2),val('SI '+(s.reaseguro?'( X )':'( )')+'   NO '+(!s.reaseguro?'( X )':'( )'),W2)]}),
+      new TableRow({children:[lbl('Corredor de Reaseguro',W2),val(s.reas_corredor||'',W2)]}),
+    ]}),
+    ep(),
+    secTitle('4','Resultado de la inspección'),
+    new Table({width:{size:CONTENT_W,type:WidthType.DXA},columnWidths:[W2,W2],rows:[
+      new TableRow({children:[lbl('Fecha y hora de inspección',W2),val((s.fecha_primera_visita?fDL(s.fecha_primera_visita)+(s.hora_primera_visita?' a las '+fT(s.hora_primera_visita)+' horas':''):''),W2)]}),
+      new TableRow({children:[lbl('Persona entrevistada / Puesto y/o cargo',W2),val((s.inspeccion_persona||'')+(s.inspeccion_cargo?' / '+s.inspeccion_cargo:''),W2)]}),
+      new TableRow({children:[lbl('Domicilio asegurado / Teléfono',W2),val((pol.domicilio_legal||'')+(s.inspeccion_tel?' / '+s.inspeccion_tel:''),W2)]}),
+      new TableRow({children:[lbl('Ubicación Afectada',W2),val(s.inspeccion_domicilio||s.lugar_siniestro||'',W2)]}),
+      new TableRow({children:[lbl('Lugar del siniestro',W2),val(s.lugar_siniestro||'',W2)]}),
+      new TableRow({children:[lbl('Bienes afectados y daños sufridos',W2),val(s.bienes_danados||'',W2)]}),
+      new TableRow({children:[lbl('Intervención de Autoridades',W2),val(s.intervencion_autoridades?(s.intervencion_autoridades_detalle||'Sí'):'No',W2)]}),
+    ]}),
+    ep(),
+    secTitle('5','Desarrollo detallado del siniestro'),
+    pr([tx(campoDesdInf(lastInf,'desarrollo_siniestro',s,'descripcion'),{size:18})],{sb:60,sa:60}),
+    ep(),
+    secTitle('6','Salvamento'),
+    new Table({width:{size:CONTENT_W,type:WidthType.DXA},columnWidths:[W2,W2],rows:[
+      new TableRow({children:[new TableCell({columnSpan:2,borders:allB,width:{size:CONTENT_W,type:WidthType.DXA},margins:{top:60,bottom:60,left:100,right:100},children:[pr([tx('SI '+(s.salvamento==='si'?'( X )':'( )')+'   NO '+(s.salvamento==='no'?'( X )':'( )'),{size:18})],{sb:0,sa:0})]})]}),
+      new TableRow({children:[lbl('Detalle de los bienes que se obtendrán como salvamento',W2),val(s.salvamento_detalle||'',W2)]}),
+      new TableRow({children:[lbl('Valor estimado de los bienes',W2),val(s.salvamento_valor_estimado?fM(s.salvamento_valor_estimado):'',W2)]}),
+      new TableRow({children:[lbl('Ubicación física',W2),val(s.salvamento_ubicacion||'',W2)]}),
+      new TableRow({children:[lbl('Persona a entrevistar / Teléfono',W2),val((s.salvamento_persona_contacto||'')+(s.salvamento_telefono?' / '+s.salvamento_telefono:''),W2)]}),
+      new TableRow({children:[lbl('Email para contacto / Móvil',W2),val((s.salvamento_email||'')+(s.salvamento_movil?' / '+s.salvamento_movil:''),W2)]}),
+      new TableRow({children:[lbl('Nombre de posible comprador',W2),val(s.salvamento_comprador||'',W2)]}),
+    ]}),
+    ep(),
+    secTitle('7','Recuperación'),
+    new Table({width:{size:CONTENT_W,type:WidthType.DXA},columnWidths:[W2,W2],rows:[
+      new TableRow({children:[new TableCell({columnSpan:2,borders:allB,width:{size:CONTENT_W,type:WidthType.DXA},margins:{top:60,bottom:60,left:100,right:100},children:[pr([tx('SI '+(s.recuperacion?'( X )':'( )')+'   NO '+(!s.recuperacion?'( X )':'( )'),{size:18})],{sb:0,sa:0})]})]}),
+      new TableRow({children:[lbl('Terceros responsables',W2),val(s.recuperacion_terceros||s.recuperacion_terceros_responsables||'',W2)]}),
+      new TableRow({children:[lbl('Nombre del recuperador',W2),val(s.recuperacion_nombre_recuperador||'',W2)]}),
+      new TableRow({children:[lbl('Carta Porte o Bill of Lading',W2),val(s.recuperacion_carta_porte||'',W2)]}),
+      new TableRow({children:[lbl('Fecha prescripción de la acción',W2),val(fD(s.recuperacion_fecha_prescripcion),W2)]}),
+    ]}),
+    ep(),
+    secTitle('8','Transportes'),
+    new Table({width:{size:CONTENT_W,type:WidthType.DXA},columnWidths:[W2,W2],rows:[
+      new TableRow({children:[lbl('Tipo de transporte',W2),val(s.transporte_tipo||'',W2)]}),
+      new TableRow({children:[lbl('Puerto o frontera',W2),val(s.transporte_frontera||'',W2)]}),
+      new TableRow({children:[lbl('Placa o matrícula',W2),val(s.transporte_placa||'',W2)]}),
+      new TableRow({children:[lbl('Destino del embarque',W2),val(s.transporte_destino||'',W2)]}),
+      new TableRow({children:[lbl('Compañía transportista',W2),val(s.transporte_compania||'',W2)]}),
+    ]}),
+    ep(),
+    secTitle('9','Estrategias y observaciones'),
+    pr([tx([s.estrategias,s.observaciones,s.actividades].filter(Boolean).join('\n\n')||campoDesdInf(lastInf,'estrategias',s,'estrategias_observaciones')||'',{size:18})],{sb:60,sa:60}),
+    ...(s.documentos_faltantes?[
+      pr([tx('DOCUMENTOS SOLICITADOS FALTANTES',{bold:true,size:18})],{sb:80,sa:40}),
+      pr([tx(s.documentos_faltantes,{size:18})],{sb:0,sa:60}),
+    ]:[]),
+    ep(),
+    secTitle('10','Ajustador responsable y titular del despacho'),
+    ...(ajusts.length?ajusts:[{nombre:'Javier Chávez Á.',cnsf:'C34388',correo:'jchavez@aasa.com.mx',telefono:'(55)6302-9178'},{nombre:'Ernesto Almaraz Ll.',cnsf:'C15979',correo:'ealmaraz@aasa.com.mx',telefono:'(55)5593-8823'}]).map(a=>pr([tx(a.nombre+(a.telefono?' / '+a.telefono:'')+(a.correo?' / '+a.correo:''),{size:18})],{sb:40,sa:20})),
+    ep(),
+    secTitle('11','Cronología preliminar'),
+    new Table({width:{size:CONTENT_W,type:WidthType.DXA},columnWidths:[crW,crW,crW,crW],rows:cronoRows}),
+    ep(),
+    pr([tx('Atentamente',{size:18})],{align:AlignmentType.CENTER,sb:400,sa:40}),
+    pr([tx('ALMARAZ AJUSTADORES, S. A.',{bold:true,size:18})],{align:AlignmentType.CENTER,sb:0,sa:400}),
+    new Table({width:{size:CONTENT_W,type:WidthType.DXA},columnWidths:firmList.map(()=>fW),
+      borders:{top:bNone,bottom:bNone,left:bNone,right:bNone,insideH:bNone,insideV:bNone},
+      rows:[new TableRow({children:sigCells})]}),
+  ];
+
+  const doc=new Document({
+    styles:{default:{document:{run:{font:'Arial',size:18,color:BLACK}}}},
+    sections:[{
+      properties:{
+        page:{size:{width:PAGE_W,height:15840},
+              margin:{top:1418,bottom:851,left:1701,right:900,header:709,footer:709}},
+        titlePage:false,
+      },
+      headers:{default:makeHeader()},
+      footers:{default:makeFooter()},
+      children,
+    }],
+  });
+
+  let blob;
+  try{
+    blob=await Packer.toBlob(doc);
+  }catch(err){
+    toast('Error generando Word GNP: '+err.message);
+    console.error('Packer GNP error:',err);
+    return;
+  }
+  const filename=(s.tramite_gnp||s.numero_exp)+'_INFORME_GNP.docx';
+  if(window.showSaveFilePicker){
+    try{
+      const fh=await window.showSaveFilePicker({
+        suggestedName:filename,
+        types:[{description:'Documento Word',accept:{'application/vnd.openxmlformats-officedocument.wordprocessingml.document':['.docx']}}]
+      });
+      const writable=await fh.createWritable();
+      await writable.write(blob);
+      await writable.close();
+      toast('Informe GNP guardado.');
+      return;
+    }catch(e){ if(e.name==='AbortError') return; }
+  }
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download=filename; a.style.display='none';
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{ document.body.removeChild(a); URL.revokeObjectURL(url); },1000);
+  toast('Informe GNP descargado.');
+}
+
+
+// ══════════════════════════════════════════════════════════════════════
+// HELPERS COMPARTIDOS PARA GENERADORES DE INFORMES
+// ══════════════════════════════════════════════════════════════════════
+
+// Título dinámico según tipo e índice
+function infTitulo(lastInf){
+  if(!lastInf||!lastInf.tipo||lastInf.tipo==='preliminar') return 'INFORME PRELIMINAR';
+  if(lastInf.tipo==='final')        return 'INFORME FINAL';
+  if(lastInf.tipo==='nota_tecnica') return 'NOTA TÉCNICA';
+  if(lastInf.tipo==='actualizacion'){
+    const n = lastInf.numero_version||1;
+    return 'INFORME DE ACTUALIZACIÓN ' + n;
+  }
+  return 'INFORME PRELIMINAR';
+}
+
+// Informe a usar para generación: respeta override de infId si viene del tab Informes o del selector de Reportes
+function lastInfParaReporte(sinId){
+  const sel = g('r-caso');
+  // Check explicit infId override (from tab Informes "Generar" button)
+  const overrideId = sel ? parseInt(sel.dataset.infId||'0') : 0;
+  const todos2 = data.inf.filter(i=>i.id_siniestro===sinId);
+  if(overrideId){
+    const found = todos2.find(i=>i.id===overrideId);
+    if(found){ delete sel.dataset.infId; return found; }
+  }
+  // Check selector in Reportes panel (for actualizacion type)
+  if(tipoReporte==='actualizacion'){
+    const rptSel = g('r-inf-selector');
+    const rptInfId = rptSel ? parseInt(rptSel.value)||0 : 0;
+    if(rptInfId){
+      const found2 = todos2.find(i=>i.id===rptInfId);
+      if(found2) return found2;
+    }
+    // Default: most recent actualizacion
+    const acts = todos2.filter(i=>i.tipo==='actualizacion').sort((a,b)=>b.id-a.id);
+    if(acts.length) return acts[0];
+  }
+  return todos2.sort((a,b)=>b.id-a.id)[0]||{};
+}
+
+// Reservas a usar: las del informe (id_informe=X) si es actualización
+function rvListParaInforme(sinId, lastInf){
+  const todas = data.res.filter(r=>r.id_siniestro===sinId);
+  if(lastInf?.id && lastInf.tipo==='actualizacion'){
+    const delInf = todas.filter(r=>r.id_informe===lastInf.id);
+    if(delInf.length) return delInf;
+  }
+  // Fallback: vigentes (más reciente por concepto)
+  const vigMap={};
+  todas.forEach(r=>{if(!vigMap[r.concepto]||r.id>vigMap[r.concepto].id)vigMap[r.concepto]=r;});
+  return Object.values(vigMap);
+}
+
+// Campo narrativo: usa el campo del informe si existe, si no el del expediente
+function campoDesdInf(lastInf, campoInf, s, campoSin){
+  if(lastInf&&lastInf[campoInf]) return lastInf[campoInf];
+  if(s&&campoSin&&s[campoSin]) return s[campoSin];
+  return '';
+}
+
+
+// ══════════════════════════════════════════════════════════════════════
+// buildCoberturaTableHTML — tabla multi-cobertura para PDF/HTML
+// rvList: array de reservas, moneda: 'MXN'|'USD', showTotal: bool
+// ══════════════════════════════════════════════════════════════════════
+function buildCoberturaTableHTML(rvList, moneda){
+  if(!rvList||!rvList.length) return '';
+  rvList=rvList.map(r=>({...r,concepto:CONCEPTO_LABEL[r.concepto]||r.concepto||'Cobertura'}));
+  const fN=n=>fmtMXN(n||0);
+  const showTotal=rvList.length>1;
+
+  const calc=rvList.map(r=>{
+    const bruta=r.monto||0;
+    const perdida=r.monto_perdida_estimada||r.monto||0;
+    const dep=r.depreciacion_pct||0;
+    const ded=r.deducible||0;
+    const coasPct=r.coaseguro_pct||0;
+    const coas=r.monto_coaseguro||((perdida-ded)*(coasPct/100));
+    const bajo=r.monto_bajo_seguro||0;
+    const neta=perdida-bajo-ded-coas;  // Pérdida − Bajo Seguro − Deducible − Coaseguro
+    return {r,bruta,perdida,dep,ded,coasPct,coas,bajo,neta,indemniz:perdida-ded};
+  });
+
+  let totBruta=0,totPerdida=0,totDed=0,totCoas=0,totBajo=0,totNeta=0;
+  calc.forEach(x=>{totBruta+=x.bruta;totPerdida+=x.perdida;totDed+=x.ded;totCoas+=x.coas;totBajo+=x.bajo;totNeta+=x.neta;});
+
+  const th=(t,extra='')=>`<th style="background:#1F3864;color:#fff;font-size:9px;font-weight:700;padding:4px 7px;border:1px solid #1F3864;text-align:center;${extra}">${t}</th>`;
+  const td=(t,bg='#fff',bold=false,right=false)=>`<td style="border:1px solid #ccc;padding:3px 7px;font-size:9px;background:${bg};font-weight:${bold?'700':'400'};text-align:${right?'right':'left'};">${t}</td>`;
+  const tdL=(t,bg='#f0f0f0')=>`<td style="border:1px solid #ccc;padding:3px 7px;font-size:9px;background:${bg};font-weight:600;">${t}</td>`;
+  const m=(n)=>moneda+' '+fN(n);
+
+  let h=`<table style="width:100%;border-collapse:collapse;margin-bottom:6px;font-size:9px;">
+  <thead><tr>${th('Coberturas o secciones','text-align:left;')}`;
+  calc.forEach((x,i)=>{ h+=th(x.r.concepto||('Cobertura '+(i+1))); });
+  if(showTotal) h+=th('ESTIMACIÓN TOTAL','background:#0F2744;');
+  h+=`</tr></thead><tbody>`;
+
+  const ROWS=[
+    {label:'Reserva bruta',                           key:'bruta',    tot:totBruta},
+    {label:'Depreciación % promedio',                 key:'dep',      tot:'—',    fmt:'pct'},
+    {label:'Monto Pérdida Ajustada',                 key:'perdida',  tot:totPerdida},
+    {label:'Deducible',                               key:'ded',      tot:totDed},
+    {label:'Monto Pérdida Indemnizable',             key:'indemniz', tot:totPerdida-totDed},
+    {label:'Coaseguro a cargo del Asegurado',        key:'coas',     tot:totCoas, coas:true},
+    {label:'Bajo Seguro',                             key:'bajo',     tot:totBajo, bajo:true},
+    {label:'Reserva Neta',                            key:'neta',     tot:totNeta, bold:true, hl:true},
+  ];
+  ROWS.forEach((rd,ri)=>{
+    const bg=rd.hl?'#EBF3FF':(ri%2===0?'#F5F6F8':'#FFFFFF');
+    const bgT=rd.hl?'#D0E4FF':(ri%2===0?'#EAECEF':'#F5F6F8');
+    // For coaseguro row, append % to label if any coverage has it
+    let labelDisplay = rd.label;
+    if(rd.coas){
+      const pcts = calc.filter(x=>x.coasPct>0).map(x=>x.coasPct.toFixed(2)+'%');
+      if(pcts.length) labelDisplay += ' ('+pcts.join(' / ')+' s/MPA-Ded.)';
+    }
+    h+=`<tr>${tdL(labelDisplay,bg)}`;
+    calc.forEach(x=>{
+      const v=x[rd.key];
+      const disp=rd.fmt==='pct'?(v===0?'—':v.toFixed(2)+'%'):((rd.coas||rd.bajo)&&v===0?'N/A':m(v));
+      h+=td(disp,bg,rd.bold,true);
+    });
+    if(showTotal){
+      const t2=typeof rd.tot==='number'?(rd.coas&&rd.tot===0?'N/A':m(rd.tot)):rd.tot;
+      h+=td(t2,bgT,true,true);
+    }
+    h+=`</tr>`;
+  });
+
+  // Bases de reserva
+  h+=`<tr>${tdL('Especificar las bases que se tomaron para determinar la reserva','#F0F4FA')}`;
+  calc.forEach(x=>{ h+=td(x.r.bases_determinacion||'','#F0F4FA',false,false); });
+  if(showTotal) h+=td('','#E8EDF5');
+  h+=`</tr>`;
+
+  h+=`</tbody></table>`;
+  return h;
+}
+
+function buildFormalGenerico(s, secs, aseg){
+  const pol      = data.pol.find(p=>p.id===s.id_poliza)||{};
+  const asdo     = data.asdo.find(a=>a.id===pol.id_asegurado)||{};
+  const now      = new Date().toLocaleDateString('es-MX',{day:'2-digit',month:'long',year:'numeric'});
+  const lastInf  = lastInfParaReporte(s.id);
+  const tipoTitulo = infTitulo(lastInf);
+  const esAct      = lastInf.tipo==='actualizacion';
+
+  // ── Financieros ────────────────────────────────────────────────────
+  let rvList = rvListParaInforme(s.id, lastInf);
+  rvList.forEach(r=>{ r.concepto=CONCEPTO_LABEL[r.concepto]||r.concepto||'Cobertura'; });
+  const sublims = data.sublim.filter(sl=>sl.id_poliza===pol.id);
+  const coasRows= data.coas.filter(c=>c.id_siniestro===s.id);
+  const sinAjusts= data.sinajust.filter(a=>a.id_siniestro===s.id);
+  const ajusts   = sinAjusts.map(sa=>data.ajust.find(a=>a.id===sa.id_ajustador)).filter(Boolean);
+
+  const totReserva = rvList.reduce((acc,r)=>{
+    const p=r.monto_perdida_estimada||r.monto||0, d=r.deducible||0;
+    const c=r.monto_coaseguro||((p-d)*(r.coaseguro_pct||0)/100);
+    const b2=r.monto_bajo_seguro||0;return acc+(p-b2-d-c);
+  },0);
+
+  const fD = d=>{ if(!d) return '—'; const[y,m,dy]=d.split('-'); return dy+'/'+m+'/'+y; };
+  const fM = n=>{ if(!n&&n!==0) return '—'; return new Intl.NumberFormat('es-MX',{minimumFractionDigits:2}).format(n); };
+
+  const PROC_TXT = {
+    procedente   :'PROCEDENTE ( X )   IMPROCEDENTE ( )',
+    improcedente :'PROCEDENTE ( )   IMPROCEDENTE ( X )',
+    por_determinar:'POR DETERMINAR ( X )'
+  }[s.procedencia||'procedente'];
+
+  const SALV_TXT = {
+    si           :'Si ( X )   NO ( )   Por determinar ( )',
+    no           :'Si ( )   NO ( X )   Por determinar ( )',
+    por_determinar:'Si ( )   NO ( )   Por determinar ( X )'
+  }[s.salvamento||'por_determinar'];
+
+  const dedTxt = rvList.map(r=>r.bases_determinacion).filter(Boolean).join('. ');
+
+  // ── CSS embebido — espeja el Word ──────────────────────────────────
+  const CSS = `
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'Arial',sans-serif;background:#fff;color:#111;font-size:10px;line-height:1.45;}
+
+    /* ── ENCABEZADO página 1 ── */
+    .pg1-header{display:flex;justify-content:flex-end;align-items:flex-start;padding-bottom:0;margin-bottom:10px;}
+    .pg1-header-right{text-align:right;}
+    .pg1-logo{height:32px;width:auto;display:block;margin-left:auto;margin-bottom:6px;}
+    .pg1-titulo{font-size:14px;font-weight:700;color:#2E5090;white-space:nowrap;}
+
+    /* ── PIE DE PÁGINA 1 ── */
+    .pg1-footer{display:flex;justify-content:space-between;border-top:2px solid #1F3864;
+      padding-top:6px;margin-top:20px;font-size:9px;color:#444;}
+    .pg1-footer-left .empresa{font-weight:700;color:#1F3864;font-size:10px;margin-bottom:3px;}
+    .pg1-footer-right{text-align:right;}
+
+    /* ── PORTADA: bloques ── */
+    .fecha-doc{font-size:10px;margin-bottom:8px;}
+    .destinatario-box{border:1px solid #999;background:#F2F2F2;padding:10px 14px;margin-bottom:6px;}
+    .dest-aseg{font-size:14px;font-weight:700;margin-bottom:6px;}
+    .dest-presente{font-size:10px;margin-bottom:10px;}
+    .dest-nombre{font-size:10px;font-weight:700;margin-bottom:2px;margin-top:0;}
+    .dest-depto{font-size:10px;}
+
+    /* ── TABLA GENERAL portada ── */
+    .port-table{width:100%;border-collapse:collapse;margin-bottom:4px;}
+    .port-table td{border:1px solid #999;font-size:10px;padding:4px 7px;vertical-align:top;}
+    .port-table .lbl{background:#BDD7EE;font-weight:700;color:#1F3864;white-space:nowrap;width:1%;}
+    .port-table .val{background:#fff;}
+
+    /* ── TABLA FECHAS ── */
+    .fechas-table{width:100%;border-collapse:collapse;margin-bottom:4px;}
+    .fechas-table td{border:2px solid #1F3864;padding:6px 8px;text-align:center;vertical-align:middle;}
+    .fechas-table .fh{background:#1F3864;color:#fff;font-weight:700;font-size:9px;text-transform:uppercase;}
+    .fechas-table .fv{font-weight:700;color:#1F3864;font-size:10px;}
+
+    /* ── ESTIMACIÓN PORTADA ── */
+    .estimacion-total{background:#1F3864;color:#fff;font-weight:700;font-size:11px;
+      padding:8px 10px;text-align:left;margin:4px 0;}
+
+    /* ── SECCIONES NARRATIVAS ── */
+    .sec-title{font-size:11px;font-weight:700;color:#1F3864;border-bottom:2px solid #1F3864;
+      padding-bottom:2px;margin:12px 0 5px;text-transform:uppercase;}
+    .sec-sub{font-size:10px;font-weight:700;color:#1F3864;margin:8px 0 4px;}
+    .narrative{font-size:10px;line-height:1.6;margin-left:20px;margin-bottom:6px;white-space:pre-wrap;}
+
+    /* ── TABLA ESTIMACIÓN sección 10 ── */
+    .est-table{width:100%;border-collapse:collapse;margin:6px 0;}
+    .est-table th{background:#1F3864;color:#fff;font-size:9px;font-weight:700;
+      padding:5px 7px;text-align:center;border:1px solid #1F3864;}
+    .est-table td{border:1px solid #ccc;padding:4px 7px;font-size:10px;}
+    .est-table td.lbl{background:#F2F2F2;font-weight:600;}
+    .est-table td.num{text-align:right;}
+    .est-table tr.total td{background:#E8F0FE;font-weight:700;}
+
+    /* ── TABLA PÓLIZA ── */
+    .pol-row{display:flex;margin-bottom:3px;font-size:10px;}
+    .pol-lbl{font-weight:700;min-width:140px;flex-shrink:0;}
+
+    /* ── FIRMAS ── */
+    .firmas-wrap{display:flex;gap:20px;margin-top:30px;}
+    .firma-item{flex:1;text-align:center;}
+    .firma-line{border-top:1px solid #333;margin-bottom:4px;margin-top:40px;}
+    .firma-nombre{font-weight:700;font-size:10px;}
+    .firma-cnsf{font-size:9px;color:#555;}
+
+    @media print{
+      @page{
+        margin:15mm 12mm 15mm 15mm;
+        /* Suppress browser default header/footer (URL, page number) */
+        margin-header:0;
+        margin-footer:0;
+      }
+      body{padding:0;}
+      .no-break{page-break-inside:avoid;}
+    }
+    /* Chrome/Edge: hide browser-injected header/footer */
+    @page { size: auto; margin: 15mm 12mm 15mm 15mm; }
+  `;
+
+  // ── Helper: fila de portada ────────────────────────────────────────
+  const portRow = (lbl, val) =>
+    `<tr><td class="lbl">${lbl}</td><td class="val" colspan="3">${val||''}</td></tr>`;
+  const portRow2 = (lbl1,val1,lbl2,val2) =>
+    `<tr><td class="lbl">${lbl1}</td><td class="val">${val1||''}</td>
+         <td class="lbl">${lbl2}</td><td class="val">${val2||''}</td></tr>`;
+
+  // ── PORTADA ────────────────────────────────────────────────────────
+  let h = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
+    <title>${s.numero_exp} — ${tipoTitulo}</title>
+    <style>${CSS}</style></head><body>`;
+
+  // Encabezado página 1: logo derecha + INFORME PRELIMINAR
+  h += `<div class="pg1-header">
+    <div class="pg1-header-right">
+      ${logoDataUrl?`<img src="${logoDataUrl}" class="pg1-logo" alt="AASA">`:'<div style="font-size:18px;font-weight:900;color:#1F3864;margin-bottom:6px;">AASA</div>'}
+      <div class="pg1-titulo">INFORME PRELIMINAR</div>
+    </div>
+  </div>`;
+
+  h += `<div class="fecha-doc">${now}</div>`;
+
+  // Bloque destinatario
+  const fgCont   = data.cont.find(co=>co.id===lastInf.id_contacto_dest)||null;
+  const fgNombre = lastInf.destinatario||(fgCont?fgCont.nombre:'')||'';
+  const fgCargo  = lastInf.jefe_depto||(fgCont?fgCont.cargo:'')||'Siniestros Daños';
+  h += `<div class="destinatario-box no-break">
+    <div class="dest-aseg">${aseg.nombre||''}</div>
+    <div class="dest-presente">Presente</div>
+    ${fgNombre?`<div class="dest-nombre">${fgNombre}</div><div class="dest-depto">${fgCargo}</div>`:''}
+  </div>`;
+
+  // Tabla identificación
+  h += `<table class="port-table no-break">
+    <tr>
+      <td class="lbl">Siniestro&nbsp;:</td><td class="val">${s.numero_siniestro||''}</td>
+      <td class="lbl">Póliza&nbsp;:</td><td class="val">${pol.numero||''}</td>
+    </tr>
+    <tr>
+      <td class="lbl">Ref. AASA&nbsp;:</td><td class="val" colspan="3">${s.numero_exp||''}</td>
+    </tr>
+    ${portRow('ASEGURADO', asdo.nombre||'')}
+    ${portRow('DOMICILIO FISCAL', pol.domicilio_legal||'')}
+    ${portRow('GIRO DEL NEGOCIO:', s.giro_asegurado||'')}
+  </table>`;
+
+  // Tabla de fechas: 4 columnas con etiqueta+valor, bordes azul marino
+  const vigTxt = (fD(pol.vigencia_ini)||'—')+' al '+(fD(pol.vigencia_fin)||'—');
+  h += `<table class="fechas-table no-break">
+    <tr>
+      <td class="fh">VIGENCIA</td>
+      <td class="fh">SINIESTRO</td>
+      <td class="fh">ASIGNACIÓN</td>
+      <td class="fh">1a. INSPECCIÓN</td>
+    </tr>
+    <tr>
+      <td class="fv">${vigTxt}</td>
+      <td class="fv">${fD(s.fecha_siniestro)}</td>
+      <td class="fv">${fD(s.fecha_asignacion)}</td>
+      <td class="fv">${fD(s.fecha_primera_visita)}</td>
+    </tr>
+    <tr>
+      <td class="fh">1er CONTACTO</td>
+      <td colspan="3" style="background:#F8FAFC;"></td>
+    </tr>
+    <tr>
+      <td class="fv">${fD(s.fecha_primer_contacto)}</td>
+      <td colspan="3" style="background:#fff;"></td>
+    </tr>
+  </table>`;
+
+  // Resto de filas portada
+  h += `<table class="port-table no-break">
+    ${portRow('LUGAR DEL EVENTO:', s.lugar_siniestro||pol.ubicacion_riesgo||'')}
+    ${portRow('BREVE NARRACIÓN DE LOS HECHOS:', s.descripcion||'')}
+    ${portRow('SEGURO', pol.tipo_seguro||'')}
+    ${portRow('CAUSA PRÓXIMA DEL EVENTO', s.causa||'')}
+    ${portRow('DAÑOS OCURRIDOS', s.bienes_danados||'')}
+    ${portRow2('RAMO', pol.ramo||'', 'COBERTURA', s.subramo||pol.subramo||'')}
+    ${portRow('RIESGO AFECTADO', s.riesgo_afectado||'')}
+    ${portRow('DEDUCIBLE', dedTxt)}
+    ${portRow('COASEGURO', s.coaseguro?(s.coaseguro_detalle||'Sí'):'N/A')}
+    ${portRow('BIENES AFECTADOS:', s.bienes_danados||'')}
+    ${portRow('SITUACIÓN ACTUAL:', s.situacion_actual||'')}
+    ${portRow('RECLAMACIÓN:', PROC_TXT)}
+    ${portRow('FUNDAMENTO:', s.fundamento||'')}
+    ${portRow('INTERVENCIÓN DE AUTORIDADES:', s.intervencion_autoridades?(s.intervencion_autoridades_detalle||'Sí'):'N/A.')}
+    ${portRow('SUBROGACIÓN:', s.subrogacion||'N/A.')}
+    ${portRow('SALVAMENTO:', SALV_TXT)}
+    ${portRow('ASESORES:', s.asesores||'No aplican')}
+    ${portRow('SUMA ASEGURADA:', pol.suma_asegurada?`<strong>${pol.moneda||'MXN'} ${fM(pol.suma_asegurada)}</strong>`:'')}
+    ${portRow('SUMAS ASEGURADAS:', sublims.length?sublims.map(sl=>`${sl.concepto}: ${sl.moneda||'MXN'} ${fM(sl.monto)}`).join('&nbsp;&nbsp;|&nbsp;&nbsp;')+(sublims.length>1?'&nbsp;&nbsp;<strong>TOTAL: '+(sublims[0].moneda||'MXN')+' '+fM(sublims.reduce((a,s)=>a+(s.monto||0),0))+'</strong>':''):'No aplica')}
+  </table>`;
+
+  // Estimación total destacada
+  h += `<div class="estimacion-total">
+    ESTIMACIÓN: ${pol.moneda||'MXN'} ${fM(totReserva)}
+    <span style="font-weight:400;font-size:9px;margin-left:8px;">100% neto de Deducible</span>
+  </div>`;
+
+  const obsPG=[s.observaciones,s.estrategias,s.actividades].filter(Boolean).join('<br>')||s.estrategias_observaciones||'';
+  if(obsPG){
+    h += `<table class="port-table"><tr><td class="lbl">OBSERVACIONES:</td><td class="val">${obsPG}</td></tr></table>`;
+  }
+
+  // Pie de página 1
+  h += `<div class="pg1-footer">
+    <div class="pg1-footer-left">
+      <div class="empresa">ALMARAZ AJUSTADORES, S.A.</div>
+      <div>PBX +52 55 5593-8823</div>
+      <div>aasa.mexico@aasa.com.mx</div>
+    </div>
+    <div class="pg1-footer-right">
+      <div>Calle Miguel Hidalgo 61, Oficina 3</div>
+      <div>Col. San Jerónimo Lídice, Alcaldía La Magdalena Contreras</div>
+      <div>C.P. 10200 Ciudad de México, México</div>
+    </div>
+  </div>`;
+
+  // ── SECCIONES NARRATIVAS ───────────────────────────────────────────
+  if(secs.includes('desarrollo')){
+    h += `<div style="page-break-before:always;"></div>`;
+
+    h += `<div class="sec-title">1 &nbsp; Introducción</div>
+    <div class="narrative">${campoDesdInf(lastInf,'introduccion',s,'introduccion')||campoDesdInf(lastInf,'desarrollo_siniestro',s,'descripcion')}</div>`;
+
+    h += `<div class="sec-title">2 &nbsp; Asegurado</div>
+    <div class="sec-sub">2.1 &nbsp; Descripción general del riesgo asegurado</div>
+    <div class="narrative">${s.descripcion_riesgo||s.descripcion||''}</div>
+    <div class="sec-sub">2.2 &nbsp; Giro del asegurado</div>
+    <div class="narrative">${s.giro_asegurado||''}</div>
+    <div class="sec-sub">2.3 &nbsp; Ubicación donde ocurrió el siniestro</div>
+    <div class="narrative">${s.lugar_siniestro||pol.ubicacion_riesgo||pol.domicilio_legal||''}</div>`;
+  }
+
+  if(secs.includes('inspeccion')){
+    h += `<div class="sec-title">3 &nbsp; Inspección del siniestro</div>
+    <div class="narrative">${s.inspeccion_narrativa||campoDesdInf(lastInf,'inspeccion_narrativa',s,'inspeccion_narrativa')||('El '+fD(s.fecha_primera_visita)+(s.hora_primera_visita?', a las '+s.hora_primera_visita.slice(0,5)+' hrs.':'')+', nos presentamos en el domicilio afectado, sito en '+(s.inspeccion_domicilio||s.lugar_siniestro||'')+', donde fuimos atendidos por '+(s.inspeccion_persona||'')+(s.inspeccion_cargo?', '+s.inspeccion_cargo:'')+', quien nos mostró los daños, observando, lo siguiente:')}</div>`;
+  }
+
+  if(secs.includes('desarrollo')){
+    h += `<div class="sec-title">4 &nbsp; Cómo ocurrió el siniestro</div>
+    <div class="narrative">${campoDesdInf(lastInf,'desarrollo_siniestro',s,'descripcion')}</div>`;
+
+    h += `<div class="sec-title">5 &nbsp; Causa del siniestro</div>
+    <div class="narrative">${s.causa||''}</div>`;
+  }
+
+  if(secs.includes('inspeccion')){
+    h += `<div class="sec-title">6 &nbsp; Bienes afectados y daños sufridos</div>
+    <div class="narrative">${s.descripcion_danios_html||s.bienes_danados||''}</div>`;
+
+    h += `<div class="sec-title">7 &nbsp; Alcance del daño</div>
+    <div class="narrative">${s.situacion_actual||''}</div>`;
+  }
+
+  if(secs.includes('desarrollo')){
+    h += `<div class="sec-title">8 &nbsp; Procedencia</div>
+    <div class="narrative">${s.fundamento||`De acuerdo como se dieron los hechos, condiciones contractuales de la póliza y bienes afectados; el siniestro es de carácter ${PROC_TXT.split(' (')[0]}, y al momento no se tiene exclusión alguna aplicable.`}</div>`;
+  }
+
+  if(secs.includes('identificacion')){
+    h += `<div class="sec-title">9 &nbsp; Póliza de seguro</div>`;
+    const polData = [
+      ['Tipo de Seguro', pol.tipo_seguro||''],
+      ['Vigencia del Seguro', `Desde las 12:00 hrs. del día ${fD(pol.vigencia_ini)}, hasta las 12:00 hrs. del ${fD(pol.vigencia_fin)}.`],
+      ['Bienes Amparados', pol.bienes_amparados||''],
+      ['Bienes Amparados', s.bienes_amparados||''],
+      ['Bienes Cubiertos', s.descripcion_danios_html||s.bienes_danados||''],
+      ['Riesgos Cubiertos', s.riesgos_cubiertos||s.riesgo_afectado||''],
+      ['Naturaleza y Alcance de los Daños', s.naturaleza_alcance_danios||''],
+      ['Límite máx. responsabilidad', pol.limite_max_texto||''],
+      ['Sumas aseguradas', sublims.length?sublims.map(sl=>sl.concepto+': '+(sl.moneda||'MXN')+' '+fM(sl.monto)+(sl.deducible?' (Ded.: '+sl.deducible+')':'')+(sl.coaseguro_pct?', Coas.: '+sl.coaseguro_pct+'%':'')).join(' | ')+(sublims.length>1?' | TOTAL: '+(sublims[0].moneda||'MXN')+' '+fM(sublims.reduce((a,s)=>a+(s.monto||0),0)):''):`${pol.moneda||'MXN'} ${fM(pol.suma_asegurada)}`],
+      ['Deducible', dedTxt],
+      ['Coaseguro', s.coaseguro?(s.coaseguro_detalle||'Sí'):'N/A'],
+    ];
+    polData.forEach(([lbl,val])=>{
+      h += `<div class="pol-row"><span class="pol-lbl">${lbl}</span><span>${val}</span></div>`;
+    });
+  }
+
+  if(secs.includes('estimacion')&&rvList.length){
+    h += `<div class="sec-title">10 &nbsp; Determinación de la reserva</div>
+    <div class="sec-sub">10.1 &nbsp; Reclamación</div>
+    <div class="narrative">El Asegurado aún no presenta su reclamación formal, pero será por el importe de reemplazo de los elementos afectados, según estimamos a continuación:</div>
+    <div class="sec-sub">10.2 &nbsp; Ajuste</div>
+    <div class="narrative">${dedTxt}</div>
+    <div class="sec-sub">10.3 &nbsp; Estimación de reserva</div>`;
+
+    h += buildCoberturaTableHTML(rvList, pol.moneda||'MXN');
+
+    h += `<div class="narrative" style="margin-top:8px;">Por la cantidad antes detallada de <strong>${pol.moneda||'MXN'} ${fM(totReserva)}</strong>, sugerimos crear la reserva correspondiente.</div>`;
+  }
+
+  if(secs.includes('salvamento')){
+    h += `<div class="sec-title">11 &nbsp; Salvamento</div>
+    <div class="narrative">${s.salvamento==='no'?'No se considera salvamento alguno.':SALV_TXT}</div>`;
+  }
+
+  if(secs.includes('estrategias')||secs.includes('desarrollo')){
+    h += `<div class="sec-title">12 &nbsp; Observaciones y actividades a realizar</div>
+    <div class="narrative">${[s.estrategias,s.observaciones,s.actividades].filter(Boolean).join('<br><br>')||s.estrategias_observaciones||'De momento ninguna.'}</div>`;
+  }
+
+  // ── FIRMAS ─────────────────────────────────────────────────────────
+  if(secs.includes('cronologia')){
+    const firmList = ajusts.length ? ajusts : [{nombre:'Javier Chávez Á.',cnsf:'C34388'}];
+    h += `<div style="text-align:center;margin-top:24px;font-size:10px;font-weight:700;">Atentamente</div>
+    <div style="text-align:center;font-size:10px;font-weight:700;margin-bottom:10px;">ALMARAZ AJUSTADORES, S. A.</div>
+    <div class="firmas-wrap">`;
+    firmList.forEach(aj=>{
+      h += `<div class="firma-item">
+        <div class="firma-line"></div>
+        <div class="firma-nombre">${aj.nombre||''}</div>
+        <div class="firma-cnsf">Cédula CNSF: ${aj.cnsf||''}</div>
+      </div>`;
+    });
+    h += `</div>`;
+  }
+
+  h += `</body></html>`;
+  return h;
+}
+
+
+function renderAjustadores(){
+  if(!g('ajust-body')) return;
+  g('ajust-body').innerHTML=data.ajust.map(a=>{
+    const ofNombre=typeof a.id_oficina==='object'?a.id_oficina?.nombre:(data.ofic.find(o=>o.id===a.id_oficina)?.nombre||'—');
+    return `<tr>
+      <td><strong>${a.nombre}</strong></td>
+      <td><span class="badge b-informe">${a.iniciales||'—'}</span></td>
+      <td style="font-size:11px;">${a.cnsf||'—'}</td>
+      <td style="font-size:11px;">${a.correo||'—'}</td>
+      <td style="font-size:11px;">${a.telefono||'—'}</td>
+      <td>${ofNombre}</td>
+      <td><div class="td-acts">
+        <button class="btn btn-sm" onclick="editarAjustador(${a.id})">Editar</button>
+        <button class="btn btn-sm btn-danger" onclick="eliminar('ajustadores',${a.id})">Eliminar</button>
+      </div></td>
+    </tr>`;}).join('')||'<tr><td colspan="7" class="empty">Sin ajustadores.</td></tr>';
+}
+
+function renderOficinas(){
+  if(!g('ofic-body')) return;
+  g('ofic-body').innerHTML=data.ofic.map(o=>`<tr>
+    <td><strong>${o.nombre}</strong></td>
+    <td>${o.ciudad||'—'}</td>
+    <td>${o.estado||'—'}</td>
+    <td>${o.telefono||'—'}</td>
+    <td><div class="td-acts">
+      <button class="btn btn-sm" onclick="editarOficina(${o.id})">Editar</button>
+      <button class="btn btn-sm btn-danger" onclick="eliminar('oficinas',${o.id})">Eliminar</button>
+    </div></td>
+  </tr>`).join('')||'<tr><td colspan="5" class="empty">Sin oficinas.</td></tr>';
+}
+
+async function guardarAjustador(){
+  const id=v('aj-id');
+  const d2={nombre:v('aj-nombre'),iniciales:(v('aj-iniciales')||'').toUpperCase()||null,
+    correo:v('aj-correo')||null,telefono:v('aj-tel')||null,cnsf:v('aj-cnsf')||null,
+    id_oficina:parseInt(v('aj-oficina'))||null};
+  if(id){ await db.from('ajustadores').update(d2).eq('id',id); toast('Ajustador actualizado.'); }
+  else   { await db.from('ajustadores').insert(d2); toast('Ajustador creado.'); }
+  cerrarModal('modal-ajust'); await loadAll();
+}
+
+function editarAjustador(id){
+  const a=data.ajust.find(x=>x.id===id); if(!a) return;
+  g('ajust-modal-title').textContent='Editar ajustador'; g('aj-id').value=a.id;
+  g('aj-nombre').value=a.nombre||''; g('aj-iniciales').value=a.iniciales||'';
+  g('aj-correo').value=a.correo||''; g('aj-tel').value=a.telefono||'';
+  g('aj-cnsf').value=a.cnsf||'';
+  const ofId=typeof a.id_oficina==='object'?a.id_oficina?.id:a.id_oficina;
+  g('aj-oficina').value=ofId||'';
+  g('modal-ajust').classList.add('open');
+}
+
+async function guardarOficina(){
+  const id=v('of-id');
+  const d2={nombre:v('of-nombre'),ciudad:v('of-ciudad')||null,estado:v('of-estado')||null,
+    telefono:v('of-tel')||null,direccion:v('of-dir')||null};
+  if(id){ await db.from('oficinas').update(d2).eq('id',id); toast('Oficina actualizada.'); }
+  else   { await db.from('oficinas').insert(d2); toast('Oficina creada.'); }
+  cerrarModal('modal-ofic'); await loadAll();
+}
+
+function editarOficina(id){
+  const o=data.ofic.find(x=>x.id===id); if(!o) return;
+  g('ofic-modal-title').textContent='Editar oficina'; g('of-id').value=o.id;
+  g('of-nombre').value=o.nombre||''; g('of-ciudad').value=o.ciudad||'';
+  g('of-estado').value=o.estado||''; g('of-tel').value=o.telefono||'';
+  g('of-dir').value=o.direccion||'';
+  g('modal-ofic').classList.add('open');
+}
+
+async function guardarSinAjust(){
+  if(!currentSin){ toast('Selecciona un expediente primero.'); return; }
+  const ajId=parseInt(v('sa-ajust'));
+  if(!ajId){ toast('Selecciona un ajustador.'); return; }
+  const {error}=await db.from('siniestro_ajustadores').insert({
+    id_siniestro:currentSin.id, id_ajustador:ajId,
+    rol:v('sa-rol')||'responsable',
+    fecha_asignacion:v('sa-fecha')||new Date().toISOString().slice(0,10),
+    notas:v('sa-notas')||null
+  });
+  if(error&&error.code==='23505'){ toast('Este ajustador ya está asignado al expediente.'); return; }
+  toast('Ajustador asignado.'); cerrarModal('modal-sin-ajust'); await loadAll(); renderDetalle();
+}
+
+function switchCat(id,btn){
+  ['aseg','asdo','cont','tc','ajust','ofic'].forEach(c=>{
+    const el=g('cat-'+c); if(el) el.style.display=c===id?'block':'none';
+  });
+  document.querySelectorAll('#panel-catalogos .tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  if(id==='ajust') renderAjustadores();
+  if(id==='ofic')  renderOficinas();
+}
+
+function switchMain(tab,btn){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.topbar-mid .nav-btn').forEach(b=>b.classList.remove('active'));
+  g('panel-'+tab).classList.add('active'); if(btn) btn.classList.add('active');
+  if(tab==='reportes') poblarSelectores();
+  if(tab==='alertas') renderAlertas();
+}
+
+/* ── INIT ── */
+(async()=>{
+  const {data:{session}}=await db.auth.getSession();
+  if(session&&(ALLOWED.includes(session.user.email)||READONLY.includes(session.user.email))) mostrarApp(session.user.email);
+})();
+</script>
+</body>
+</html>
