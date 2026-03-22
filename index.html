@@ -527,6 +527,9 @@ body.modo-lectura .readonly-hidden { display:none !important; }
 <div class="modal modal-lg" style="width:760px;">
   <div class="modal-title" id="sin-modal-title">Nuevo expediente</div>
   <input type="hidden" id="s-id">
+  <div id="seccion-atlas" style="display:none;"></div>
+  <div id="seccion-no-gnp" style="display:none;"></div>
+
   <input type="hidden" id="s-giro">
   <input type="hidden" id="s-hora-ocurr">
   <input type="hidden" id="s-hora-asig">
@@ -3449,8 +3452,8 @@ function actualizarCamposAseg(){
   const cod = (aseg.codigo_sistema||'').toUpperCase();
 
   // Mostrar/ocultar secciones específicas
-  g('seccion-gnp').style.display   = cod==='GNP'   ? 'block' : 'none';
-  g('seccion-atlas').style.display = cod==='ATLAS'  ? 'block' : 'none';
+  {let _e=g('seccion-gnp');   if(_e) _e.style.display = cod==='GNP'   ? 'block' : 'none';}
+  {let _e=g('seccion-atlas');  if(_e) _e.style.display = cod==='ATLAS'  ? 'block' : 'none';}
   // Campos exclusivos de informes genéricos — no aplican a GNP
   const noGnpSec = g('seccion-no-gnp');
   if(noGnpSec) noGnpSec.style.display = cod==='GNP' ? 'none' : 'block';
