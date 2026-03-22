@@ -1698,7 +1698,7 @@ let rteImgSaved  = null;     // saved selection range
 let rteImgSel    = null;     // selected graf item
 
 function rteInsertarImagen(suffix){
-  if(!currentSin){ toast('Abre un expediente primero.'); return; }
+  if(!currentSin){ toast('Guarda el expediente primero para poder insertar imágenes.'); return; }
   rteImgSuffix = suffix;
   rteImgSel    = null;
 
@@ -3584,6 +3584,7 @@ async function guardarSiniestro(){
 
 function editarSiniestro(id){
   const s=data.sin.find(x=>x.id===id); if(!s) return;
+  currentSin=s;  // needed for image picker and other context-aware tools
   g('sin-modal-title').textContent='Editar expediente'; g('s-id').value=s.id;
   g('s-exp').value=s.numero_exp||''; g('s-numsin').value=s.numero_siniestro||'';
   g('s-subramo').value=s.subramo||''; g('s-causa').value=s.causa||''; g('s-riesgo').value=s.riesgo_afectado||'';
