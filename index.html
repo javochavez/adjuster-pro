@@ -5683,390 +5683,521 @@ async function descargarWord(){
 
   const { Document, Packer, Paragraph, Table, TableRow, TableCell, TextRun, ImageRun,
           AlignmentType, WidthType, BorderStyle, ShadingType, VerticalAlign,
-          Header, Footer, LevelFormat, PageBreak, PageNumber } = docx;
+          Header, Footer, LevelFormat, PageBreak, PageNumber, TableOfContents,
+          HeadingLevel } = docx;
 
-  const pol     = data.pol.find(p=>p.id===s.id_poliza)||{};
-  const asdo    = data.asdo.find(a=>a.id===pol.id_asegurado)||{};
-  const lastInf = lastInfParaReporte(s.id);
-  const resRows = data.res.filter(r=>r.id_siniestro===s.id);
-  const resVig  = {};
+  // ── Datos del expediente ──────────────────────────────────────────
+  const pol      = data.pol.find(p=>p.id===s.id_poliza)||{};
+  const asdo     = data.asdo.find(a=>a.id===pol.id_asegurado)||{};
+  const aseg     = data.aseg.find(a=>a.id===pol.id_aseguradora)||{};
+  const lastInf  = lastInfParaReporte(s.id);
+  const resRows  = data.res.filter(r=>r.id_siniestro===s.id);
+  const resVig   = {};
   resRows.forEach(r=>{if(!resVig[r.concepto]||r.id>resVig[r.concepto].id)resVig[r.concepto]=r;});
-  const rvList  = Object.values(resVig);
-  Object.values(resVig).forEach(r=>{ r.concepto=CONCEPTO_LABEL[r.concepto]||r.concepto||'Cobertura'; });
-  const sublims = data.sublim.filter(sl=>sl.id_poliza===pol.id);
-  const sinAjusts=data.sinajust.filter(a=>a.id_siniestro===s.id);
-  const ajusts  = sinAjusts.map(sa=>data.ajust.find(a=>a.id===sa.id_ajustador)).filter(Boolean);
+  const rvList   = Object.values(resVig);
+  rvList.forEach(r=>{ r.concepto=CONCEPTO_LABEL[r.concepto]||r.concepto||'Cobertura'; });
+  const sublims  = data.sublim.filter(sl=>sl.id_poliza===pol.id);
+  const sinAjusts= data.sinajust.filter(a=>a.id_siniestro===s.id);
+  const ajusts   = sinAjusts.map(sa=>data.ajust.find(a=>a.id===sa.id_ajustador)).filter(Boolean);
+  const tipoTitulo = infTitulo(lastInf);
 
-
-  // Pre-build narrative paragraphs (async image fetching)
-  const pIntro     = await rteToWordParagraphs(campoDesdInf(lastInf,'introduccion',s,'introduccion')||campoDesdInf(lastInf,'desarrollo_siniestro',s,'descripcion'));
-  const pDescRiesgo= await rteToWordParagraphs(s.descripcion_riesgo||'');
-  const pInspeccion= await rteToWordParagraphs(s.inspeccion_narrativa||campoDesdInf(lastInf,'inspeccion_narrativa',s,'inspeccion_narrativa')||('El '+fD(s.fecha_primera_visita)+(s.hora_primera_visita?', a las '+s.hora_primera_visita.slice(0,5)+' hrs.,':'')+' nos presentamos en el domicilio afectado, sito en '+(s.inspeccion_domicilio||s.lugar_siniestro||'')+', donde fuimos atendidos por '+(s.inspeccion_persona||'')+(s.inspeccion_cargo?', '+s.inspeccion_cargo:'')+', quien nos mostró los daños, observando, lo siguiente:'));
-  const pHechos    = await rteToWordParagraphs(campoDesdInf(lastInf,'desarrollo_siniestro',s,'descripcion'));
-  const pBienes    = await rteToWordParagraphs((s.descripcion_danios_html||s.bienes_danados||''));
-  const pEstrategias= await rteToWordParagraphs([s.estrategias,s.observaciones,s.actividades].filter(Boolean).join('\n\n')||campoDesdInf(lastInf,'estrategias',s,'estrategias_observaciones')||'');
-
-  const tipoTitulo=infTitulo(lastInf);
+  // ── Helpers ───────────────────────────────────────────────────────
+  const fD=(d2)=>{ if(!d2)return ''; const[y,m,dy]=d2.split('-');
+    const meses=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+    return dy+' de '+meses[parseInt(m)-1]+' de '+y; };
+  const fDS=(d2)=>{ if(!d2)return ''; const[y,m,dy]=d2.split('-'); return dy+'/'+m+'/'+y; };
+  const fM=(n)=>{ if(!n&&n!==0)return '—'; return new Intl.NumberFormat('es-MX',{minimumFractionDigits:2}).format(n); };
+  const stripHtml=(h)=>h?(h.replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ').replace(/\s+/g,' ').trim()):'';
   const now=new Date().toLocaleDateString('es-MX',{day:'2-digit',month:'long',year:'numeric'});
 
-  const fD=(d2)=>{ if(!d2) return ''; const[y,m,dy]=d2.split('-'); return dy+'/'+m+'/'+y; };
-  const fM=(n)=>{ if(!n&&n!==0) return '—'; return new Intl.NumberFormat('es-MX',{minimumFractionDigits:2}).format(n); };
+  // ── Constantes de layout ──────────────────────────────────────────
+  const PAGE_W=12242, PAGE_H=15842;
+  const MAR_T=1985, MAR_B=1418, MAR_L=1701, MAR_R=510, MAR_HDR=1276, MAR_FTR=720;
+  const CONTENT_W = PAGE_W - MAR_L - MAR_R; // 10031 twips ≈ 6.97"
+  const COURIER='Courier New', ARIAL='Arial';
+  const BLACK='000000', WHITE='FFFFFF', BLUE='1F3864', BLUE2='2E74B5', GRAY='F2F2F2';
+  const bNone={style:BorderStyle.NONE,size:0,color:WHITE};
+  const noB={top:bNone,bottom:bNone,left:bNone,right:bNone};
+  const bThin={style:BorderStyle.SINGLE,size:4,color:'AAAAAA'};
+  const allB={top:bThin,bottom:bThin,left:bThin,right:bThin};
 
+  // ── Text helpers ─────────────────────────────────────────────────
+  // courier = body font, arial = headings
+  const cr=(text,o={})=>new TextRun({text:String(text??''),font:COURIER,
+    size:o.size||24,bold:o.bold||false,color:o.color||BLACK,italics:o.italics||false,
+    underline:o.underline||undefined});
+  const ar=(text,o={})=>new TextRun({text:String(text??''),font:ARIAL,
+    size:o.size||24,bold:o.bold||false,color:o.color||BLACK,italics:o.italics||false});
+  const pr=(runs,o={})=>new Paragraph({
+    children:Array.isArray(runs)?runs.filter(Boolean):[runs],
+    alignment:o.align||AlignmentType.BOTH,
+    spacing:{before:o.sb??0,after:o.sa??0,line:o.line||undefined},
+    indent:o.left||o.hanging?{left:o.left||0,hanging:o.hanging||0}:undefined,
+    heading:o.heading||undefined,
+    border:o.border||undefined,
+  });
+  const ep=()=>pr([cr('')],{sb:0,sa:120});
 
-  // ── RTE → Word paragraphs (handles embedded images) ──────────────
-  const IMG_MAX_W = CONTENT_W; // twips
-  async function rteToWordParagraphs(html, opts={}){
-    if(!html) return [pr([tx('',{size:20})],{sb:60,sa:60})];
+  // ── RTE → Courier paragraphs (with embedded images) ──────────────
+  const IMG_MAX_W=CONTENT_W;
+  async function rteToWordParagraphs(html,indent=425){
+    if(!html) return [pr([cr('')],{sb:0,sa:60})];
+    // Strip to plain text first — images handled separately
     const tmp=document.createElement('div'); tmp.innerHTML=html;
     const paras=[];
-    const addText=(text)=>{
-      if(text.trim()) paras.push(pr([tx(text.replace(/<[^>]+>/g,' ').trim(),{size:opts.size||20})],{sb:60,sa:60}));
+    const addText=(text,bold=false,ital=false)=>{
+      const clean=text.replace(/\s+/g,' ').trim();
+      if(!clean) return;
+      paras.push(pr([cr(clean,{bold,italics:ital})],{left:indent,sa:80,align:AlignmentType.BOTH}));
     };
-    for(const node of Array.from(tmp.childNodes)){
-      if(node.nodeType===3){ addText(node.textContent); continue; }
-      const tag=node.tagName||'';
+    const walkNode=(node)=>{
+      if(node.nodeType===3){ if(node.textContent.trim()) addText(node.textContent); return; }
+      const tag=(node.tagName||'').toUpperCase();
       if(tag==='FIGURE'||tag==='IMG'){
-        const imgEl = tag==='IMG' ? node : node.querySelector('img');
-        const capEl = tag==='FIGURE' ? node.querySelector('figcaption') : null;
-        if(imgEl&&imgEl.src){
-          try{
-            const b64=await fetchImgAsBase64(imgEl.src);
-            if(b64){
-              const sizePct=parseInt(imgEl.dataset.size)||50;
-              const w=Math.round(IMG_MAX_W*(sizePct/100));
-              const alignStr=(imgEl.dataset.align||'center');
-              const al=alignStr==='right'?AlignmentType.RIGHT:alignStr==='left'?AlignmentType.LEFT:AlignmentType.CENTER;
-              paras.push(new Paragraph({alignment:al,spacing:{before:80,after:40},
-                children:[new ImageRun({data:Uint8Array.from(atob(b64),c=>c.charCodeAt(0)),
-                  transformation:{width:w,height:Math.round(w*0.65)}})]}));
-              if(capEl&&capEl.textContent.trim()){
-                paras.push(pr([tx(capEl.textContent,{size:16,italics:true,color:'555555'})],
-                  {sb:0,sa:80,align:AlignmentType.CENTER}));
-              }
-            }
-          } catch(e){ console.warn('img skip',e); }
+        const imgEl=tag==='IMG'?node:node.querySelector('img');
+        const capEl=tag==='FIGURE'?node.querySelector('figcaption'):null;
+        if(imgEl?.src){
+          paras.push({__imgDeferred__:true,src:imgEl.src,
+            sizePct:parseInt(imgEl.dataset?.size)||50,
+            align:imgEl.dataset?.align||'center',
+            caption:capEl?.textContent||''});
         }
-      } else {
-        addText(node.textContent||node.innerText||'');
+        return;
       }
+      const isBold=tag==='STRONG'||tag==='B'||getComputedStyle(node).fontWeight>='600';
+      const isItal=tag==='EM'||tag==='I';
+      if(tag==='LI'){
+        const txt=node.textContent.replace(/\s+/g,' ').trim();
+        if(txt) paras.push(pr([cr('• '+txt)],{left:indent+360,sa:60,align:AlignmentType.BOTH}));
+        return;
+      }
+      Array.from(node.childNodes).forEach(walkNode);
+    };
+    Array.from(tmp.childNodes).forEach(walkNode);
+    // Resolve deferred images
+    const resolved=[];
+    for(const p of paras){
+      if(p.__imgDeferred__){
+        try{
+          const b64=await fetchImgAsBase64(p.src);
+          if(b64){
+            const w=Math.round(CONTENT_W*(p.sizePct/100));
+            const al=p.align==='right'?AlignmentType.RIGHT:p.align==='left'?AlignmentType.LEFT:AlignmentType.CENTER;
+            resolved.push(new Paragraph({alignment:al,spacing:{before:80,after:40},
+              children:[new ImageRun({data:Uint8Array.from(atob(b64),c=>c.charCodeAt(0)),
+                transformation:{width:w,height:Math.round(w*0.66)},type:'jpg'})]}));
+            if(p.caption) resolved.push(pr([cr(p.caption,{size:20,italics:true})],
+              {align:AlignmentType.CENTER,sb:0,sa:60}));
+          }
+        }catch(e){/*skip*/}
+      } else { resolved.push(p); }
     }
-    return paras.length ? paras : [pr([tx('',{size:20})],{sb:60,sa:60})];
+    return resolved.length?resolved:[pr([cr('')],{sb:0,sa:60})];
   }
 
-  const BLUE='1F3864', GRAY='F2F2F2', BLACK='000000', WHITE='FFFFFF';
-  const bThin={style:BorderStyle.SINGLE,size:4,color:'000000'};
-  const bNone={style:BorderStyle.NONE,size:0,color:'FFFFFF'};
-  const allB={top:bThin,bottom:bThin,left:bThin,right:bThin};
-  const noB={top:bNone,bottom:bNone,left:bNone,right:bNone};
-  const PAGE_W=12242, CONTENT_W=10144;
-  const COL=[1600,3500,1600,3444];
+  // ── Pre-fetch narrative paragraphs (async) ────────────────────────
+  const pIntro     = await rteToWordParagraphs(
+    campoDesdInf(lastInf,'introduccion',s,'introduccion')||s.descripcion||'', 425);
+  const pDescAseg  = await rteToWordParagraphs(pol.descripcion_asegurado||'', 425);
+  const pUbicacion = await rteToWordParagraphs(s.inspeccion_domicilio||s.lugar_siniestro||pol.ubicacion_riesgo||'', 1418);
+  const pInspeccion= await rteToWordParagraphs(
+    s.inspeccion_narrativa||campoDesdInf(lastInf,'inspeccion_narrativa',s,'inspeccion_narrativa')||'', 426);
+  const pBienes    = await rteToWordParagraphs(s.descripcion_danios_html||s.bienes_danados||'', 709);
+  const pNaturaleza= await rteToWordParagraphs(s.naturaleza_alcance_danios||'', 425);
+  const pProcedencia=await rteToWordParagraphs(s.fundamento||'', 425);
+  const pReclamacion=await rteToWordParagraphs(
+    s.reclamacion_asegurado||'Por el momento el Asegurado no ha presentado su formal reclamación a la compañía de Seguros, sin embargo, estamos en proceso de recepción de documentos, mismos que están siendo analizados.', 425);
+  const pConsiderandos=await rteToWordParagraphs(s.considerandos||'', 425);
+  const pSalvamento=await rteToWordParagraphs(s.salvamento_detalle_html||s.salvamento_detalle||'', 425);
+  const pActividades=await rteToWordParagraphs(s.actividades||'', 425);
+  const pComentarios=await rteToWordParagraphs(s.observaciones||'', 425);
 
-  const txt=(text,o={})=>new TextRun({text:String(text??''),font:o.font||'Arial',
-    size:o.size||20,bold:o.bold||false,color:o.color||BLACK,italics:o.italics||false});
-  const para2=(children,o={})=>new Paragraph({
-    children:Array.isArray(children)?children:[children],
-    alignment:o.align||AlignmentType.LEFT,
-    spacing:{before:o.sb??40,after:o.sa??40},
-    indent:o.indent?{left:o.indent}:undefined,
-    border:o.border,
-  });
-  const ep=()=>para2([txt('')],{sb:20,sa:20});
-  const mkCell=(content,o={})=>new TableCell({
-    width:o.w?{size:o.w,type:WidthType.DXA}:undefined,
-    columnSpan:o.span,
-    shading:o.bg?{fill:o.bg,type:ShadingType.CLEAR}:undefined,
-    borders:o.borders??allB,
-    margins:{top:80,bottom:80,left:120,right:120},
-    verticalAlign:o.va||VerticalAlign.TOP,
-    children:Array.isArray(content)?content:[
-      para2([txt(String(content??''),{bold:o.bold,size:o.size||18,color:o.color||BLACK})],
-            {align:o.align||AlignmentType.LEFT,sb:20,sa:20})
-    ],
-  });
-  const lbl=(t,w)=>mkCell(t,{w,bold:true,size:18,bg:'BDD7EE'});
-  const val=(t,w,sp)=>mkCell(t,{w,size:18,span:sp});
-  const secTitle=(num,text)=>para2(
-    [txt(num+'  '+text.toUpperCase(),{bold:true,size:22,color:BLUE})],
-    {sb:200,sa:80,border:{bottom:{style:BorderStyle.SINGLE,size:6,color:BLUE,space:2}}}
-  );
-  const body2=(text)=>para2([txt(text||'',{size:20})],{sb:60,sa:60,indent:720});
+  // ── Fetch localización images ─────────────────────────────────────
+  const grafLoc=data.graf.filter(g=>g.id_siniestro===s.id&&g.tipo==='localizacion'&&g.url);
+  const locImageParas=[];
+  for(const g of grafLoc){
+    try{
+      const b64=await fetchImgAsBase64(g.url);
+      if(b64){
+        const w=Math.round(CONTENT_W*0.55);
+        locImageParas.push(new Paragraph({alignment:AlignmentType.CENTER,spacing:{before:120,after:40},
+          children:[new ImageRun({data:Uint8Array.from(atob(b64),c=>c.charCodeAt(0)),
+            transformation:{width:w,height:Math.round(w*0.69)},type:'jpg'})]}));
+        if(g.etiqueta) locImageParas.push(pr([cr(g.etiqueta,{size:20,italics:true})],
+          {align:AlignmentType.CENTER,sb:0,sa:120}));
+      }
+    }catch(e){/*skip*/}
+  }
 
-  // Logo AASA
-  let logoImgRun2=null;
-  if(logoDataUrl&&logoDataUrl.includes('base64,')){
+  // ── Logo ──────────────────────────────────────────────────────────
+  let logoRun=null;
+  if(logoDataUrl?.includes('base64,')){
     try{
       const b64str=logoDataUrl.split(',')[1];
       const byteArr=Uint8Array.from(atob(b64str),c=>c.charCodeAt(0));
       const isJpeg=logoDataUrl.includes('jpeg')||logoDataUrl.includes('jpg');
-      logoImgRun2=new ImageRun({data:byteArr,transformation:{width:Math.round(32*(logoW&&logoH?logoW/logoH:3.83)),height:32},type:isJpeg?'jpg':'png'});
-    }catch(e){ logoImgRun2=null; }
+      // Logo in document: 1.95" x 0.51" = 1783080 x 464820 EMU → twips: 1783080/914400*1440≈2806 x 464820/914400*1440≈731
+      logoRun=new ImageRun({data:byteArr,transformation:{width:2806,height:731},type:isJpeg?'jpg':'png'});
+    }catch(e){logoRun=null;}
   }
 
-  // Header: solo página 1 — logo + INFORME PRELIMINAR
-  const makeFirstHeader=()=>new Header({children:[
-    new Table({
-      width:{size:CONTENT_W,type:WidthType.DXA},
-      columnWidths:[CONTENT_W-3400,3400],
-      borders:{top:bNone,bottom:bNone,left:bNone,right:bNone,insideH:bNone,insideV:bNone},
-      rows:[new TableRow({children:[
-        new TableCell({width:{size:CONTENT_W-3400,type:WidthType.DXA},borders:noB,
-          margins:{top:0,bottom:0,left:0,right:0},
-          children:[para2([txt('')],{sb:0,sa:0})]}),
-        new TableCell({width:{size:3400,type:WidthType.DXA},borders:noB,
-          margins:{top:0,bottom:0,left:120,right:0},
-          verticalAlign:VerticalAlign.TOP,
-          children:[
-            new Paragraph({children:logoImgRun2?[logoImgRun2]:[txt('AASA',{bold:true,size:36,color:BLUE})],
-              alignment:AlignmentType.RIGHT,spacing:{before:0,after:80}}),
-            new Paragraph({children:[txt(tipoTitulo,{bold:true,size:28,color:'2E5090',font:'Arial'})],
-              alignment:AlignmentType.RIGHT,spacing:{before:0,after:0}}),
-          ]}),
-      ]})]
-    }),
+  // ── HEADERS ───────────────────────────────────────────────────────
+  // Página 1: logo derecha + [TIPO DE INFORME] debajo
+  const firstHeader=new Header({children:[
+    new Paragraph({alignment:AlignmentType.RIGHT,spacing:{before:0,after:40},
+      children:logoRun?[logoRun]:[ar('AASA',{bold:true,size:28,color:BLUE})]}),
+    new Paragraph({alignment:AlignmentType.RIGHT,spacing:{before:0,after:0},
+      children:[ar(tipoTitulo,{bold:true,size:22,color:BLUE2})]}),
   ]});
-  const makeDefaultHeader=()=>new Header({children:[new Paragraph({children:[txt('')],spacing:{before:0,after:0}})]});
-
-  // Footer: página 1 = datos AASA; páginas 2+ = asegurado + página n de N
-  const makeFirstFooter=()=>new Footer({children:[
-    new Table({
-      width:{size:CONTENT_W,type:WidthType.DXA},
-      columnWidths:[Math.floor(CONTENT_W/2),CONTENT_W-Math.floor(CONTENT_W/2)],
-      borders:{top:{style:BorderStyle.SINGLE,size:6,color:'1F3864',space:2},
-               bottom:bNone,left:bNone,right:bNone,insideH:bNone,insideV:bNone},
-      rows:[new TableRow({children:[
-        new TableCell({width:{size:Math.floor(CONTENT_W/2),type:WidthType.DXA},borders:noB,
-          margins:{top:80,bottom:0,left:0,right:180},
-          children:[
-            new Paragraph({children:[txt('ALMARAZ AJUSTADORES, S.A.',{bold:true,size:18,color:BLUE})],spacing:{before:0,after:40}}),
-            new Paragraph({children:[txt('PBX +52 55 5593-8823',{size:16,color:'444444'})],spacing:{before:0,after:20}}),
-            new Paragraph({children:[txt('aasa.mexico@aasa.com.mx',{size:16,color:'444444'})],spacing:{before:0,after:0}}),
-          ]}),
-        new TableCell({width:{size:CONTENT_W-Math.floor(CONTENT_W/2),type:WidthType.DXA},borders:noB,
-          margins:{top:80,bottom:0,left:180,right:0},verticalAlign:VerticalAlign.TOP,
-          children:[
-            new Paragraph({children:[txt('Calle Miguel Hidalgo 61, Oficina 3',{size:16,color:'444444'})],alignment:AlignmentType.RIGHT,spacing:{before:0,after:20}}),
-            new Paragraph({children:[txt('Col. San Jerónimo Lídice, Alcaldía La Magdalena Contreras',{size:16,color:'444444'})],alignment:AlignmentType.RIGHT,spacing:{before:0,after:20}}),
-            new Paragraph({children:[txt('C.P. 10200 Ciudad de México, México',{size:16,color:'444444'})],alignment:AlignmentType.RIGHT,spacing:{before:0,after:0}}),
-          ]}),
-      ]})]
-    }),
-  ]});
-  const LBLUE_SOFT='4472C4';
-  const makeDefaultFooter=()=>new Footer({children:[
-    new Table({
-      width:{size:CONTENT_W,type:WidthType.DXA},
-      columnWidths:[CONTENT_W-2200,2200],
-      borders:{top:{style:BorderStyle.SINGLE,size:2,color:'C5D9F1',space:2},
-               bottom:bNone,left:bNone,right:bNone,insideH:bNone,insideV:bNone},
-      rows:[new TableRow({children:[
-        new TableCell({width:{size:CONTENT_W-2200,type:WidthType.DXA},borders:noB,
-          margins:{top:60,bottom:0,left:0,right:120},
-          children:[
-            new Paragraph({children:[txt(asdo.nombre||'',{size:16,color:LBLUE_SOFT})],spacing:{before:0,after:16}}),
-            new Paragraph({children:[txt(s.numero_siniestro?'No. Siniestro: '+s.numero_siniestro:(s.numero_exp||''),{size:16,color:LBLUE_SOFT})],spacing:{before:0,after:0}}),
-          ]}),
-        new TableCell({width:{size:2200,type:WidthType.DXA},borders:noB,
-          margins:{top:60,bottom:0,left:120,right:0},verticalAlign:VerticalAlign.CENTER,
-          children:[new Paragraph({
-            children:[
-              new TextRun({text:'Página ',size:16,color:LBLUE_SOFT,font:'Arial'}),
-              new TextRun({children:[PageNumber.CURRENT],size:16,color:LBLUE_SOFT,font:'Arial'}),
-              new TextRun({text:' de ',size:16,color:LBLUE_SOFT,font:'Arial'}),
-              new TextRun({children:[PageNumber.TOTAL_PAGES],size:16,color:LBLUE_SOFT,font:'Arial'}),
-            ],alignment:AlignmentType.RIGHT,spacing:{before:0,after:0},
-          })]}),
-      ]})]
-    }),
-  ]});
-
-  // Portada
-  const portRows=[];
-  portRows.push(new TableRow({children:[
-    new TableCell({columnSpan:4,borders:noB,margins:{top:60,bottom:120,left:0,right:0},
-      children:[para2([txt(now,{size:20})],{sb:0,sa:0})]})]}));
-  portRows.push(new TableRow({children:[
-    new TableCell({columnSpan:4,borders:allB,shading:{fill:GRAY,type:ShadingType.CLEAR},
-      margins:{top:100,bottom:100,left:160,right:160},
+  // Páginas 2+: "Página X de Y" derecha
+  const defaultHeader=new Header({children:[
+    new Paragraph({alignment:AlignmentType.RIGHT,spacing:{before:0,after:0},
       children:[
-        para2([txt((data.aseg.find(a=>a.id===pol.id_aseguradora)||{}).nombre||'',{bold:true,size:28,color:'000000'})],{sb:20,sa:60}),
-        para2([txt('Presente',{size:20})],{sb:0,sa:0}),
-        para2([txt('')],{sb:0,sa:0}),
-        ...(lastInf.destinatario?[
-          para2([txt(lastInf.destinatario,{bold:true,size:20})],{sb:60,sa:0}),
-          para2([txt(lastInf.jefe_depto||'Siniestros Daños',{size:20})],{sb:0,sa:20}),
-        ]:[]),
-      ]})]}));
-
-  portRows.push(new TableRow({children:[lbl('Siniestro :',COL[0]),val(s.numero_siniestro||'',COL[1]),mkCell('',{w:COL[2]+COL[3],borders:noB,span:2})]}));
-  portRows.push(new TableRow({children:[lbl('Póliza :',COL[0]),val(pol.numero||'',COL[1]),mkCell('',{w:COL[2]+COL[3],borders:noB,span:2})]}));
-  portRows.push(new TableRow({children:[lbl('Ref. AASA :',COL[0]),val(s.numero_exp||'',COL[1]),mkCell('',{w:COL[2]+COL[3],borders:noB,span:2})]}));
-
-  const fullRow=(label,value)=>new TableRow({children:[
-    lbl(label,COL[0]),
-    new TableCell({columnSpan:3,borders:allB,width:{size:COL[1]+COL[2]+COL[3],type:WidthType.DXA},
-      margins:{top:80,bottom:80,left:120,right:120},
-      children:[para2([txt(String(value??''),{size:18})],{sb:20,sa:20})]}),
-  ]});
-  const dataRow=(l1,v1,l2,v2)=>new TableRow({children:[
-    lbl(l1,COL[0]),val(v1,COL[1]),
-    l2?lbl(l2,COL[2]):mkCell('',{w:COL[2],borders:noB}),
-    v2?val(v2,COL[3]):mkCell('',{w:COL[3],borders:noB}),
+        new TextRun({text:'Página ',font:COURIER,size:18,color:'555555'}),
+        new TextRun({children:[PageNumber.CURRENT],font:COURIER,size:18,bold:true,color:BLUE}),
+        new TextRun({text:' de ',font:COURIER,size:18,color:'555555'}),
+        new TextRun({children:[PageNumber.TOTAL_PAGES],font:COURIER,size:18,bold:true,color:BLUE}),
+      ]}),
   ]});
 
-  if(s.ot||s.tramite_gnp) portRows.push(fullRow('OT / No. TRÁMITE', s.ot||s.tramite_gnp||''));
-  portRows.push(fullRow('ASEGURADO',asdo.nombre||''));
-  portRows.push(fullRow('DOMICILIO FISCAL',pol.domicilio_legal||''));
-  portRows.push(fullRow('GIRO DEL NEGOCIO:',s.giro_asegurado||''));
+  // ── FOOTERS ───────────────────────────────────────────────────────
+  // Footer helper — línea superior azul
+  const footerLine={bottom:{style:BorderStyle.SINGLE,size:6,color:BLUE2,space:1}};
 
-  // Fechas
-  const FW=Math.floor(CONTENT_W/4);
-  const bFecha={style:BorderStyle.SINGLE,size:4,color:'1F3864'};
-  const allFecha={top:bFecha,bottom:bFecha,left:bFecha,right:bFecha};
-  const fechaLbl=(label)=>new TableCell({width:{size:FW,type:WidthType.DXA},borders:allFecha,
-    shading:{fill:'1F3864',type:ShadingType.CLEAR},margins:{top:80,bottom:80,left:120,right:120},
-    children:[new Paragraph({children:[txt(label,{bold:true,size:16,color:'FFFFFF',font:'Arial'})],
-      alignment:AlignmentType.CENTER,spacing:{before:0,after:0}})]});
-  const fechaVal=(value)=>new TableCell({width:{size:FW,type:WidthType.DXA},borders:allFecha,
-    margins:{top:100,bottom:100,left:120,right:120},
-    children:[new Paragraph({children:[txt(value||'—',{bold:true,size:20,color:'1F3864',font:'Arial'})],
-      alignment:AlignmentType.CENTER,spacing:{before:0,after:0}})]});
+  // Página 1: datos AASA
+  const firstFooter=new Footer({children:[
+    new Paragraph({border:footerLine,spacing:{before:0,after:60},children:[cr('')]}),
+    new Paragraph({alignment:AlignmentType.CENTER,spacing:{before:0,after:20},
+      children:[cr('ALMARAZ AJUSTADORES, S.A.',{bold:true,size:18,color:BLUE})]}),
+    new Paragraph({alignment:AlignmentType.CENTER,spacing:{before:0,after:16},
+      children:[cr('Calle Miguel Hidalgo 61, Oficina 3, Col. San Jerónimo Lídice, Alcaldía La Magdalena Contreras',{size:16,color:'555555'})]}),
+    new Paragraph({alignment:AlignmentType.CENTER,spacing:{before:0,after:16},
+      children:[cr('C.P. 10200 Ciudad de México · PBX +52 (55) 5593-8823 · aasa.mexico@aasa.com.mx',{size:16,color:'555555'})]}),
+  ]});
 
-  portRows.push(new TableRow({children:[
-    new TableCell({columnSpan:4,borders:allB,width:{size:CONTENT_W,type:WidthType.DXA},
-      margins:{top:0,bottom:0,left:0,right:0},
-      children:[new Table({
-        width:{size:CONTENT_W,type:WidthType.DXA},
-        columnWidths:[FW,FW,FW,CONTENT_W-FW*3],
-        borders:{top:bNone,bottom:bNone,left:bNone,right:bNone,insideH:bNone,insideV:bNone},
-        rows:[
-          new TableRow({children:[fechaLbl('VIGENCIA'),fechaLbl('SINIESTRO'),fechaLbl('ASIGNACIÓN'),fechaLbl('1a. INSPECCIÓN')]}),
-          new TableRow({children:[fechaVal(fD(pol.vigencia_ini)+(pol.vigencia_fin?' al\n'+fD(pol.vigencia_fin):'')),fechaVal(fD(s.fecha_siniestro)),fechaVal(fD(s.fecha_asignacion)),fechaVal(fD(s.fecha_primera_visita))]}),
-          new TableRow({children:[fechaLbl('1er CONTACTO'),new TableCell({columnSpan:3,width:{size:CONTENT_W-FW,type:WidthType.DXA},borders:{top:bNone,bottom:bNone,left:bNone,right:bNone},shading:{fill:'F0F4F8',type:ShadingType.CLEAR},margins:{top:0,bottom:0,left:0,right:0},children:[new Paragraph({children:[txt('')],spacing:{before:0,after:0}})]})]}),
-          new TableRow({children:[fechaVal(fD(s.fecha_primer_contacto)),new TableCell({columnSpan:3,width:{size:CONTENT_W-FW,type:WidthType.DXA},borders:{top:bNone,bottom:bNone,left:bNone,right:bNone},margins:{top:0,bottom:0,left:0,right:0},children:[new Paragraph({children:[txt('')],spacing:{before:0,after:0}})]})]}),
-        ],
-      })],
-    }),
-  ]}));
+  // Páginas 2+: [Tipo Reporte] – [Asegurado]   Siniestro: [No.]
+  const defaultFooter=new Footer({children:[
+    new Paragraph({border:footerLine,spacing:{before:0,after:0},children:[cr('')]}),
+    new Paragraph({alignment:AlignmentType.BOTH,spacing:{before:40,after:0},
+      children:[
+        cr(tipoTitulo,{bold:true,size:18,color:BLUE}),
+        cr(' – ',{size:18,color:'555555'}),
+        cr(asdo.nombre||'',{size:18,color:'555555'}),
+        cr('     Siniestro: ',{size:18,color:'555555'}),
+        cr(s.numero_siniestro||s.numero_exp||'',{bold:true,size:18,color:BLUE}),
+      ]}),
+  ]});
 
-  portRows.push(fullRow('LUGAR DEL EVENTO:',s.lugar_siniestro||pol.ubicacion_riesgo||''));
-  portRows.push(fullRow('BREVE NARRACIÓN DE LOS HECHOS:',s.descripcion||''));
-  portRows.push(fullRow('SEGURO',pol.tipo_seguro||''));
-  portRows.push(fullRow('CAUSA PRÓXIMA DEL EVENTO',s.causa||''));
-  portRows.push(fullRow('DAÑOS OCURRIDOS',s.bienes_danados||''));
-  portRows.push(dataRow('RAMO',pol.ramo||'','COBERTURA',s.subramo||pol.subramo||''));
-  portRows.push(fullRow('RIESGO AFECTADO',s.riesgo_afectado||''));
-  const dedTxt=rvList.map(r=>r.bases_determinacion).filter(Boolean).join('. ');
-  portRows.push(fullRow('DEDUCIBLE',dedTxt));
-  portRows.push(fullRow('COASEGURO',s.coaseguro?(s.coaseguro_detalle||'Sí'):'N/A'));
-  portRows.push(fullRow('BIENES AFECTADOS:',s.bienes_danados||''));
-  portRows.push(fullRow('SITUACIÓN ACTUAL:',s.situacion_actual||''));
-  const procTxt={procedente:'PROCEDENTE ( X )   IMPROCEDENTE ( )',improcedente:'PROCEDENTE ( )   IMPROCEDENTE ( X )',por_determinar:'POR DETERMINAR ( X )'}[s.procedencia||'procedente'];
-  portRows.push(fullRow('RECLAMACIÓN:',procTxt));
-  portRows.push(fullRow('FUNDAMENTO:',s.fundamento||''));
-  portRows.push(fullRow('INTERVENCIÓN DE AUTORIDADES:',s.intervencion_autoridades?(s.intervencion_autoridades_detalle||'Sí'):'N/A.'));
-  portRows.push(fullRow('SUBROGACIÓN:',s.subrogacion||'N/A.'));
-  const salvTxt={si:'Si ( X )   NO ( )   Por determinar ( )',no:'Si ( )   NO ( X )   Por determinar ( )',por_determinar:'Si ( )   NO ( )   Por determinar ( X )'}[s.salvamento||'por_determinar'];
-  portRows.push(fullRow('SALVAMENTO:',salvTxt));
-  portRows.push(fullRow('ASESORES:',s.asesores||'No aplican'));
-  portRows.push(fullRow('SUMA ASEGURADA:',pol.suma_asegurada?(pol.moneda||'MXN')+' '+fM(pol.suma_asegurada):''));
-  portRows.push(fullRow('SUMAS ASEGURADAS:',sublims.length?sublims.map(sl=>sl.concepto+': '+(sl.moneda||'MXN')+' '+fM(sl.monto)).join('   |   ')+(sublims.length>1?'   TOTAL: '+(sublims[0].moneda||'MXN')+' '+fM(sublims.reduce((a,s)=>a+(s.monto||0),0)):''):'No aplica'));
+  // ── HEADING helper ────────────────────────────────────────────────
+  let secNum=0;
+  const ROMAN=['','I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV','XV','XVI','XVII','XVIII','XIX','XX'];
+  const h1=(text)=>{
+    secNum++;
+    return new Paragraph({
+      heading:HeadingLevel.HEADING_1,
+      spacing:{before:360,after:120},
+      children:[ar(ROMAN[secNum]+'.  '+text.toUpperCase(),{bold:true,size:24,color:BLACK})],
+    });
+  };
+  const h1noNum=(text)=>new Paragraph({
+    heading:HeadingLevel.HEADING_1,
+    spacing:{before:240,after:80},
+    children:[ar(text.toUpperCase(),{bold:true,size:24,color:BLACK})],
+  });
 
-  const totReserva=rvList.reduce((acc,r)=>{const p=r.monto_perdida_estimada||r.monto||0,d2=r.deducible||0,c=r.monto_coaseguro||((p-d2)*(r.coaseguro_pct||0)/100),b=r.monto_bajo_seguro||0;return acc+(p-b-d2-c);},0);
-  portRows.push(new TableRow({children:[
-    new TableCell({columnSpan:4,borders:allB,shading:{fill:BLUE,type:ShadingType.CLEAR},
-      margins:{top:100,bottom:100,left:120,right:120},
-      children:[para2([txt('ESTIMACION: '+(pol.moneda||'MXN')+' '+fM(totReserva),{bold:true,size:22,color:WHITE}),txt('  100% neto de Deducible',{size:18,color:WHITE})],{sb:20,sa:20})]})]}));
-  const obsPortada=[s.observaciones,s.estrategias,s.actividades].filter(Boolean).join('\n')||s.estrategias_observaciones||'';
-  if(obsPortada) portRows.push(fullRow('OBSERVACIONES:',obsPortada));
+  // ── PORTADA ───────────────────────────────────────────────────────
+  const funcionario = lastInf.destinatario||s.destinatario_nombre||'';
+  const cargo       = lastInf.jefe_depto||s.destinatario_cargo||'';
 
-  // Tabla estimación
+  // Tabla portada — cuerpo principal
+  const portaCell=(label,value,fullWidth=false)=>{
+    const W=CONTENT_W;
+    const LW=Math.round(W*0.38), VW=W-LW;
+    if(fullWidth){
+      return new TableRow({children:[
+        new TableCell({width:{size:W,type:WidthType.DXA},columnSpan:2,
+          borders:noB,margins:{top:0,bottom:40,left:0,right:0},
+          children:[pr([cr(String(value??''),{bold:true})],
+            {left:LW,hanging:LW,align:AlignmentType.BOTH,sa:0})]})]});
+    }
+    return new TableRow({children:[
+      new TableCell({width:{size:LW,type:WidthType.DXA},borders:noB,
+        margins:{top:0,bottom:0,left:0,right:120},
+        children:[pr([cr(label,{bold:true})],{align:AlignmentType.LEFT,sa:0,sb:0})]}),
+      new TableCell({width:{size:VW,type:WidthType.DXA},borders:noB,
+        margins:{top:0,bottom:0,left:0,right:0},
+        children:[pr([cr(String(value??''))],{align:AlignmentType.BOTH,sa:0,sb:0})]}),
+    ]});
+  };
+
+  const LW=Math.round(CONTENT_W*0.38), VW=CONTENT_W-LW;
+
+  // Tabla identificación (Siniestro / Póliza / N/Ref)
+  const idTableW=Math.round(CONTENT_W*0.72);
+  const idC1=Math.round(idTableW*0.3), idC2=idTableW-idC1;
+  const idTbl=new Table({
+    width:{size:idTableW,type:WidthType.DXA},
+    columnWidths:[idC1,idC2],
+    rows:[
+      new TableRow({children:[
+        new TableCell({width:{size:idC1,type:WidthType.DXA},borders:allB,
+          shading:{fill:GRAY,type:ShadingType.CLEAR},margins:{top:60,bottom:60,left:120,right:120},
+          children:[pr([cr('Siniestro:',{bold:true})],{align:AlignmentType.LEFT,sa:0,sb:0})]}),
+        new TableCell({width:{size:idC2,type:WidthType.DXA},borders:allB,
+          margins:{top:60,bottom:60,left:120,right:120},
+          children:[pr([cr(s.numero_siniestro||'')],{align:AlignmentType.LEFT,sa:0,sb:0})]}),
+      ]}),
+      new TableRow({children:[
+        new TableCell({width:{size:idC1,type:WidthType.DXA},borders:allB,
+          shading:{fill:GRAY,type:ShadingType.CLEAR},margins:{top:60,bottom:60,left:120,right:120},
+          children:[pr([cr('Póliza:',{bold:true})],{align:AlignmentType.LEFT,sa:0,sb:0})]}),
+        new TableCell({width:{size:idC2,type:WidthType.DXA},borders:allB,
+          margins:{top:60,bottom:60,left:120,right:120},
+          children:[pr([cr(pol.numero||'')],{align:AlignmentType.LEFT,sa:0,sb:0})]}),
+      ]}),
+      new TableRow({children:[
+        new TableCell({width:{size:idC1,type:WidthType.DXA},borders:allB,
+          shading:{fill:GRAY,type:ShadingType.CLEAR},margins:{top:60,bottom:60,left:120,right:120},
+          children:[pr([cr('N/Ref.:',{bold:true})],{align:AlignmentType.LEFT,sa:0,sb:0})]}),
+        new TableCell({width:{size:idC2,type:WidthType.DXA},borders:allB,
+          margins:{top:60,bottom:60,left:120,right:120},
+          children:[pr([cr(s.numero_exp||'')],{align:AlignmentType.LEFT,sa:0,sb:0})]}),
+      ]}),
+    ],
+  });
+
+  // ── Reserva total para portada ────────────────────────────────────
+  const totReserva=rvList.reduce((acc,r)=>{
+    const p=r.monto_perdida_estimada||r.monto||0,d2=r.deducible||0;
+    const c=r.monto_coaseguro||((p-d2)*(r.coaseguro_pct||0)/100),b=r.monto_bajo_seguro||0;
+    return acc+(p-b-d2-c);
+  },0);
+  const monedaStr=pol.moneda||'MXN';
+  const dedTxt=sublims.filter(sl=>sl.deducible).map(sl=>sl.concepto+': '+sl.deducible).join('; ')
+    ||rvList.map(r=>r.bases_determinacion).filter(Boolean).join('. ')||'';
+  const coasTxt=sublims.filter(sl=>sl.coaseguro_pct).map(sl=>sl.concepto+': '+sl.coaseguro_pct+'%').join('; ')||'N/A';
+  const sumasTxt=sublims.length
+    ? sublims.map(sl=>sl.concepto+': '+(sl.moneda||'MXN')+' '+fM(sl.monto)).join(' | ')
+      +(sublims.length>1?' | TOTAL: '+(sublims[0].moneda||'MXN')+' '+fM(sublims.reduce((a,sl)=>a+(sl.monto||0),0)):'')
+    : monedaStr+' '+fM(pol.suma_asegurada);
+
+  // ── Tabla de estimación de reserva ───────────────────────────────
   let tablaEstim=null;
   if(rvList.length){
-    const hdr=new TableRow({children:[mkCell('CONCEPTO',{w:4800,bold:true,bg:BLUE,color:WHITE,size:18,align:AlignmentType.CENTER}),mkCell('RECLAMACIÓN ESTIMADA',{w:2672,bold:true,bg:BLUE,color:WHITE,size:18,align:AlignmentType.CENTER}),mkCell('DEDUCIBLE',{w:1300,bold:true,bg:BLUE,color:WHITE,size:18,align:AlignmentType.CENTER}),mkCell('RESERVA',{w:1372,bold:true,bg:BLUE,color:WHITE,size:18,align:AlignmentType.CENTER})]});
+    const eW=[Math.round(CONTENT_W*0.36),Math.round(CONTENT_W*0.22),Math.round(CONTENT_W*0.21),Math.round(CONTENT_W*0.21)];
+    eW[3]=CONTENT_W-eW[0]-eW[1]-eW[2];
+    const eHdr=(t,w)=>new TableCell({width:{size:w,type:WidthType.DXA},
+      borders:allB,shading:{fill:BLUE,type:ShadingType.CLEAR},
+      margins:{top:80,bottom:80,left:120,right:120},
+      children:[pr([ar(t,{bold:true,size:18,color:WHITE})],{align:AlignmentType.CENTER,sa:0,sb:0})]});
+    const eVal=(t,w,bold=false,bg=null)=>new TableCell({width:{size:w,type:WidthType.DXA},
+      borders:allB,shading:bg?{fill:bg,type:ShadingType.CLEAR}:undefined,
+      margins:{top:60,bottom:60,left:120,right:120},
+      children:[pr([cr(String(t??''),{size:18,bold})],{align:AlignmentType.RIGHT,sa:0,sb:0})]});
+    const eLbl=(t,w,bg=null)=>new TableCell({width:{size:w,type:WidthType.DXA},
+      borders:allB,shading:bg?{fill:bg,type:ShadingType.CLEAR}:undefined,
+      margins:{top:60,bottom:60,left:120,right:120},
+      children:[pr([cr(String(t??''),{size:18})],{align:AlignmentType.LEFT,sa:0,sb:0})]});
     let sp=0,sd=0,sr=0;
-    const dRows=rvList.map(r=>{const p=r.monto_perdida_estimada||r.monto||0,d2=r.deducible||0,c=r.monto_coaseguro||((p-d2)*(r.coaseguro_pct||0)/100),b=r.monto_bajo_seguro||0,res=p-b-d2-c;sp+=p;sd+=d2;sr+=res;return new TableRow({children:[mkCell(r.concepto||'',{w:4800,size:18}),mkCell(fM(p),{w:2672,size:18,align:AlignmentType.RIGHT}),mkCell(fM(d2),{w:1300,size:18,align:AlignmentType.RIGHT}),mkCell(fM(res),{w:1372,size:18,align:AlignmentType.RIGHT})]});});
-    const totRow=new TableRow({children:[mkCell('TOTAL',{w:4800,bold:true,bg:GRAY,size:18}),mkCell(fM(sp),{w:2672,bold:true,bg:GRAY,size:18,align:AlignmentType.RIGHT}),mkCell(fM(sd),{w:1300,bold:true,bg:GRAY,size:18,align:AlignmentType.RIGHT}),mkCell(fM(sr),{w:1372,bold:true,bg:GRAY,size:18,align:AlignmentType.RIGHT})]});
-    tablaEstim=new Table({width:{size:CONTENT_W,type:WidthType.DXA},columnWidths:[4800,2672,1300,1372],rows:[hdr,...dRows,totRow]});
+    const dRows=rvList.map(r=>{
+      const p=r.monto_perdida_estimada||r.monto||0,d2=r.deducible||0;
+      const c=r.monto_coaseguro||((p-d2)*(r.coaseguro_pct||0)/100),b=r.monto_bajo_seguro||0;
+      const res=p-b-d2-c; sp+=p; sd+=d2; sr+=res;
+      return new TableRow({children:[eLbl(r.concepto||'',eW[0]),eVal(fM(p),eW[1]),eVal(fM(d2),eW[2]),eVal(fM(res),eW[3])]});
+    });
+    const totRow=new TableRow({children:[
+      eLbl('TOTAL',eW[0],'E8F0FE'),eVal(fM(sp),eW[1],true,'E8F0FE'),
+      eVal(fM(sd),eW[2],true,'E8F0FE'),eVal(fM(sr),eW[3],true,'E8F0FE')]});
+    tablaEstim=new Table({
+      width:{size:CONTENT_W,type:WidthType.DXA},columnWidths:eW,
+      rows:[new TableRow({children:[eHdr('COBERTURA',eW[0]),eHdr('RECLAMACIÓN',eW[1]),eHdr('DEDUCIBLE',eW[2]),eHdr('RESERVA',eW[3])]}),
+        ...dRows,totRow]});
   }
 
-  // Firmas
+  // ── Tabla sección PÓLIZA (hanging indent estilo modelo) ───────────
+  const polizaRows=[];
+  const polRow=(label,value)=>{
+    const PW=CONTENT_W, PLW=3240, PVW=PW-PLW;
+    return new TableRow({children:[
+      new TableCell({width:{size:PLW,type:WidthType.DXA},borders:noB,
+        margins:{top:0,bottom:20,left:0,right:120},
+        children:[pr([cr(label,{bold:true})],{align:AlignmentType.LEFT,sa:0,sb:0})]}),
+      new TableCell({width:{size:PVW,type:WidthType.DXA},borders:noB,
+        margins:{top:0,bottom:20,left:0,right:0},
+        children:[pr([cr(String(value??''))],{align:AlignmentType.BOTH,sa:0,sb:0})]}),
+    ]});
+  };
+  polizaRows.push(polRow('NÚMERO:',pol.numero||''));
+  polizaRows.push(polRow('ASEGURADO:',asdo.nombre||''));
+  polizaRows.push(polRow('DOMICILIO FISCAL:',pol.domicilio_legal||''));
+  polizaRows.push(polRow('GIRO DEL ASEGURADO:',stripHtml(pol.giro_asegurado||'')));
+  polizaRows.push(polRow('VIGENCIA:','De las 12:00 horas del '+fD(pol.vigencia_ini)+' a las 12:00 horas del '+fD(pol.vigencia_fin)+', hora local estándar de las ubicaciones asegurables.'));
+  polizaRows.push(polRow('MONEDA:',monedaStr));
+  polizaRows.push(polRow('BIENES CUBIERTOS:',stripHtml(s.bienes_amparados||'')));
+  polizaRows.push(polRow('RIESGOS CUBIERTOS:',stripHtml(s.riesgos_cubiertos||s.riesgo_afectado||'')));
+  polizaRows.push(polRow('SUMAS ASEGURADAS:',sumasTxt));
+  polizaRows.push(polRow('LÍMITE MÁX. RESPONSABILIDAD:',stripHtml(pol.limite_max_texto||'')));
+  polizaRows.push(polRow('DEDUCIBLES:',dedTxt));
+  polizaRows.push(polRow('COASEGURO:',coasTxt));
+  const polizaTable=new Table({
+    width:{size:CONTENT_W,type:WidthType.DXA},
+    columnWidths:[3240,CONTENT_W-3240],
+    borders:{top:bNone,bottom:bNone,left:bNone,right:bNone,insideH:bNone,insideV:bNone},
+    rows:polizaRows,
+  });
+
+  // ── Firmas ────────────────────────────────────────────────────────
   const firmList=ajusts.length?ajusts:[{nombre:'Javier Chávez Á.',cnsf:'C34388'}];
   const colW=Math.floor(CONTENT_W/firmList.length);
-  const sigCells=firmList.map(aj=>new TableCell({width:{size:colW,type:WidthType.DXA},borders:noB,margins:{top:0,bottom:0,left:120,right:120},children:[para2([txt('',{size:20})],{sb:0,sa:60,border:{top:{style:BorderStyle.SINGLE,size:4,color:BLACK,space:2}}}),para2([txt(aj.nombre||'',{bold:true,size:20})],{align:AlignmentType.CENTER,sb:40,sa:20}),para2([txt('Cédula CNSF: '+(aj.cnsf||''),{size:18})],{align:AlignmentType.CENTER,sb:0,sa:0})]}));
-  const firmasTable=new Table({width:{size:CONTENT_W,type:WidthType.DXA},columnWidths:firmList.map(()=>colW),borders:{top:bNone,bottom:bNone,left:bNone,right:bNone,insideH:bNone,insideV:bNone},rows:[new TableRow({children:sigCells})]});
+  const sigCells=firmList.map(aj=>new TableCell({
+    width:{size:colW,type:WidthType.DXA},borders:noB,
+    margins:{top:0,bottom:0,left:120,right:120},
+    children:[
+      pr([cr('')],{border:{top:{style:BorderStyle.SINGLE,size:4,color:BLACK,space:2}},sb:0,sa:40}),
+      pr([cr(aj.nombre||'',{bold:true})],{align:AlignmentType.CENTER,sb:0,sa:20}),
+      pr([cr('Cédula CNSF: '+(aj.cnsf||''),{size:20})],{align:AlignmentType.CENTER,sb:0,sa:0}),
+    ]}));
+  const firmasTable=new Table({
+    width:{size:CONTENT_W,type:WidthType.DXA},
+    columnWidths:firmList.map(()=>colW),
+    borders:{top:bNone,bottom:bNone,left:bNone,right:bNone,insideH:bNone,insideV:bNone},
+    rows:[new TableRow({children:sigCells})],
+  });
 
-  const toc=[['1','INTRODUCCIÓN'],['2','ASEGURADO'],['2.1','DESCRIPCIÓN GENERAL DEL RIESGO ASEGURADO'],['2.2','GIRO DEL ASEGURADO'],['2.3','UBICACIÓN DONDE OCURRIÓ EL SINIESTRO'],['3','INSPECCIÓN DEL SINIESTRO'],['4','CÓMO OCURRIÓ EL SINIESTRO'],['5','CAUSA DEL SINIESTRO'],['6','BIENES AFECTADOS'],['7','ALCANCE DEL DAÑO'],['8','PROCEDENCIA'],['9','PÓLIZA DE SEGURO'],['10','DETERMINACIÓN DE LA RESERVA'],['10.1','RECLAMACIÓN'],['10.2','AJUSTE'],['10.3','ESTIMACIÓN DE RESERVA'],['11','SALVAMENTO'],['12','OBSERVACIONES Y ACTIVIDADES']].map(([n,t])=>para2([txt(n+'  '+t,{size:18,font:'Calibri'})],{sb:20,sa:20}));
-
-  const estrategias=campoDesdInf(lastInf,'estrategias',s,'estrategias_observaciones')||'De momento ninguna.';
-
+  // ── CONTENIDO del documento ───────────────────────────────────────
   const children=[
-    new Table({width:{size:CONTENT_W,type:WidthType.DXA},columnWidths:COL,rows:portRows}),ep(),
-    para2([new PageBreak()],{sb:0,sa:0}),
-    para2([txt('CONTENIDO',{bold:true,size:24,color:BLUE})],{sb:100,sa:160}),
-    ...toc,
-    para2([txt('INFORMACIÓN COMPLEMENTARIA',{bold:true,size:20,color:BLUE})],{sb:80,sa:40}),
-    para2([new PageBreak()],{sb:0,sa:0}),
-    secTitle('1','Introducción'),
+    // ── PORTADA ──
+    pr([cr(now)],{align:AlignmentType.LEFT,sa:240}),
+    pr([cr(aseg.nombre||'',{bold:true,size:28})],{align:AlignmentType.LEFT,sa:40}),
+    pr([cr('Presente')],{align:AlignmentType.LEFT,sa:0}),
+    pr([cr('')],{sa:120}),
+    ...(funcionario?[
+      pr([cr(funcionario,{bold:true})],{align:AlignmentType.LEFT,sa:0}),
+      pr([cr(cargo,{bold:true})],{align:AlignmentType.LEFT,sa:160}),
+    ]:[pr([cr('')],{sa:160})]),
+    idTbl,
+    pr([cr('')],{sa:160}),
+    pr([cr('Aseguradora: ',{bold:true}),cr(aseg.nombre||'')],{align:AlignmentType.LEFT,sa:0}),
+    pr([cr('Asegurado: ',{bold:true}),cr(asdo.nombre||'')],{align:AlignmentType.BOTH,
+      left:LW,hanging:LW,sa:0}),
+    pr([cr('Domicilio Legal: ',{bold:true}),cr(pol.domicilio_legal||'')],{align:AlignmentType.BOTH,
+      left:LW,hanging:LW,sa:0}),
+    pr([cr('Lugar del Siniestro: ',{bold:true}),cr(s.inspeccion_domicilio||s.lugar_siniestro||'')],{align:AlignmentType.BOTH,
+      left:LW,hanging:LW,sa:0}),
+    pr([cr('Giro del Asegurado: ',{bold:true}),cr(stripHtml(pol.giro_asegurado||s.giro_asegurado||''))],{align:AlignmentType.BOTH,
+      left:LW,hanging:LW,sa:0}),
+    pr([cr('Vigencia: ',{bold:true}),cr(fDS(pol.vigencia_ini)+(pol.vigencia_fin?' al '+fDS(pol.vigencia_fin):''))],{align:AlignmentType.BOTH,
+      left:LW,hanging:LW,sa:0}),
+    pr([cr('Fecha de Siniestro: ',{bold:true}),cr(fD(s.fecha_siniestro||s.fecha_ocurrencia)||'')],{align:AlignmentType.LEFT,
+      left:LW,hanging:LW,sa:0}),
+    pr([cr('Fecha de Asignación: ',{bold:true}),cr(fD(s.fecha_asignacion)||'')],{align:AlignmentType.LEFT,
+      left:LW,hanging:LW,sa:0}),
+    pr([cr('Fecha de Inspección: ',{bold:true}),cr(fD(s.fecha_primera_visita)||'')],{align:AlignmentType.LEFT,
+      left:LW,hanging:LW,sa:0}),
+    pr([cr('')],{sa:80}),
+    pr([cr('Descripción de los Daños: ',{bold:true}),cr(stripHtml(s.descripcion_danios_html||s.bienes_danados||''))],{align:AlignmentType.BOTH,left:LW,hanging:LW,sa:0}),
+    pr([cr('Bienes Amparados: ',{bold:true}),cr(stripHtml(s.bienes_amparados||''))],{align:AlignmentType.BOTH,left:LW,hanging:LW,sa:0}),
+    pr([cr('Cobertura: ',{bold:true}),cr(s.subramo||pol.subramo||'')],{align:AlignmentType.BOTH,left:LW,hanging:LW,sa:0}),
+    pr([cr('Suma Asegurada: ',{bold:true}),cr(sumasTxt)],{align:AlignmentType.LEFT,left:LW,hanging:LW,sa:0}),
+    pr([cr('Moneda: ',{bold:true}),cr(monedaStr)],{align:AlignmentType.LEFT,left:LW,hanging:LW,sa:0}),
+    pr([cr('Deducible: ',{bold:true}),cr(dedTxt)],{align:AlignmentType.BOTH,left:LW,hanging:LW,sa:0}),
+    pr([cr('Reserva Sugerida: ',{bold:true}),cr(monedaStr+' '+fM(totReserva))],{align:AlignmentType.LEFT,left:LW,hanging:LW,sa:0}),
+    pr([cr('Reserva actual al 100% neta de deducible y coaseguro (si aplica), como se explica más adelante en el presente informe.',{italics:true,size:20})],{align:AlignmentType.BOTH,left:LW,sa:0}),
+    pr([cr('Observaciones: ',{bold:true}),cr(s.observaciones||'')],{align:AlignmentType.BOTH,left:LW,hanging:LW,sa:160}),
+
+    // TOC placeholder
+    new Paragraph({children:[ar('[INSERTAR TABLA DE CONTENIDO]',{bold:true,size:24,color:'888888'})],alignment:AlignmentType.CENTER,spacing:{before:200,after:200}}),
+
+    // Page break before body
+    new Paragraph({children:[new PageBreak()],spacing:{before:0,after:0}}),
+
+    // ── SECCIONES ──
+    h1('Introducción'),
     ...pIntro, ep(),
-    secTitle('2','Asegurado'),
-    para2([txt('2.1  DESCRIPCIÓN GENERAL DEL RIESGO ASEGURADO',{bold:true,size:20,color:BLUE})],{sb:120,sa:60}),
-    ...pDescRiesgo,
-    para2([txt('2.2  GIRO DEL ASEGURADO',{bold:true,size:20,color:BLUE})],{sb:120,sa:60}),
-    body2(s.giro_asegurado||''),
-    para2([txt('2.3  UBICACIÓN DONDE OCURRIÓ EL SINIESTRO',{bold:true,size:20,color:BLUE})],{sb:120,sa:60}),
-    body2(s.lugar_siniestro||pol.ubicacion_riesgo||pol.domicilio_legal||''),ep(),
-    secTitle('3','Inspección del siniestro'),
-    ...pInspeccion, ep(),
-    secTitle('4','Cómo ocurrió el siniestro'),
-    ...pHechos, ep(),
-    secTitle('5','Causa del siniestro'),
-    body2(s.causa||''),ep(),
-    secTitle('6','Bienes afectados y daños sufridos'),
-    ...pBienes, ep(),
-    secTitle('7','Alcance del daño'),
-    body2(s.situacion_actual||''),ep(),
-    secTitle('8','Procedencia'),
-    body2(s.fundamento||'De acuerdo como se dieron los hechos, condiciones contractuales de la póliza y bienes afectados; el siniestro es de carácter '+procTxt.split(' (')[0]+', y al momento no se tiene exclusión alguna aplicable.'),ep(),
-    secTitle('9','Póliza de seguro'),
-    ...[['Tipo de Seguro',pol.tipo_seguro||''],['Vigencia del Seguro','Desde las 12:00 hrs. del día '+fD(pol.vigencia_ini)+', hasta las 12:00 hrs. del '+fD(pol.vigencia_fin)+'.'],['Bienes Amparados',(s.bienes_amparados?s.bienes_amparados.replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ').trim():'')],['Bienes Cubiertos',(s.descripcion_danios_html?s.descripcion_danios_html.replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ').trim():s.bienes_danados)||''],['Riesgos Cubiertos',(s.riesgos_cubiertos?s.riesgos_cubiertos.replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ').trim():s.riesgo_afectado)||''],['Naturaleza y Alcance de los Daños',(s.naturaleza_alcance_danios?s.naturaleza_alcance_danios.replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ').trim():'')||''],['Sumas aseguradas', sublims.length ? sublims.map(sl=>sl.concepto+': '+(sl.moneda||'MXN')+' '+fM(sl.monto)+(sl.deducible?' (Ded.: '+sl.deducible+')':'')+(sl.coaseguro_pct?', Coas.: '+sl.coaseguro_pct+'%':'')).join(' | ')+(sublims.length>1?' | TOTAL: '+(sublims[0].moneda||'MXN')+' '+fM(sublims.reduce((a,s)=>a+(s.monto||0),0)):'') : (pol.moneda||'MXN')+' '+fM(pol.suma_asegurada)],['Límite máx. responsabilidad',(pol.limite_max_texto?pol.limite_max_texto.replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ').trim():'')],['Deducible',dedTxt],['Coaseguro',s.coaseguro?(s.coaseguro_detalle||'Sí'):'N/A']].map(([label,value])=>para2([txt(label+'  ',{bold:true,size:20}),txt(value,{size:20})],{sb:60,sa:60,indent:720})),
+
+    h1('El Asegurado'),
+    ...pDescAseg, ep(),
+
+    h1noNum('Ubicación Afectada'),
+    ...pUbicacion, ep(),
+
+    h1noNum('Localización'),
+    ...(locImageParas.length?locImageParas:[pr([cr('Ver imágenes en pestaña Gráficos del expediente.',{italics:true,size:20})],{left:425,sa:60})]),
     ep(),
-    secTitle('7','Reclamación del Asegurado'),
-    body2((s.reclamacion_asegurado?s.reclamacion_asegurado.replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ').trim():'')||'Por el momento el Asegurado no ha presentado su formal reclamación a la compañía de Seguros, sin embargo, estamos en proceso de recepción de documentos, mismos que están siendo analizados.'),ep(),
-    secTitle('8','Considerandos'),
-    body2((s.considerandos?s.considerandos.replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ').trim():'')||''),ep(),
-    secTitle('10','Determinación de la reserva'),
-    para2([txt('10.1  RECLAMACIÓN',{bold:true,size:20,color:BLUE})],{sb:120,sa:60}),
-    body2('El Asegurado aún no presenta su reclamación formal, pero será por el importe de reemplazo de los elementos afectados, según estimamos a continuación:'),ep(),
-    para2([txt('10.2  AJUSTE',{bold:true,size:20,color:BLUE})],{sb:80,sa:60}),
-    body2(dedTxt),ep(),
-    para2([txt('10.3  ESTIMACIÓN DE RESERVA',{bold:true,size:20,color:BLUE})],{sb:80,sa:80}),
-    ...(tablaEstim?[tablaEstim]:[]),ep(),
-    para2([txt('Por la cantidad antes detallada de ',{size:20}),txt((pol.moneda||'MXN')+' '+fM(totReserva),{bold:true,size:20}),txt(', sugerimos crear la reserva correspondiente.',{size:20})],{sb:80,sa:80,indent:720}),ep(),
-    secTitle('11','Salvamento'),
-    body2(s.salvamento==='no'?'No se considera salvamento alguno.':salvTxt),ep(),
-    secTitle('12','Observaciones y actividades a realizar'),
-    ...pEstrategias, ep(),
-    para2([txt('Atentamente',{size:20})],{align:AlignmentType.CENTER,sb:400,sa:40}),
-    para2([txt('ALMARAZ AJUSTADORES, S. A.',{bold:true,size:20})],{align:AlignmentType.CENTER,sb:0,sa:400}),
+
+    h1('Inspección'),
+    ...pInspeccion, ep(),
+
+    h1('Descripción de los Bienes Afectados'),
+    ...pBienes, ep(),
+
+    h1('Póliza'),
+    polizaTable, ep(),
+
+    h1('Naturaleza y Alcance de los Daños'),
+    ...pNaturaleza, ep(),
+
+    h1('Procedencia'),
+    ...pProcedencia, ep(),
+
+    h1('Reserva'),
+    h1noNum('Reclamación del Asegurado'),
+    ...pReclamacion, ep(),
+
+    h1noNum('Considerandos'),
+    ...pConsiderandos, ep(),
+
+    h1noNum('Reserva Actual'),
+    ...(tablaEstim?[tablaEstim,ep()]:[pr([cr('Sin coberturas de reserva registradas.')],{left:425,sa:60}),ep()]),
+    pr([cr(monedaStr+' '+fM(totReserva),{bold:true,size:24})],{align:AlignmentType.CENTER,sa:0,sb:80}),
+    ep(),
+
+    h1('Salvamento'),
+    ...pSalvamento, ep(),
+
+    h1('Actividades por Realizar'),
+    ...pActividades, ep(),
+
+    h1('Comentarios'),
+    ...pComentarios, ep(),
+
+    pr([cr('')],{sa:400}),
+    pr([cr('Atentamente',{size:24})],{align:AlignmentType.CENTER,sa:40}),
+    pr([cr('ALMARAZ AJUSTADORES, S.A.',{bold:true,size:24})],{align:AlignmentType.CENTER,sa:400}),
     firmasTable,
   ];
 
+  // ── Build Document ────────────────────────────────────────────────
   const doc=new Document({
-    styles:{default:{document:{run:{font:'Arial',size:20,color:BLACK}}}},
-    numbering:{config:[{reference:'bullets',levels:[{level:0,format:LevelFormat.BULLET,text:'\u2022',alignment:AlignmentType.LEFT,style:{paragraph:{indent:{left:720,hanging:360}}}}]}]},
+    styles:{
+      default:{
+        document:{run:{font:COURIER,size:24,color:BLACK}},
+      },
+      paragraphStyles:[
+        {id:'Heading1',name:'Heading 1',basedOn:'Normal',next:'Normal',quickFormat:true,
+          run:{font:ARIAL,size:24,bold:true,color:BLACK},
+          paragraph:{spacing:{before:360,after:120},outlineLevel:0}},
+      ],
+    },
+    numbering:{config:[
+      {reference:'bullets',levels:[{level:0,format:LevelFormat.BULLET,text:'\u2022',
+        alignment:AlignmentType.LEFT,style:{paragraph:{indent:{left:720,hanging:360}}}}]},
+    ]},
     sections:[{
       properties:{
-        page:{size:{width:12242,height:15842},margin:{top:1985,bottom:1418,left:1701,right:397,header:1276,footer:720}},
+        page:{size:{width:PAGE_W,height:PAGE_H},
+          margin:{top:MAR_T,bottom:MAR_B,left:MAR_L,right:MAR_R,header:MAR_HDR,footer:MAR_FTR}},
         titlePage:true,
       },
-      headers:{default:makeDefaultHeader(),first:makeFirstHeader()},
-      footers:{default:makeDefaultFooter(),first:makeFirstFooter()},
+      headers:{first:firstHeader,default:defaultHeader},
+      footers:{first:firstFooter,default:defaultFooter},
       children,
     }],
   });
 
   const blob=await Packer.toBlob(doc);
-  const filename=s.numero_exp+'_INFORME_PRELIMINAR.docx';
+  const tipoStr=(lastInf.tipo||'preliminar').toUpperCase();
+  const filename=(s.numero_exp||'INFORME')+'_'+tipoStr+'.docx';
   if(window.showSaveFilePicker){
     try{
       const fh=await window.showSaveFilePicker({
@@ -6074,10 +6205,8 @@ async function descargarWord(){
         types:[{description:'Documento Word',accept:{'application/vnd.openxmlformats-officedocument.wordprocessingml.document':['.docx']}}]
       });
       const writable=await fh.createWritable();
-      await writable.write(blob);
-      await writable.close();
-      toast('Informe guardado.');
-      return;
+      await writable.write(blob); await writable.close();
+      toast('Informe guardado.'); return;
     }catch(e){ if(e.name==='AbortError') return; }
   }
   const url=URL.createObjectURL(blob);
@@ -6085,7 +6214,7 @@ async function descargarWord(){
   a.href=url; a.download=filename; a.style.display='none';
   document.body.appendChild(a); a.click();
   setTimeout(()=>{ document.body.removeChild(a); URL.revokeObjectURL(url); },1000);
-  toast('Informe Preliminar descargado.');
+  toast('Informe '+tipoStr+' descargado.');
 }
 
 
