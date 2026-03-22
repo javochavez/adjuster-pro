@@ -5923,23 +5923,13 @@ async function descargarWord(){
   const tipoStr=(lastInf.tipo||'preliminar').toUpperCase().replace(/\s+/g,'_');
   const filename=(s.numero_exp||'INFORME')+'_'+tipoStr+'.docx';
 
-  if(window.showSaveFilePicker){
-    try{
-      const fh=await window.showSaveFilePicker({
-        suggestedName:filename,
-        types:[{description:'Documento Word',accept:{'application/vnd.openxmlformats-officedocument.wordprocessingml.document':['.docx']}}]
-      });
-      const w=await fh.createWritable();
-      await w.write(blob); await w.close();
-      toast('Informe guardado.'); return;
-    }catch(e){ if(e.name==='AbortError') return; }
-  }
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');
   a.href=url; a.download=filename; a.style.display='none';
-  document.body.appendChild(a); a.click();
-  setTimeout(()=>{ document.body.removeChild(a); URL.revokeObjectURL(url); },1000);
-  toast('Informe '+tipoStr+' descargado.');
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(()=>{ document.body.removeChild(a); URL.revokeObjectURL(url); },2000);
+  toast('✓ Informe generado. Revise su carpeta de Descargas.');
   } catch(globalErr){
     console.error('descargarWord ERROR:', globalErr.message, globalErr.stack);
     toast('Error: '+globalErr.message);
@@ -6293,19 +6283,7 @@ async function descargarWordGNP(){
     return;
   }
   const filename=(s.tramite_gnp||s.numero_exp)+'_INFORME_GNP.docx';
-  if(window.showSaveFilePicker){
-    try{
-      const fh=await window.showSaveFilePicker({
-        suggestedName:filename,
-        types:[{description:'Documento Word',accept:{'application/vnd.openxmlformats-officedocument.wordprocessingml.document':['.docx']}}]
-      });
-      const writable=await fh.createWritable();
-      await writable.write(blob);
-      await writable.close();
-      toast('Informe GNP guardado.');
-      return;
-    }catch(e){ if(e.name==='AbortError') return; }
-  }
+
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');
   a.href=url; a.download=filename; a.style.display='none';
