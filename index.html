@@ -5797,18 +5797,10 @@ async function descargarWord(){
 
   // Decode base64 → Uint8Array
   // Debug: verify JSZip loaded and base64 is valid
-  console.log('JSZip available:', typeof JSZip);
-  console.log('MODEL_B64 length:', MODEL_B64.length);
-  console.log('MODEL_B64 first 20:', MODEL_B64.slice(0,20));
-  console.log('MODEL_B64 last 10:', MODEL_B64.slice(-10));
-  // Verify base64 chars only
-  const badChars = MODEL_B64.replace(/[A-Za-z0-9+/=]/g,'');
-  console.log('Bad chars in b64:', badChars.length, repr=badChars.slice(0,10));
   let zip;
   try {
     zip = await JSZip.loadAsync(MODEL_B64, {base64:true});
-    console.log('ZIP loaded OK, files:', Object.keys(zip.files).slice(0,5));
-  } catch(zipErr) {
+    } catch(zipErr) {
     console.error('ZIP load error:', zipErr.message, zipErr);
     toast('Error ZIP: '+zipErr.message);
     return;
@@ -5818,50 +5810,83 @@ async function descargarWord(){
   const xmlEsc=(s)=>String(s||'')
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
-  function makeRun(text,bold=false,sz='24'){
-    const rpr=`<w:rPr><w:rFonts w:ascii="Courier New" w:hAnsi="Courier New"/>${bold?'<w:b/><w:bCs/>':''}<w:sz w:val="${sz}"/><w:szCs w:val="${sz}"/></w:rPr>`;
-    const space=text!==text.trim()||text.includes('  ')?' xml:space="preserve"':'';
-    return `<w:r>${rpr}<w:t${space}>${xmlEsc(text)}</w:t></w:r>`;
-  }
-
   function fillXml(xml){
-    // Process paragraph by paragraph
-    return xml.replace(/<w:p( [^>]*)?>[\s\S]*?<\/w:p>/g, para=>{
-      // Extract full rendered text (collapse all runs)
-      const allText=[];
-      para.replace(/<w:t[^>]*>([^<]*)<\/w:t>/g,(_,t)=>{ allText.push(t); return ''; });
-      const full=allText.join('');
+    // Safe strategy: replace text only inside <w:t> tags, never restructure XML.
+    // Handles both: (a) marker intact in one <w:t>, (b) marker split across runs.
+    let result = xml;
 
-      // Find matching field
-      for(const [ph,val] of Object.entries(fields)){
-        if(full.includes('['+ph+']')){
-          const newText=full.replace('['+ph+']',String(val||''));
-          // Preserve pPr
-          const pPr=para.match(/<w:pPr>[\s\S]*?<\/w:pPr>/)?.[0]||'';
-          // Preserve drawings (images)
-          const drawings=[...para.matchAll(/<w:r><w:rPr>[\s\S]*?<\/w:rPr><w:drawing>[\s\S]*?<\/w:drawing><\/w:r>/g)].map(m=>m[0]).join('');
-          const bold=/<w:b\/>/.test(para);
-          const szM=para.match(/<w:sz w:val="(\d+)"/);
-          const sz=szM?szM[1]:'24';
-          const openTag=para.match(/^<w:p[^>]*>/)?.[0]||'<w:p>';
-          return `${openTag}${pPr}${drawings}${makeRun(newText,bold,sz)}</w:p>`;
+    for(const [ph,val] of Object.entries(fields)){
+      const marker='['+ph+']';
+      const safeVal=xmlEsc(String(val||''));
+      let safety=0;
+
+      while(result.includes(marker) && safety++<20){
+        // Case 1: marker is fully contained in a single <w:t>...</w:t>
+        const wtRe=/<w:t([^>]*)>([^<]*)<\/w:t>/g;
+        let m, found=false;
+        while((m=wtRe.exec(result))!==null){
+          if(m[2].includes(marker)){
+            const newText=m[2].replace(marker,String(val||''));
+            const sp=(newText!==newText.trim()||newText.includes('  '))?' xml:space="preserve"':'';
+            result=result.slice(0,m.index)+'<w:t'+sp+'>'+xmlEsc(newText)+'</w:t>'+result.slice(m.index+m[0].length);
+            found=true; break;
+          }
         }
+        if(found) continue;
+
+        // Case 2: marker is split across runs — collect all <w:t> in sequence,
+        // join them, replace, then put entire new text in the first <w:t> and
+        // clear the subsequent ones. We do this at the raw text level without
+        // restructuring any wrapping elements.
+        //
+        // Find contiguous sequence of <w:t>...</w:t> whose concatenation contains marker.
+        // Strategy: find the marker char by char across <w:t> boundaries.
+        let allTMatches=[];
+        const allTRe=/<w:t[^>]*>[^<]*<\/w:t>/g;
+        let tm;
+        while((tm=allTRe.exec(result))!==null) allTMatches.push({full:tm[0],idx:tm.index,
+          text:tm[0].replace(/<w:t[^>]*>/,'').replace(/<\/w:t>/,'')});
+
+        // Find window of consecutive <w:t> whose text joined contains marker
+        let found2=false;
+        for(let i=0;i<allTMatches.length;i++){
+          for(let j=i;j<Math.min(i+15,allTMatches.length);j++){
+            const combined=allTMatches.slice(i,j+1).map(t=>t.text).join('');
+            if(combined.includes(marker)){
+              // Replace: put new text in first <w:t>, blank rest
+              const newCombined=combined.replace(marker,String(val||''));
+              let first=true;
+              let rebuilt='';
+              for(let k=i;k<=j;k++){
+                const orig=allTMatches[k].full;
+                if(first){
+                  const sp=(newCombined!==newCombined.trim()||newCombined.includes('  '))?' xml:space="preserve"':'';
+                  rebuilt+='<w:t'+sp+'>'+xmlEsc(newCombined)+'</w:t>';
+                  first=false;
+                } else {
+                  rebuilt+='<w:t></w:t>';
+                }
+              }
+              // Replace in result from first match idx to end of last
+              const replStart=allTMatches[i].idx;
+              const replEnd=allTMatches[j].idx+allTMatches[j].full.length;
+              result=result.slice(0,replStart)+rebuilt+result.slice(replEnd);
+              found2=true; break;
+            }
+          }
+          if(found2) break;
+        }
+        if(!found2) break;
       }
-      return para;
-    });
+    }
+    return result;
   }
 
   // Fill all XML files
-  const filesToFill=['word/document.xml','word/header1.xml','word/header2.xml',
-                     'word/footer1.xml','word/footer2.xml'];
-  for(const fname of filesToFill){
-    const f=zip.file(fname);
-    if(!f){ console.log('File not found:',fname); continue; }
-    let xml;
-    try { xml=await f.async('string'); console.log('Read OK:',fname,xml.length,'chars'); }
-    catch(e){ console.error('Read error:',fname,e.message); continue; }
-    try { zip.file(fname, fillXml(xml)); console.log('Fill OK:',fname); }
-    catch(e){ console.error('Fill error:',fname,e.message,e.stack?.slice(0,200)); }
+  for(const fname of ['word/document.xml','word/header1.xml','word/header2.xml',
+                       'word/footer1.xml','word/footer2.xml']){
+    const f=zip.file(fname); if(!f) continue;
+    zip.file(fname, fillXml(await f.async('string')));
   }
 
   // ── Replace localización images ───────────────────────────────────
@@ -5887,16 +5912,7 @@ async function descargarWord(){
   }
 
   // ── Generate and download ─────────────────────────────────────────
-  console.log('Generating ZIP...');
-  let outBytes;
-  try {
-    outBytes=await zip.generateAsync({type:'uint8array',compression:'DEFLATE'});
-    console.log('Generated OK, size:',outBytes.length);
-  } catch(genErr){
-    console.error('generateAsync error:',genErr.message,genErr);
-    toast('Error generando: '+genErr.message);
-    return;
-  }
+  const outBytes=await zip.generateAsync({type:'uint8array',compression:'DEFLATE'});
   const blob=new Blob([outBytes],{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
   const tipoStr=(lastInf.tipo||'preliminar').toUpperCase().replace(/\s+/g,'_');
   const filename=(s.numero_exp||'INFORME')+'_'+tipoStr+'.docx';
