@@ -5808,8 +5808,6 @@ async function descargarWord(){
     'Límite máximo de responsabilidad': strip(pol.limite_max_texto||''),
     'Deducible (Citar la(s) cobertura(s) y su descripción)': dedTxt,
     'Coaseguro (Citar cada cobertura y porcentaje que aplica)': coasTxt,
-    'Reservas':                       reservaGrid,
-    'Reserva en Letra':         moneda+' '+fM(totReserva)+' ('+numeroALetras(totReserva,moneda)+')',
     'Ajustador':                      ajustadorNombre,
     'INSERTAR TABLA DE CONTENIDO':    '[Actualice la tabla de contenido en Word: Referencias → Actualizar tabla]',
   };
@@ -5828,6 +5826,8 @@ async function descargarWord(){
     'Detalle de Salvamento y Ubicación': s.salvamento_detalle_html||s.salvamento_detalle||'',
     'Actividades':                    s.actividades||'',
     'Observaciones':                  s.observaciones||'',
+    'Reservas':                       reservaGrid.split('\n').map(l=>`<p>${l.replace(/ /g,'&nbsp;')}</p>`).join(''),
+    'Reserva en Letra':               `<p><strong>${moneda} ${fM(totReserva)}</strong> (${numeroALetras(totReserva,moneda)})</p>`,
   };
 
   // ── HTML → OOXML paragraph converter ─────────────────────────────────────
@@ -5949,19 +5949,22 @@ async function descargarWord(){
     for(const [ph, rawHtml] of Object.entries(rteFields)){
       if(!rawHtml) continue;
       const marker=`[${ph}]`;
-      // Check if placeholder still exists in XML (fillXml should have left it)
-      if(!xml.includes(marker)) continue;
 
       // Build OOXML paragraphs from HTML
       const paraList=htmlToOoxmlParas(rawHtml);
       const ooxmlBlock=paraList.join('');
 
-      // Replace paragraph containing the marker
+      // Find paragraph where concatenated run text contains the marker
+      // (marker may be split across multiple <w:r> elements)
+      let replaced=false;
       xml=xml.replace(/<w:p[ >][\s\S]*?<\/w:p>/g, para=>{
         const texts=[...para.matchAll(/<w:t[^>]*>([^<]*)<\/w:t>/g)].map(m=>m[1]).join('');
         if(!texts.includes(marker)) return para;
+        replaced=true;
         return ooxmlBlock;
       });
+      if(replaced) console.log('rteExpand replaced:',ph);
+      else console.log('rteExpand: marker not found in any para:',marker);
     }
 
     // Embed images (resolve ||IMGKEY:..|| placeholders)
