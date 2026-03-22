@@ -119,13 +119,11 @@ td { padding:9px 10px; vertical-align:middle; }
 /* ── MODALS ── */
 .overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:200; overflow-y:auto; }
 .overlay.open { display:block; }
-.overlay > .modal, .overlay > div > .modal { margin:24px auto; }
-.modal { background:var(--surface); border:1px solid var(--border-md); border-radius:var(--rl); padding:1.5rem; width:640px; max-height:90vh; overflow-y:auto; }
-.modal.modal-flex { padding:0; display:flex; flex-direction:column; overflow:hidden; max-height:calc(100vh - 48px); }
+.overlay > .modal { background:var(--surface); border:1px solid var(--border-md); border-radius:var(--rl); padding:1.5rem; width:640px; max-height:90vh; overflow-y:auto; }
 .modal-sm { width:460px; }
 .modal-lg { width:780px; }
 .modal-title { font-size:15px; font-weight:700; margin-bottom:1.1rem; }
-.modal-flex .modal-title { padding:1.5rem 1.5rem 0; flex-shrink:0; }
+
 .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
 .fg { display:flex; flex-direction:column; gap:3px; }
 .fg.full { grid-column:1/-1; }
@@ -135,7 +133,6 @@ td { padding:9px 10px; vertical-align:middle; }
 .fg textarea { resize:vertical; min-height:70px; }
 .fg input:focus, .fg select:focus, .fg textarea:focus { outline:none; border-color:var(--accent-lt); }
 .modal-footer { display:flex; gap:8px; justify-content:flex-end; margin-top:1.25rem; padding-top:.9rem; border-top:1px solid var(--border); }
-.modal-flex .modal-footer { margin-top:0; padding:.9rem 1.5rem 1.5rem; flex-shrink:0; }
 
 /* ── EXPEDIENTE DETAIL ── */
 .exp-header { background:var(--surface); border:1px solid var(--border); border-radius:var(--rl); padding:1.1rem 1.25rem; margin-bottom:12px; display:flex; justify-content:space-between; align-items:flex-start; }
@@ -528,9 +525,9 @@ body.modo-lectura .readonly-hidden { display:none !important; }
 
 <!-- Siniestro -->
 <div class="overlay" id="modal-sin">
-<div class="modal modal-lg modal-flex" style="width:760px;">
+<div class="modal modal-lg" style="width:760px;">
   <div class="modal-title" id="sin-modal-title">Nuevo expediente</div>
-<div class="modal-scroll-body" style="overflow-y:auto;flex:1;min-height:0;padding:0 1.5rem 1rem;-webkit-overflow-scrolling:touch;">
+
   <input type="hidden" id="s-id">
   <div id="seccion-atlas" style="display:none;"></div>
   <div id="seccion-no-gnp" style="display:none;"></div>
