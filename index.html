@@ -527,6 +527,49 @@ body.modo-lectura .readonly-hidden { display:none !important; }
 <div class="modal modal-lg" style="width:760px;">
   <div class="modal-title" id="sin-modal-title">Nuevo expediente</div>
   <input type="hidden" id="s-id">
+  <input type="hidden" id="s-giro">
+  <input type="hidden" id="s-hora-ocurr">
+  <input type="hidden" id="s-hora-asig">
+  <input type="hidden" id="s-f1cont">
+  <input type="hidden" id="s-h1cont">
+  <input type="hidden" id="s-h1vis">
+  <input type="hidden" id="s-autoridades">
+  <input type="hidden" id="s-autoridades-det">
+  <input type="hidden" id="s-recuperacion">
+  <input type="hidden" id="s-rec-terceros">
+  <input type="hidden" id="s-rec-det">
+  <input type="hidden" id="s-coaseguro">
+  <input type="hidden" id="s-coas-det">
+  <input type="hidden" id="s-reaseguro">
+  <input type="hidden" id="s-reas-corredor">
+  <input type="hidden" id="s-tramite-gnp">
+  <input type="hidden" id="s-ot">
+  <input type="hidden" id="s-gnp-jefe">
+  <input type="hidden" id="s-gnp-oficina">
+  <input type="hidden" id="s-gnp-clave-ajust">
+  <input type="hidden" id="s-gnp-salv-persona">
+  <input type="hidden" id="s-gnp-salv-tel">
+  <input type="hidden" id="s-gnp-salv-email">
+  <input type="hidden" id="s-gnp-salv-movil">
+  <input type="hidden" id="s-gnp-salv-comprador">
+  <input type="hidden" id="s-gnp-rec-recuperador">
+  <input type="hidden" id="s-gnp-rec-carta-porte">
+  <input type="hidden" id="s-gnp-rec-prescripcion">
+  <input type="hidden" id="s-gnp-trans-tipo">
+  <input type="hidden" id="s-gnp-trans-frontera">
+  <input type="hidden" id="s-gnp-trans-placa">
+  <input type="hidden" id="s-gnp-trans-destino">
+  <input type="hidden" id="s-gnp-trans-compania">
+  <input type="hidden" id="s-gnp-docs-faltantes">
+  <input type="hidden" id="s-atlas-poliza">
+  <input type="hidden" id="s-atlas-sin-gnp">
+  <input type="hidden" id="s-situacion-actual">
+  <input type="hidden" id="s-subrogacion">
+  <input type="hidden" id="s-asesores">
+  <div id="s-desc-riesgo-rte" class="rte-editor" contenteditable="true" style="display:none;"></div>
+  <textarea id="s-desc-riesgo" style="display:none;"></textarea>
+  <div id="s-estrategias-rte" class="rte-editor" contenteditable="true" style="display:none;"></div>
+  <textarea id="s-estrategias" style="display:none;"></textarea>
 
   <!-- ═══════ IDENTIFICACIÓN ═══════ -->
   <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin:18px 0 8px;margin-bottom:8px;">Identificación</div>
@@ -3800,81 +3843,81 @@ async function guardarSiniestro(){
 function editarSiniestro(id){
   const s=data.sin.find(x=>x.id===id); if(!s) return;
   currentSin=s;  // needed for image picker and other context-aware tools
-  g('sin-modal-title').textContent='Editar expediente'; g('s-id').value=s.id;
-  g('s-exp').value=s.numero_exp||''; g('s-numsin').value=s.numero_siniestro||'';
-  g('s-subramo').value=s.subramo||'';
+  g('sin-modal-title').textContent='Editar expediente'; {let _e=g('s-id');if(_e)_e.value=s.id;}
+  {let _e=g('s-exp');if(_e)_e.value=s.numero_exp||'';} {let _e=g('s-numsin');if(_e)_e.value=s.numero_siniestro||'';}
+  {let _e=g('s-subramo');if(_e)_e.value=s.subramo||'';}
   loadRteSin('reclamacion', s.reclamacion_asegurado||'');
   setTimeout(renderEstimacionSinGrid, 100);
   loadRteSin('considerandos', s.considerandos||'');
-  loadRteSin('salv-det', s.salvamento_detalle_html||s.salvamento_detalle||''); g('s-causa').value=s.causa||''; g('s-riesgo').value=s.riesgo_afectado||'';
+  loadRteSin('salv-det', s.salvamento_detalle_html||s.salvamento_detalle||''); {let _e=g('s-causa');if(_e)_e.value=s.causa||'';} {let _e=g('s-riesgo');if(_e)_e.value=s.riesgo_afectado||'';}
   loadRteSin('riesgos-cubiertos', s.riesgos_cubiertos||'');
   loadRteSin('localizacion', s.localizacion_html||'');
   loadRteSin('naturaleza-alcance', s.naturaleza_alcance_danios||'');
-  g('s-clave-ajust').value=s.clave_ajustador_cia||'';
-  g('s-giro').value=s.giro_asegurado||'';
-  if(g('s-dest-nombre')) g('s-dest-nombre').value=s.destinatario_nombre||'';
-  if(g('s-dest-cargo'))  g('s-dest-cargo').value=s.destinatario_cargo||'';
+  {let _e=g('s-clave-ajust');if(_e)_e.value=s.clave_ajustador_cia||'';}
+  {let _e=g('s-giro');if(_e)_e.value=s.giro_asegurado||'';}
+  if(g('s-dest-nombre')) {let _e=g('s-dest-nombre');if(_e)_e.value=s.destinatario_nombre||'';}
+  if(g('s-dest-cargo'))  {let _e=g('s-dest-cargo');if(_e)_e.value=s.destinatario_cargo||'';}
   // Populate and restore funcionario selector
   const polFun=data.pol.find(p=>p.id===s.id_poliza)||{};
   poblarFuncionarioDestSin(polFun.id_aseguradora||0);
   if(s.id_contacto_dest && g('s-funcionario-dest')){
-    g('s-funcionario-dest').value=s.id_contacto_dest;
+    {let _e=g('s-funcionario-dest');if(_e)_e.value=s.id_contacto_dest;}
   }
   loadRteSin('desc', s.descripcion||'');
   loadRteSin('desc-riesgo', s.descripcion_riesgo||'');
   mostrarDescAsegSin(s.id_poliza);  // loads giro + desc from poliza
   loadRteSin('introduccion', s.introduccion||'');
   loadRteSin('inspeccion-narrativa', s.inspeccion_narrativa||'');
-  g('s-notas').value=s.notas||'';
+  {let _e=g('s-notas');if(_e)_e.value=s.notas||'';}
   loadRteSin('estrategias',   s.estrategias||s.estrategias_observaciones||'');
   loadRteSin('observaciones', s.observaciones||'');
   loadRteSin('actividades',   s.actividades||'');
-  g('s-est').value=s.estatus||'asignado';
-  g('s-fsin').value=s.fecha_siniestro||''; g('s-hora-ocurr').value=s.hora_ocurrencia||'';
-  g('s-fasig').value=s.fecha_asignacion||''; g('s-hora-asig').value=s.hora_asignacion||'';
-  g('s-f1cont').value=s.fecha_primer_contacto||''; g('s-h1cont').value=s.hora_primer_contacto||'';
-  g('s-f1vis').value=s.fecha_primera_visita||''; g('s-h1vis').value=s.hora_primera_visita||'';
-  g('s-insp-persona').value=s.inspeccion_persona||''; g('s-insp-cargo').value=s.inspeccion_cargo||'';
-g('s-insp-dom').value=s.inspeccion_domicilio||'';
+  {let _e=g('s-est');if(_e)_e.value=s.estatus||'asignado';}
+  {let _e=g('s-fsin');if(_e)_e.value=s.fecha_siniestro||'';} {let _e=g('s-hora-ocurr');if(_e)_e.value=s.hora_ocurrencia||'';}
+  {let _e=g('s-fasig');if(_e)_e.value=s.fecha_asignacion||'';} {let _e=g('s-hora-asig');if(_e)_e.value=s.hora_asignacion||'';}
+  {let _e=g('s-f1cont');if(_e)_e.value=s.fecha_primer_contacto||'';} {let _e=g('s-h1cont');if(_e)_e.value=s.hora_primer_contacto||'';}
+  {let _e=g('s-f1vis');if(_e)_e.value=s.fecha_primera_visita||'';} {let _e=g('s-h1vis');if(_e)_e.value=s.hora_primera_visita||'';}
+  {let _e=g('s-insp-persona');if(_e)_e.value=s.inspeccion_persona||'';} {let _e=g('s-insp-cargo');if(_e)_e.value=s.inspeccion_cargo||'';}
+{let _e=g('s-insp-dom');if(_e)_e.value=s.inspeccion_domicilio||'';}
   loadBienesRte(s.descripcion_danios_html||s.bienes_danados||'');
   loadRteSin('bienes-amparados', s.bienes_amparados||'');
-  g('s-autoridades').value=s.intervencion_autoridades?'1':'0';
-  g('s-autoridades-det').value=s.intervencion_autoridades_detalle||'';
-  g('s-salvamento').value=s.salvamento||'por_determinar';
-  g('s-salv-valor').value=s.salvamento_valor_estimado||'';
+  {let _e=g('s-autoridades');if(_e)_e.value=s.intervencion_autoridades?'1':'0';}
+  {let _e=g('s-autoridades-det');if(_e)_e.value=s.intervencion_autoridades_detalle||'';}
+  {let _e=g('s-salvamento');if(_e)_e.value=s.salvamento||'por_determinar';}
+  {let _e=g('s-salv-valor');if(_e)_e.value=s.salvamento_valor_estimado||'';}
   // s-salv-det now uses RTE — loaded above
-  g('s-recuperacion').value=s.recuperacion?'1':'0';
-  g('s-rec-terceros').value=s.recuperacion_terceros||''; g('s-rec-det').value=s.recuperacion_detalle||'';
-  g('s-coaseguro').value=s.coaseguro?'1':'0'; g('s-coas-det').value=s.coaseguro_detalle||'';
-  g('s-reaseguro').value=s.reaseguro_clausula_control?'1':'0';
-  g('s-reas-corredor').value=s.reaseguro_corredor||'';
-  g('s-tramite-gnp').value=s.tramite_gnp||''; g('s-ot').value=s.ot||'';
-  if(g('s-gnp-jefe'))       g('s-gnp-jefe').value=s.gnp_jefe_depto||'';
-  if(g('s-gnp-oficina'))    g('s-gnp-oficina').value=s.gnp_oficina||'';
-  if(g('s-gnp-clave-ajust'))g('s-gnp-clave-ajust').value=s.gnp_clave_ajustador||'';
-  if(g('s-gnp-salv-persona'))   g('s-gnp-salv-persona').value=s.salvamento_persona_contacto||'';
-  if(g('s-gnp-salv-tel'))       g('s-gnp-salv-tel').value=s.salvamento_telefono||'';
-  if(g('s-gnp-salv-email'))     g('s-gnp-salv-email').value=s.salvamento_email||'';
-  if(g('s-gnp-salv-movil'))     g('s-gnp-salv-movil').value=s.salvamento_movil||'';
-  if(g('s-gnp-salv-comprador')) g('s-gnp-salv-comprador').value=s.salvamento_comprador||'';
-  if(g('s-gnp-rec-recuperador'))g('s-gnp-rec-recuperador').value=s.recuperacion_nombre_recuperador||'';
-  if(g('s-gnp-rec-carta-porte'))g('s-gnp-rec-carta-porte').value=s.recuperacion_carta_porte||'';
-  if(g('s-gnp-rec-prescripcion'))g('s-gnp-rec-prescripcion').value=s.recuperacion_fecha_prescripcion||'';
-  if(g('s-gnp-trans-tipo'))     g('s-gnp-trans-tipo').value=s.transporte_tipo||'';
-  if(g('s-gnp-trans-frontera')) g('s-gnp-trans-frontera').value=s.transporte_frontera||'';
-  if(g('s-gnp-trans-placa'))    g('s-gnp-trans-placa').value=s.transporte_placa||'';
-  if(g('s-gnp-trans-destino'))  g('s-gnp-trans-destino').value=s.transporte_destino||'';
-  if(g('s-gnp-trans-compania')) g('s-gnp-trans-compania').value=s.transporte_compania||'';
-  if(g('s-gnp-docs-faltantes')) g('s-gnp-docs-faltantes').value=s.documentos_faltantes||'';
-  if(g('s-atlas-poliza'))   g('s-atlas-poliza').value=s.atlas_poliza_coaseg||'';
-  if(g('s-atlas-sin-gnp'))  g('s-atlas-sin-gnp').value=s.atlas_sinies_coaseg||'';
-  g('s-lugar-sin').value=s.lugar_siniestro||'';
-  g('s-procedencia').value=s.procedencia||'procedente';
+  {let _e=g('s-recuperacion');if(_e)_e.value=s.recuperacion?'1':'0';}
+  {let _e=g('s-rec-terceros');if(_e)_e.value=s.recuperacion_terceros||'';} {let _e=g('s-rec-det');if(_e)_e.value=s.recuperacion_detalle||'';}
+  {let _e=g('s-coaseguro');if(_e)_e.value=s.coaseguro?'1':'0';} {let _e=g('s-coas-det');if(_e)_e.value=s.coaseguro_detalle||'';}
+  {let _e=g('s-reaseguro');if(_e)_e.value=s.reaseguro_clausula_control?'1':'0';}
+  {let _e=g('s-reas-corredor');if(_e)_e.value=s.reaseguro_corredor||'';}
+  {let _e=g('s-tramite-gnp');if(_e)_e.value=s.tramite_gnp||'';} {let _e=g('s-ot');if(_e)_e.value=s.ot||'';}
+  if(g('s-gnp-jefe'))       {let _e=g('s-gnp-jefe');if(_e)_e.value=s.gnp_jefe_depto||'';}
+  if(g('s-gnp-oficina'))    {let _e=g('s-gnp-oficina');if(_e)_e.value=s.gnp_oficina||'';}
+  if(g('s-gnp-clave-ajust')){let _e=g('s-gnp-clave-ajust');if(_e)_e.value=s.gnp_clave_ajustador||'';}
+  if(g('s-gnp-salv-persona'))   {let _e=g('s-gnp-salv-persona');if(_e)_e.value=s.salvamento_persona_contacto||'';}
+  if(g('s-gnp-salv-tel'))       {let _e=g('s-gnp-salv-tel');if(_e)_e.value=s.salvamento_telefono||'';}
+  if(g('s-gnp-salv-email'))     {let _e=g('s-gnp-salv-email');if(_e)_e.value=s.salvamento_email||'';}
+  if(g('s-gnp-salv-movil'))     {let _e=g('s-gnp-salv-movil');if(_e)_e.value=s.salvamento_movil||'';}
+  if(g('s-gnp-salv-comprador')) {let _e=g('s-gnp-salv-comprador');if(_e)_e.value=s.salvamento_comprador||'';}
+  if(g('s-gnp-rec-recuperador')){let _e=g('s-gnp-rec-recuperador');if(_e)_e.value=s.recuperacion_nombre_recuperador||'';}
+  if(g('s-gnp-rec-carta-porte')){let _e=g('s-gnp-rec-carta-porte');if(_e)_e.value=s.recuperacion_carta_porte||'';}
+  if(g('s-gnp-rec-prescripcion')){let _e=g('s-gnp-rec-prescripcion');if(_e)_e.value=s.recuperacion_fecha_prescripcion||'';}
+  if(g('s-gnp-trans-tipo'))     {let _e=g('s-gnp-trans-tipo');if(_e)_e.value=s.transporte_tipo||'';}
+  if(g('s-gnp-trans-frontera')) {let _e=g('s-gnp-trans-frontera');if(_e)_e.value=s.transporte_frontera||'';}
+  if(g('s-gnp-trans-placa'))    {let _e=g('s-gnp-trans-placa');if(_e)_e.value=s.transporte_placa||'';}
+  if(g('s-gnp-trans-destino'))  {let _e=g('s-gnp-trans-destino');if(_e)_e.value=s.transporte_destino||'';}
+  if(g('s-gnp-trans-compania')) {let _e=g('s-gnp-trans-compania');if(_e)_e.value=s.transporte_compania||'';}
+  if(g('s-gnp-docs-faltantes')) {let _e=g('s-gnp-docs-faltantes');if(_e)_e.value=s.documentos_faltantes||'';}
+  if(g('s-atlas-poliza'))   {let _e=g('s-atlas-poliza');if(_e)_e.value=s.atlas_poliza_coaseg||'';}
+  if(g('s-atlas-sin-gnp'))  {let _e=g('s-atlas-sin-gnp');if(_e)_e.value=s.atlas_sinies_coaseg||'';}
+  {let _e=g('s-lugar-sin');if(_e)_e.value=s.lugar_siniestro||'';}
+  {let _e=g('s-procedencia');if(_e)_e.value=s.procedencia||'procedente';}
 
-  if(g('s-situacion-actual')) g('s-situacion-actual').value=s.situacion_actual||'';
-  if(g('s-fundamento'))       g('s-fundamento').value=s.fundamento||'';
-  if(g('s-subrogacion'))      g('s-subrogacion').value=s.subrogacion||'N/A';
-  if(g('s-asesores'))         g('s-asesores').value=s.asesores||'No aplican';
+  if(g('s-situacion-actual')) {let _e=g('s-situacion-actual');if(_e)_e.value=s.situacion_actual||'';}
+  if(g('s-fundamento'))       {let _e=g('s-fundamento');if(_e)_e.value=s.fundamento||'';}
+  if(g('s-subrogacion'))      {let _e=g('s-subrogacion');if(_e)_e.value=s.subrogacion||'N/A';}
+  if(g('s-asesores'))         {let _e=g('s-asesores');if(_e)_e.value=s.asesores||'No aplican';}
   const pol=data.pol.find(p=>p.id===s.id_poliza)||{};
   const asdo=data.asdo.find(a=>a.id===pol.id_asegurado)||{};
 
@@ -3887,13 +3930,13 @@ g('s-insp-dom').value=s.inspeccion_domicilio||'';
   if(pol.id){
     seleccionarPolizaSin(pol.id, pol.numero||'—', pol.id_aseguradora||0);
     // Restore company-specific fields after actualizarCamposAseg
-    if(g('s-tramite-gnp'))    g('s-tramite-gnp').value=s.tramite_gnp||'';
-    if(g('s-gnp-jefe'))       g('s-gnp-jefe').value=s.gnp_jefe_depto||'';
-    if(g('s-gnp-oficina'))    g('s-gnp-oficina').value=s.gnp_oficina||'';
-    if(g('s-gnp-clave-ajust'))g('s-gnp-clave-ajust').value=s.gnp_clave_ajustador||'';
-    if(g('s-ot'))             g('s-ot').value=s.ot||'';
-    if(g('s-atlas-poliza'))   g('s-atlas-poliza').value=s.atlas_poliza_coaseg||'';
-    if(g('s-atlas-sin-gnp'))  g('s-atlas-sin-gnp').value=s.atlas_sinies_coaseg||'';
+    if(g('s-tramite-gnp'))    {let _e=g('s-tramite-gnp');if(_e)_e.value=s.tramite_gnp||'';}
+    if(g('s-gnp-jefe'))       {let _e=g('s-gnp-jefe');if(_e)_e.value=s.gnp_jefe_depto||'';}
+    if(g('s-gnp-oficina'))    {let _e=g('s-gnp-oficina');if(_e)_e.value=s.gnp_oficina||'';}
+    if(g('s-gnp-clave-ajust')){let _e=g('s-gnp-clave-ajust');if(_e)_e.value=s.gnp_clave_ajustador||'';}
+    if(g('s-ot'))             {let _e=g('s-ot');if(_e)_e.value=s.ot||'';}
+    if(g('s-atlas-poliza'))   {let _e=g('s-atlas-poliza');if(_e)_e.value=s.atlas_poliza_coaseg||'';}
+    if(g('s-atlas-sin-gnp'))  {let _e=g('s-atlas-sin-gnp');if(_e)_e.value=s.atlas_sinies_coaseg||'';}
   }
   g('modal-sin').classList.add('open');
 }
