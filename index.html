@@ -528,7 +528,8 @@ body.modo-lectura .readonly-hidden { display:none !important; }
   <div class="modal-title" id="sin-modal-title">Nuevo expediente</div>
   <input type="hidden" id="s-id">
 
-  <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;">Identificación</div>
+  <!-- ═══════ IDENTIFICACIÓN ═══════ -->
+  <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin:18px 0 8px;margin-bottom:8px;">Identificación</div>
   <div class="form-grid">
     <div class="fg"><label>Ref. AASA</label><input type="text" id="s-exp" placeholder="ej. GNPEML010870925, ATLJCA010740624"></div>
     <div class="fg"><label>No. de siniestro</label><input type="text" id="s-numsin" placeholder="Llenar cuando se tenga"></div>
@@ -539,10 +540,12 @@ body.modo-lectura .readonly-hidden { display:none !important; }
       </select></div>
     <div class="fg"><label>Nombre del funcionario</label><input type="text" id="s-dest-nombre" placeholder="Se llena al seleccionar del directorio"></div>
     <div class="fg"><label>Cargo del funcionario</label><input type="text" id="s-dest-cargo" placeholder="ej. Jefe de Siniestros Daños"></div>
-    <div class="fg full"><label>Giro del asegurado</label><input type="text" id="s-giro" placeholder="ej. Ingenio azucarero"></div>
+    <div class="fg"><label>Fecha del siniestro</label><input type="date" id="s-fsin"></div>
+    <div class="fg"><label>Fecha de asignación</label><input type="date" id="s-fasig"></div>
+    <div class="fg"><label>Fecha primera visita</label><input type="date" id="s-f1vis" onchange="if(g('s-inspeccion-narrativa')&&!g('s-inspeccion-narrativa').dataset.editado)generarTextoInspeccion()"></div>
   </div>
 
-  <!-- ── PASO 1: ASEGURADO ─────────────────────────────────────────── -->
+  <!-- ═══════ ASEGURADO / PÓLIZA ═══════ -->
   <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin:14px 0 8px;">Paso 1 — Asegurado</div>
   <div id="sin-asdo-search-wrap">
     <div style="display:flex;gap:8px;align-items:flex-end;">
@@ -643,60 +646,13 @@ body.modo-lectura .readonly-hidden { display:none !important; }
 
   <!-- SECCIÓN GNP — visible solo cuando aseguradora.codigo_sistema = 'GNP' -->
   <div id="seccion-gnp" style="display:none;">
-    <div style="font-size:10px;font-weight:700;color:#ffcc80;text-transform:uppercase;letter-spacing:.07em;margin:12px 0 6px;padding:6px 10px;background:rgba(255,204,128,.08);border-left:3px solid #ffcc80;border-radius:0 4px 4px 0;">GNP — Campos específicos</div>
-    <div class="form-grid">
-      <div class="fg"><label>Número de trámite GNP</label><input type="text" id="s-tramite-gnp" placeholder="ej. SD00115817"></div>
-      <div class="fg"><label>Clave ajustador GNP</label><input type="text" id="s-gnp-clave-ajust" placeholder="Clave asignada por GNP"></div>
-      <div class="fg"><label>Jefe de Depto. GNP</label><input type="text" id="s-gnp-jefe" placeholder="Nombre del jefe de departamento"></div>
-      <div class="fg"><label>Oficina GNP</label><input type="text" id="s-gnp-oficina" placeholder="ej. Veracruz, Insurgentes"></div>
-    </div>
-    <!-- Salvamento extendido GNP (Sección 6) -->
-    <div style="font-size:10px;color:#ffcc80;text-transform:uppercase;letter-spacing:.06em;margin:10px 0 6px;">Salvamento extendido (GNP §6)</div>
-    <div class="form-grid">
-      <div class="fg"><label>Persona a entrevistar</label><input type="text" id="s-gnp-salv-persona" placeholder="Nombre del contacto para salvamento"></div>
-      <div class="fg"><label>Teléfono contacto</label><input type="text" id="s-gnp-salv-tel"></div>
-      <div class="fg"><label>Email contacto</label><input type="text" id="s-gnp-salv-email"></div>
-      <div class="fg"><label>Móvil contacto</label><input type="text" id="s-gnp-salv-movil"></div>
-      <div class="fg full"><label>Nombre posible comprador</label><input type="text" id="s-gnp-salv-comprador"></div>
-    </div>
-    <!-- Recuperación extendida GNP (Sección 7) -->
-    <div style="font-size:10px;color:#ffcc80;text-transform:uppercase;letter-spacing:.06em;margin:10px 0 6px;">Recuperación extendida (GNP §7)</div>
-    <div class="form-grid">
-      <div class="fg"><label>Nombre del recuperador</label><input type="text" id="s-gnp-rec-recuperador"></div>
-      <div class="fg"><label>Carta Porte / Bill of Lading</label><input type="text" id="s-gnp-rec-carta-porte"></div>
-      <div class="fg"><label>Fecha prescripción de la acción</label><input type="date" id="s-gnp-rec-prescripcion"></div>
-    </div>
-    <!-- Transportes GNP (Sección 8) -->
-    <div style="font-size:10px;color:#ffcc80;text-transform:uppercase;letter-spacing:.06em;margin:10px 0 6px;">Transportes (GNP §8)</div>
-    <div class="form-grid">
-      <div class="fg"><label>Tipo de transporte</label><input type="text" id="s-gnp-trans-tipo" placeholder="Terrestre, marítimo, aéreo"></div>
-      <div class="fg"><label>Puerto o frontera</label><input type="text" id="s-gnp-trans-frontera"></div>
-      <div class="fg"><label>Placa o matrícula</label><input type="text" id="s-gnp-trans-placa"></div>
-      <div class="fg"><label>Destino del embarque</label><input type="text" id="s-gnp-trans-destino"></div>
-      <div class="fg"><label>Compañía transportista</label><input type="text" id="s-gnp-trans-compania"></div>
-    </div>
-    <!-- Documentos faltantes GNP (Sección 9) -->
-    <div style="font-size:10px;color:#ffcc80;text-transform:uppercase;letter-spacing:.06em;margin:10px 0 6px;">Documentos faltantes (GNP §9)</div>
-    <div class="form-grid">
-      <div class="fg full"><label>Documentos solicitados faltantes</label><textarea id="s-gnp-docs-faltantes" style="min-height:60px;" placeholder="Uno por línea: Carta reclamación, Dictamen técnico..."></textarea></div>
-    </div>
-  </div>
+    <div style="font-size:10px;font-weight:700;color:#ffcc80;text-transform:uppercase;letter-spacing:.07em;margin:12px 0 6px;padding:6px 10px;background:rgba(255,204,128,.08);border-left:3px solid #ffcc80;border-radius:0 4px 4px 0;">
 
-  <!-- SECCIÓN ATLAS — visible solo cuando aseguradora.codigo_sistema = 'ATLAS' -->
-  <div id="seccion-atlas" style="display:none;">
-    <div style="font-size:10px;font-weight:700;color:#90caf9;text-transform:uppercase;letter-spacing:.07em;margin:12px 0 6px;padding:6px 10px;background:rgba(144,202,249,.08);border-left:3px solid #90caf9;border-radius:0 4px 4px 0;">Atlas — Campos específicos</div>
-    <div class="form-grid">
-      <div class="fg"><label>OT Atlas</label><input type="text" id="s-ot" placeholder="ej. 3296-2024"></div>
-      <div class="fg"><label>Póliza Atlas</label><input type="text" id="s-atlas-poliza" placeholder="ej. D00-2-71-8000-0-1"></div>
-      <div class="fg"><label>Siniestro GNP (coaseguro)</label><input type="text" id="s-atlas-sin-gnp" placeholder="No. siniestro en GNP si es coaseguro"></div>
-      <div class="fg"><label>Póliza GNP (coaseguro)</label><input type="text" id="s-atlas-pol-gnp" placeholder="No. póliza GNP si es coaseguro"></div>
-    </div>
-  </div>
+  <!-- ═══════ SINIESTRO ═══════ -->
 
-  <!-- SECCIÓN INSTITUCIONAL — siempre visible para todas las compañías -->
-  <div id="seccion-institucional">
-    <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin:12px 0 8px;">Siniestro</div>
+  <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin:18px 0 8px;">Siniestro</div>
   <div class="form-grid">
+
     <div class="fg"><label>Tipo de siniestro</label><input type="text" id="s-tipo" placeholder="Incendio, robo, etc."></div>
     <div class="fg"><label>Cobertura <span style="font-size:10px;color:var(--text-ter);font-weight:400;">(cobertura que aplica al siniestro)</span></label><input type="text" id="s-subramo" placeholder="ej. Rotura de Maquinaria, Incendio, Robo con violencia"></div>
     <div class="fg"><label>Causa</label><input type="text" id="s-causa"></div>
@@ -710,284 +666,17 @@ body.modo-lectura .readonly-hidden { display:none !important; }
         <option value="documentando">Documentando</option>
         <option value="cerrado">Cerrado</option>
       </select></div>
-    <div class="fg"><label>Intervención de autoridades</label>
-      <select id="s-autoridades"><option value="0">No</option><option value="1">Sí</option></select></div>
-    <div class="fg full"><label>Detalle intervención autoridades</label><input type="text" id="s-autoridades-det"></div>
-    <div class="fg full">
-      <label>Bienes amparados <span style="font-size:10px;color:var(--text-ter);font-weight:400;">(bienes de la póliza relevantes a este siniestro)</span></label>
-      <div class="rte-wrap">
-        <div class="rte-toolbar">
-          <button type="button" onclick="rteCmdSin('bienes-amparados','bold')"        title="Negrita"><strong>N</strong></button>
-          <button type="button" onclick="rteCmdSin('bienes-amparados','italic')"      title="Cursiva"><em>K</em></button>
-          <button type="button" onclick="rteCmdSin('bienes-amparados','underline')"   title="Subrayado"><u>S</u></button>
-          <span class="rte-sep"></span>
-          <button type="button" onclick="rteCmdSin('bienes-amparados','insertUnorderedList')" title="Lista con viñetas">≡•</button>
-          <button type="button" onclick="rteCmdSin('bienes-amparados','insertOrderedList')"   title="Lista numerada">≡1</button>
-          <span class="rte-sep"></span>
-          <button type="button" onclick="rteCmdSin('bienes-amparados','removeFormat')" title="Quitar formato">✕</button>
-          <span class="rte-sep"></span><button type="button" onclick="rteInsertarImagen('bienes-amparados')" title="Insertar imagen del expediente" style="font-size:13px;">📷</button>
-        </div>
-        <div id="s-bienes-amparados-rte" class="rte-editor" contenteditable="true"
-          data-placeholder="Descripción de los bienes que ampara la póliza para este siniestro específico..."
-          oninput="syncRteSin('bienes-amparados')"></div>
-        <textarea id="s-bienes-amparados" style="display:none;"></textarea>
-      </div>
-    </div>
-    <div class="fg full">
-      <label>Bienes afectados y daños sufridos <span style="font-size:10px;color:var(--text-ter);font-weight:400;">(texto enriquecido)</span></label>
-      <div class="rte-wrap">
-        <div class="rte-toolbar">
-          <button type="button" onclick="rteCmd('bold')"        title="Negrita"><strong>N</strong></button>
-          <button type="button" onclick="rteCmd('italic')"      title="Cursiva"><em>K</em></button>
-          <button type="button" onclick="rteCmd('underline')"   title="Subrayado"><u>S</u></button>
-          <span class="rte-sep"></span>
-          <button type="button" onclick="rteCmd('insertUnorderedList')" title="Lista con viñetas">≡•</button>
-          <button type="button" onclick="rteCmd('insertOrderedList')"   title="Lista numerada">≡1</button>
-          <span class="rte-sep"></span>
-          <button type="button" onclick="rteCmd('removeFormat')" title="Quitar formato">✕</button>
-          <span class="rte-sep"></span><button type="button" onclick="rteInsertarImagen('bienes')" title="Insertar imagen del expediente" style="font-size:13px;">📷</button>
-        </div>
-        <div id="s-bienes-rte" class="rte-editor" contenteditable="true"
-          data-placeholder="Detallar los bienes afectados y los daños sufridos..."
-          oninput="syncBienesRte()"></div>
-        <textarea id="s-bienes" style="display:none;"></textarea>
-      </div>
-    </div>
-  </div>
-
-  <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin:12px 0 8px;">Cronología</div>
-  <div class="form-grid">
-    <div class="fg"><label>Fecha del siniestro</label><input type="date" id="s-fsin"></div>
-    <div class="fg"><label>Hora de ocurrencia</label><input type="time" id="s-hora-ocurr"></div>
-    <div class="fg"><label>Fecha de asignación</label><input type="date" id="s-fasig"></div>
-    <div class="fg"><label>Hora de asignación</label><input type="time" id="s-hora-asig"></div>
-    <div class="fg"><label>Fecha primer contacto</label><input type="date" id="s-f1cont"></div>
-    <div class="fg"><label>Hora primer contacto</label><input type="time" id="s-h1cont"></div>
-    <div class="fg"><label>Fecha primera visita</label><input type="date" id="s-f1vis" onchange="if(g('s-inspeccion-narrativa')&&!g('s-inspeccion-narrativa').dataset.editado)generarTextoInspeccion()"></div>
-    <div class="fg"><label>Hora primera visita</label><input type="time" id="s-h1vis"></div>
-    <div class="fg"><label>Fecha límite informe</label><input type="date" id="s-finf"></div>
-  </div>
-
-  <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin:12px 0 8px;">Inspección</div>
-  <div class="form-grid">
-    <div class="fg"><label>Persona entrevistada</label><input type="text" id="s-insp-persona"></div>
-    <div class="fg"><label>Cargo</label><input type="text" id="s-insp-cargo"></div>
-    <div class="fg"><label>Teléfono</label><input type="text" id="s-insp-tel"></div>
     <div class="fg full"><label>Lugar del siniestro</label><input type="text" id="s-lugar-sin" placeholder="Zona específica dentro del inmueble asegurado"></div>
     <div class="fg full"><label>Ubicación Afectada</label><input type="text" id="s-insp-dom" placeholder="Domicilio afectado"></div>
   </div>
 
-  <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin:12px 0 8px;">Salvamento y Recuperación</div>
+  <!-- ═══════ I. INTRODUCCIÓN ═══════ -->
+
+  <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin:18px 0 8px;">I. Introducción del Informe</div>
   <div class="form-grid">
-    <div class="fg"><label>Salvamento</label>
-      <select id="s-salvamento"><option value="por_determinar">Por determinar</option><option value="si">Sí</option><option value="no">No</option></select></div>
-    <div class="fg"><label>Valor estimado salvamento</label><input type="number" id="s-salv-valor" placeholder="0.00"></div>
-    <div class="fg full">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-        <label style="margin-bottom:0;">Detalle de Salvamento y Ubicación</label>
-      </div>
-      <div class="rte-wrap">
-        <div class="rte-toolbar">
-          <button type="button" onclick="rteCmdSin('salv-det','bold')" title="Negrita"><strong>N</strong></button>
-          <button type="button" onclick="rteCmdSin('salv-det','italic')" title="Cursiva"><em>K</em></button>
-          <button type="button" onclick="rteCmdSin('salv-det','underline')" title="Subrayado"><u>S</u></button>
-          <span class="rte-sep"></span>
-          <button type="button" onclick="rteCmdSin('salv-det','insertUnorderedList')" title="Lista con viñetas">≡•</button>
-          <button type="button" onclick="rteCmdSin('salv-det','insertOrderedList')" title="Lista numerada">≡1</button>
-          <span class="rte-sep"></span>
-          <button type="button" onclick="rteCmdSin('salv-det','removeFormat')" title="Quitar formato">✕</button>
-          <span class="rte-sep"></span><button type="button" onclick="rteInsertarImagen('salv-det')" title="Insertar imagen" style="font-size:13px;">📷</button>
-        </div>
-        <div id="s-salv-det-rte" class="rte-editor" contenteditable="true"
-          data-placeholder="Describir los bienes susceptibles de salvamento: tipo de bien, estado actual, ubicación física donde se encuentran, quién los custodia, valor estimado de recuperación y acciones tomadas o programadas para su disposición."
-          oninput="syncRteSin('salv-det')" style="min-height:90px;"></div>
-        <textarea id="s-salv-det" style="display:none;"></textarea>
-      </div>
-    </div>
-    <div class="fg"><label>Recuperación</label>
-      <select id="s-recuperacion"><option value="0">No</option><option value="1">Sí</option></select></div>
-    <div class="fg"><label>Terceros responsables</label><input type="text" id="s-rec-terceros"></div>
-    <div class="fg full"><label>Detalle recuperación</label><input type="text" id="s-rec-det"></div>
+
   </div>
-
-  <div id="seccion-no-gnp">
-  <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin:12px 0 8px;">Coaseguro y Reaseguro</div>
-  <div class="form-grid">
-    <div class="fg"><label>Coaseguro</label>
-      <select id="s-coaseguro"><option value="0">No</option><option value="1">Sí</option></select></div>
-    <div class="fg"><label>Detalle coaseguro</label><input type="text" id="s-coas-det"></div>
-    <div class="fg"><label>Cláusula control reaseguro</label>
-      <select id="s-reaseguro"><option value="0">No</option><option value="1">Sí</option></select></div>
-    <div class="fg"><label>Corredor reaseguro</label><input type="text" id="s-reas-corredor"></div>
-  </div>
-
-    </div><!-- /seccion-no-gnp -->
-
-<div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin:12px 0 8px;">Narrativa</div>
-  <div class="form-grid">
-    <div class="fg full">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-        <label style="margin-bottom:0;">Giro del Asegurado
-          <span style="font-size:10px;color:var(--text-ter);font-weight:400;">— según póliza, editable y se guarda en póliza</span>
-        </label>
-      </div>
-      <div class="rte-wrap">
-        <div class="rte-toolbar">
-          <button type="button" onclick="rteCmdSinGiro('bold')"               title="Negrita"><strong>N</strong></button>
-          <button type="button" onclick="rteCmdSinGiro('italic')"             title="Cursiva"><em>K</em></button>
-          <button type="button" onclick="rteCmdSinGiro('underline')"          title="Subrayado"><u>S</u></button>
-          <span class="rte-sep"></span>
-          <button type="button" onclick="rteCmdSinGiro('insertUnorderedList')" title="Lista con viñetas">≡•</button>
-          <button type="button" onclick="rteCmdSinGiro('insertOrderedList')"   title="Lista numerada">≡1</button>
-          <span class="rte-sep"></span>
-          <button type="button" onclick="rteCmdSinGiro('removeFormat')"       title="Quitar formato">✕</button>
-        </div>
-        <div id="sin-giro-aseg-rte" class="rte-editor" contenteditable="true"
-          data-placeholder="Giro comercial o actividad principal del Asegurado de acuerdo a la póliza..."
-          oninput="syncSinGiroAseg()" style="min-height:70px;"></div>
-        <textarea id="sin-giro-aseg" style="display:none;"></textarea>
-      </div>
-    </div>
-    <div class="fg full">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-        <label style="margin-bottom:0;">Límite máximo de responsabilidad
-          <span style="font-size:10px;color:var(--text-ter);font-weight:400;">— editable, se guarda en la póliza</span>
-        </label>
-      </div>
-      <div class="rte-wrap">
-        <div class="rte-toolbar">
-          <button type="button" onclick="rteCmdSinLim('bold')"               title="Negrita"><strong>N</strong></button>
-          <button type="button" onclick="rteCmdSinLim('italic')"             title="Cursiva"><em>K</em></button>
-          <button type="button" onclick="rteCmdSinLim('underline')"          title="Subrayado"><u>S</u></button>
-          <span class="rte-sep"></span>
-          <button type="button" onclick="rteCmdSinLim('insertUnorderedList')" title="Lista con viñetas">≡•</button>
-          <button type="button" onclick="rteCmdSinLim('insertOrderedList')"   title="Lista numerada">≡1</button>
-          <span class="rte-sep"></span>
-          <button type="button" onclick="rteCmdSinLim('removeFormat')"       title="Quitar formato">✕</button>
-        </div>
-        <div id="sin-lim-texto-rte" class="rte-editor" contenteditable="true"
-          data-placeholder="Límite máximo de responsabilidad según póliza..."
-          oninput="syncSinLimTexto()" style="min-height:70px;"></div>
-        <textarea id="sin-lim-texto" style="display:none;"></textarea>
-      </div>
-    </div>
-    <div class="fg full">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-        <label style="margin-bottom:0;">Descripción del Asegurado
-          <span style="font-size:10px;color:var(--text-ter);font-weight:400;">— se guarda en la póliza, disponible en todos sus siniestros</span>
-        </label>
-      </div>
-      <div class="rte-wrap">
-        <div class="rte-toolbar">
-          <button type="button" onclick="rteCmdSinDescAseg('bold')"                title="Negrita"><strong>N</strong></button>
-          <button type="button" onclick="rteCmdSinDescAseg('italic')"              title="Cursiva"><em>K</em></button>
-          <button type="button" onclick="rteCmdSinDescAseg('underline')"           title="Subrayado"><u>S</u></button>
-          <span class="rte-sep"></span>
-          <button type="button" onclick="rteCmdSinDescAseg('insertUnorderedList')" title="Lista con viñetas">≡•</button>
-          <button type="button" onclick="rteCmdSinDescAseg('insertOrderedList')"   title="Lista numerada">≡1</button>
-          <span class="rte-sep"></span>
-          <button type="button" onclick="rteCmdSinDescAseg('removeFormat')"        title="Quitar formato">✕</button>
-          <span class="rte-sep"></span><button type="button" onclick="rteInsertarImagen('desc-aseg')" title="Insertar imagen del expediente" style="font-size:13px;">📷</button>
-        </div>
-        <div id="sin-desc-aseg-rte" class="rte-editor" contenteditable="true"
-          data-placeholder="Describa al Asegurado: historia, giro, actividad principal, características del riesgo..."
-          oninput="syncSinDescAseg()" style="min-height:90px;"></div>
-        <textarea id="sin-desc-aseg" style="display:none;"></textarea>
-      </div>
-    </div>
-    <div class="fg full">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-        <label style="margin-bottom:0;">Riesgos Cubiertos
-          <span style="font-size:10px;color:var(--text-ter);font-weight:400;">— riesgos de la póliza aplicables a este siniestro</span>
-        </label>
-      </div>
-      <div class="rte-wrap">
-        <div class="rte-toolbar">
-          <button type="button" onclick="rteCmdSin('riesgos-cubiertos','bold')"               title="Negrita"><strong>N</strong></button>
-          <button type="button" onclick="rteCmdSin('riesgos-cubiertos','italic')"             title="Cursiva"><em>K</em></button>
-          <button type="button" onclick="rteCmdSin('riesgos-cubiertos','underline')"          title="Subrayado"><u>S</u></button>
-          <span class="rte-sep"></span>
-          <button type="button" onclick="rteCmdSin('riesgos-cubiertos','insertUnorderedList')" title="Lista con viñetas">≡•</button>
-          <button type="button" onclick="rteCmdSin('riesgos-cubiertos','insertOrderedList')"   title="Lista numerada">≡1</button>
-          <span class="rte-sep"></span>
-          <button type="button" onclick="rteCmdSin('riesgos-cubiertos','removeFormat')"       title="Quitar formato">✕</button>
-          <span class="rte-sep"></span><button type="button" onclick="rteInsertarImagen('riesgos-cubiertos')" title="Insertar imagen" style="font-size:13px;">📷</button>
-        </div>
-        <div id="s-riesgos-cubiertos-rte" class="rte-editor" contenteditable="true"
-          data-placeholder="Lista de riesgos cubiertos por la póliza que aplican a este siniestro (ej. a) Incendio, b) Rayo, c) Explosión, d) Cobertura Adicional...)..."
-          oninput="syncRteSin('riesgos-cubiertos')" style="min-height:80px;"></div>
-        <textarea id="s-riesgos-cubiertos" style="display:none;"></textarea>
-      </div>
-    </div>
-    <div class="fg full">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-        <label style="margin-bottom:0;">Localización (Descripción e Imágenes)</label>
-      </div>
-      <div class="rte-wrap">
-        <div class="rte-toolbar">
-          <button type="button" onclick="rteCmdSin('localizacion','bold')"               title="Negrita"><strong>N</strong></button>
-          <button type="button" onclick="rteCmdSin('localizacion','italic')"             title="Cursiva"><em>K</em></button>
-          <button type="button" onclick="rteCmdSin('localizacion','underline')"          title="Subrayado"><u>S</u></button>
-          <span class="rte-sep"></span>
-          <button type="button" onclick="rteCmdSin('localizacion','insertUnorderedList')" title="Lista con viñetas">≡•</button>
-          <button type="button" onclick="rteCmdSin('localizacion','insertOrderedList')"   title="Lista numerada">≡1</button>
-          <span class="rte-sep"></span>
-          <button type="button" onclick="rteCmdSin('localizacion','removeFormat')"       title="Quitar formato">✕</button>
-          <span class="rte-sep"></span><button type="button" onclick="rteInsertarImagen('localizacion')" title="Insertar imagen" style="font-size:13px;">📷</button>
-        </div>
-        <div id="s-localizacion-rte" class="rte-editor" contenteditable="true"
-          data-placeholder="Agregar datos de localización, vista satelital, detalles relevantes de localización del domicilio asegurado."
-          oninput="syncRteSin('localizacion')" style="min-height:140px;"></div>
-        <textarea id="s-localizacion" style="display:none;"></textarea>
-      </div>
-    </div>
-    
-<div class="fg full">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-        <label style="margin-bottom:0;">Naturaleza y Alcance de los Daños</label>
-      </div>
-      <div class="rte-wrap">
-        <div class="rte-toolbar">
-          <button type="button" onclick="rteCmdSin('naturaleza-alcance','bold')"               title="Negrita"><strong>N</strong></button>
-          <button type="button" onclick="rteCmdSin('naturaleza-alcance','italic')"             title="Cursiva"><em>K</em></button>
-          <button type="button" onclick="rteCmdSin('naturaleza-alcance','underline')"          title="Subrayado"><u>S</u></button>
-          <span class="rte-sep"></span>
-          <button type="button" onclick="rteCmdSin('naturaleza-alcance','insertUnorderedList')" title="Lista con viñetas">≡•</button>
-          <button type="button" onclick="rteCmdSin('naturaleza-alcance','insertOrderedList')"   title="Lista numerada">≡1</button>
-          <span class="rte-sep"></span>
-          <button type="button" onclick="rteCmdSin('naturaleza-alcance','removeFormat')"       title="Quitar formato">✕</button>
-          <span class="rte-sep"></span><button type="button" onclick="rteInsertarImagen('naturaleza-alcance')" title="Insertar imagen" style="font-size:13px;">📷</button>
-        </div>
-        <div id="s-naturaleza-alcance-rte" class="rte-editor" contenteditable="true"
-          data-placeholder="Describir: 1) Naturaleza del daño — tipo de daño ocurrido (mecánico, eléctrico, por agua, por fuego, por impacto, corrosión, etc.). 2) Alcance del daño — extensión de la afectación (daño total o parcial, porcentaje estimado afectado, número de equipos o áreas involucradas, si el daño es reparable o implica sustitución). Ejemplo: Daño eléctrico por sobretensión en tablero principal, con afectación parcial estimada en 40% de la instalación eléctrica del piso 2. Los equipos de cómputo presentan daño total no reparable."
-          oninput="syncRteSin('naturaleza-alcance')" style="min-height:120px;"></div>
-        <textarea id="s-naturaleza-alcance" style="display:none;"></textarea>
-      </div>
-    </div>
-    <div class="fg full">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-        <label style="margin-bottom:0;">Descripción general del riesgo asegurado</label>
-      </div>
-      <div class="rte-wrap">
-      <div class="rte-toolbar">
-          <button type="button" onclick="rteCmdSin('desc-riesgo','bold')" title="Negrita"><strong>N</strong></button>
-          <button type="button" onclick="rteCmdSin('desc-riesgo','italic')" title="Cursiva"><em>K</em></button>
-          <button type="button" onclick="rteCmdSin('desc-riesgo','underline')" title="Subrayado"><u>S</u></button>
-          <span class="rte-sep"></span>
-          <button type="button" onclick="rteCmdSin('desc-riesgo','insertUnorderedList')" title="Lista con viñetas">≡•</button>
-          <button type="button" onclick="rteCmdSin('desc-riesgo','insertOrderedList')" title="Lista numerada">≡1</button>
-          <span class="rte-sep"></span>
-          <button type="button" onclick="rteCmdSin('desc-riesgo','removeFormat')" title="Quitar formato">✕</button>
-          <span class="rte-sep"></span><button type="button" onclick="rteInsertarImagen('desc-riesgo')" title="Insertar imagen del expediente" style="font-size:13px;">📷</button>
-          
-        </div>
-        <div id="s-desc-riesgo-rte" class="rte-editor" contenteditable="true"
-          data-placeholder="Descripción física del bien o instalación asegurada, características generales, uso y ocupación..." oninput="syncRteSin('desc-riesgo')"
-          style="min-height:70px;"></div>
-        <textarea id="s-desc-riesgo" style="display:none;"></textarea>
-      </div>
-    </div>
-    <div class="fg full" id="s-introduccion-wrap" style="overflow:visible;">
+  <div class="fg full" id="s-introduccion-wrap" style="overflow:visible;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
         <label style="margin-bottom:0;">Introducción del informe</label>
       </div>
@@ -1011,44 +700,13 @@ body.modo-lectura .readonly-hidden { display:none !important; }
       </div>
     </div>
 
-    <div class="fg full">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-        <label style="margin-bottom:0;">Inspección del siniestro</label>
-      </div>
-      <div class="rte-wrap">
-      <div class="rte-toolbar">
-          <button type="button" onclick="rteCmdSin('inspeccion-narrativa','bold')" title="Negrita"><strong>N</strong></button>
-          <button type="button" onclick="rteCmdSin('inspeccion-narrativa','italic')" title="Cursiva"><em>K</em></button>
-          <button type="button" onclick="rteCmdSin('inspeccion-narrativa','underline')" title="Subrayado"><u>S</u></button>
-          <span class="rte-sep"></span>
-          <button type="button" onclick="rteCmdSin('inspeccion-narrativa','insertUnorderedList')" title="Lista con viñetas">≡•</button>
-          <button type="button" onclick="rteCmdSin('inspeccion-narrativa','insertOrderedList')" title="Lista numerada">≡1</button>
-          <span class="rte-sep"></span>
-          <button type="button" onclick="rteCmdSin('inspeccion-narrativa','removeFormat')" title="Quitar formato">✕</button>
-          <span class="rte-sep"></span><button type="button" onclick="rteInsertarImagen('inspeccion-narrativa')" title="Insertar imagen del expediente" style="font-size:13px;">📷</button>
-          <span class="rte-sep"></span><button type="button" class="btn btn-sm" onclick="generarTextoInspeccion()" title="Genera el texto usando fecha, domicilio y persona entrevistada" style="font-size:11px;">✦ Generar texto</button>
-        </div>
-        <div id="s-inspeccion-narrativa-rte" class="rte-editor" contenteditable="true"
-          data-placeholder="Capture la fecha de primera visita y el domicilio inspeccionado, luego use ✦ Generar texto..." oninput="syncRteSin('inspeccion-narrativa');this.dataset.editado='1'"
-          style="min-height:100px;"></div>
-        <textarea id="s-inspeccion-narrativa" style="display:none;"></textarea>
-      </div>
-    </div>
-    <div class="fg"><label>Procedencia del reclamo</label>
-      <select id="s-procedencia">
-        <option value="procedente">Procedente</option>
-        <option value="por_determinar">Por determinar</option>
-        <option value="improcedente">Improcedente</option>
-      </select></div>
-    <div class="fg"></div>
-    <div class="fg full"><label>Situación actual de los bienes</label><textarea id="s-situacion-actual" style="min-height:55px;" placeholder="ej. En estado de daños sujetos a reparación mediante cambio de tarjetas y circuitos."></textarea></div>
-    <div class="fg full"><label>Fundamento de procedencia</label><textarea id="s-fundamento" style="min-height:55px;" placeholder="ej. La póliza ampara el equipo afectado contra el riesgo acaecido."></textarea></div>
-    <div class="fg"><label>Subrogación</label><input type="text" id="s-subrogacion" placeholder="N/A o descripción de tercero responsable"></div>
-    <div class="fg"><label>Asesores / Peritos externos</label><input type="text" id="s-asesores" placeholder="No aplican"></div>
-  </div>
+  <!-- ═══════ II. EL ASEGURADO ═══════ -->
 
+  <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin:18px 0 8px;">II. El Asegurado</div>
   <div class="form-grid">
-    <div class="fg full">
+
+  </div>
+  <div class="fg full">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
         <label style="margin-bottom:0;">Narración de los hechos</label>
       </div>
@@ -1071,73 +729,234 @@ body.modo-lectura .readonly-hidden { display:none !important; }
         <textarea id="s-desc" style="display:none;"></textarea>
       </div>
     </div>
-    <div class="fg full">
+
+  <!-- ═══════ III. UBICACIÓN AFECTADA ═══════ -->
+
+  <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin:18px 0 8px;">III. Ubicación Afectada</div>
+  <div class="form-grid">
+
+    <div class="fg full"><label>Ubicación Afectada</label><input type="text" id="s-insp-dom" placeholder="Domicilio afectado"></div>
+  </div>
+
+
+  <!-- ═══════ IV. LOCALIZACIÓN ═══════ -->
+
+  <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin:18px 0 8px;">IV. Localización</div>
+  <div class="form-grid">
+
+  </div>
+  <div class="fg full">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-        <label style="margin-bottom:0;">Estrategias de ajuste</label>
+        <label style="margin-bottom:0;">Localización (Descripción e Imágenes)</label>
+      </div>
+      <div class="rte-wrap">
+        <div class="rte-toolbar">
+          <button type="button" onclick="rteCmdSin('localizacion','bold')"               title="Negrita"><strong>N</strong></button>
+          <button type="button" onclick="rteCmdSin('localizacion','italic')"             title="Cursiva"><em>K</em></button>
+          <button type="button" onclick="rteCmdSin('localizacion','underline')"          title="Subrayado"><u>S</u></button>
+          <span class="rte-sep"></span>
+          <button type="button" onclick="rteCmdSin('localizacion','insertUnorderedList')" title="Lista con viñetas">≡•</button>
+          <button type="button" onclick="rteCmdSin('localizacion','insertOrderedList')"   title="Lista numerada">≡1</button>
+          <span class="rte-sep"></span>
+          <button type="button" onclick="rteCmdSin('localizacion','removeFormat')"       title="Quitar formato">✕</button>
+          <span class="rte-sep"></span><button type="button" onclick="rteInsertarImagen('localizacion')" title="Insertar imagen" style="font-size:13px;">📷</button>
+        </div>
+        <div id="s-localizacion-rte" class="rte-editor" contenteditable="true"
+          data-placeholder="Agregar datos de localización, vista satelital, detalles relevantes de localización del domicilio asegurado."
+          oninput="syncRteSin('localizacion')" style="min-height:140px;"></div>
+        <textarea id="s-localizacion" style="display:none;"></textarea>
+      </div>
+    </div>
+
+  <!-- ═══════ V. INSPECCIÓN ═══════ -->
+
+  <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin:18px 0 8px;">V. Inspección</div>
+  <div class="form-grid">
+
+    <div class="fg"><label>Persona entrevistada</label><input type="text" id="s-insp-persona"></div>
+    <div class="fg"><label>Cargo</label><input type="text" id="s-insp-cargo"></div>
+    <div class="fg"><label>Teléfono</label><input type="text" id="s-insp-tel"></div>
+  </div>
+
+  <div class="fg full">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+        <label style="margin-bottom:0;">Inspección del siniestro</label>
       </div>
       <div class="rte-wrap">
       <div class="rte-toolbar">
-          <button type="button" onclick="rteCmdSin('estrategias','bold')" title="Negrita"><strong>N</strong></button>
-          <button type="button" onclick="rteCmdSin('estrategias','italic')" title="Cursiva"><em>K</em></button>
-          <button type="button" onclick="rteCmdSin('estrategias','underline')" title="Subrayado"><u>S</u></button>
+          <button type="button" onclick="rteCmdSin('inspeccion-narrativa','bold')" title="Negrita"><strong>N</strong></button>
+          <button type="button" onclick="rteCmdSin('inspeccion-narrativa','italic')" title="Cursiva"><em>K</em></button>
+          <button type="button" onclick="rteCmdSin('inspeccion-narrativa','underline')" title="Subrayado"><u>S</u></button>
           <span class="rte-sep"></span>
-          <button type="button" onclick="rteCmdSin('estrategias','insertUnorderedList')" title="Lista con viñetas">≡•</button>
-          <button type="button" onclick="rteCmdSin('estrategias','insertOrderedList')" title="Lista numerada">≡1</button>
+          <button type="button" onclick="rteCmdSin('inspeccion-narrativa','insertUnorderedList')" title="Lista con viñetas">≡•</button>
+          <button type="button" onclick="rteCmdSin('inspeccion-narrativa','insertOrderedList')" title="Lista numerada">≡1</button>
           <span class="rte-sep"></span>
-          <button type="button" onclick="rteCmdSin('estrategias','removeFormat')" title="Quitar formato">✕</button>
-          <span class="rte-sep"></span><button type="button" onclick="rteInsertarImagen('estrategias')" title="Insertar imagen del expediente" style="font-size:13px;">📷</button>
+          <button type="button" onclick="rteCmdSin('inspeccion-narrativa','removeFormat')" title="Quitar formato">✕</button>
+          <span class="rte-sep"></span><button type="button" onclick="rteInsertarImagen('inspeccion-narrativa')" title="Insertar imagen del expediente" style="font-size:13px;">📷</button>
+          <span class="rte-sep"></span><button type="button" class="btn btn-sm" onclick="generarTextoInspeccion()" title="Genera el texto usando fecha, domicilio y persona entrevistada" style="font-size:11px;">✦ Generar texto</button>
         </div>
-        <div id="s-estrategias-rte" class="rte-editor" contenteditable="true"
-          data-placeholder="Plan de ajuste, acciones a seguir, documentos solicitados, estrategia técnica..."
-          oninput="syncRteSin('estrategias')" style="min-height:100px;"></div>
-        <textarea id="s-estrategias" style="display:none;"></textarea>
+        <div id="s-inspeccion-narrativa-rte" class="rte-editor" contenteditable="true"
+          data-placeholder="Capture la fecha de primera visita y el domicilio inspeccionado, luego use ✦ Generar texto..." oninput="syncRteSin('inspeccion-narrativa');this.dataset.editado='1'"
+          style="min-height:100px;"></div>
+        <textarea id="s-inspeccion-narrativa" style="display:none;"></textarea>
       </div>
     </div>
-    <div class="fg full">
+
+  <!-- ═══════ VI. DESCRIPCIÓN DE BIENES AFECTADOS ═══════ -->
+
+  <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin:18px 0 8px;">VI. Descripción de los Bienes Afectados</div>
+  <div class="form-grid">
+
+  </div>
+  <div class="fg full">
+      <label>Bienes amparados <span style="font-size:10px;color:var(--text-ter);font-weight:400;">(bienes de la póliza relevantes a este siniestro)</span></label>
+      <div class="rte-wrap">
+        <div class="rte-toolbar">
+          <button type="button" onclick="rteCmdSin('bienes-amparados','bold')"        title="Negrita"><strong>N</strong></button>
+          <button type="button" onclick="rteCmdSin('bienes-amparados','italic')"      title="Cursiva"><em>K</em></button>
+          <button type="button" onclick="rteCmdSin('bienes-amparados','underline')"   title="Subrayado"><u>S</u></button>
+          <span class="rte-sep"></span>
+          <button type="button" onclick="rteCmdSin('bienes-amparados','insertUnorderedList')" title="Lista con viñetas">≡•</button>
+          <button type="button" onclick="rteCmdSin('bienes-amparados','insertOrderedList')"   title="Lista numerada">≡1</button>
+          <span class="rte-sep"></span>
+          <button type="button" onclick="rteCmdSin('bienes-amparados','removeFormat')" title="Quitar formato">✕</button>
+          <span class="rte-sep"></span><button type="button" onclick="rteInsertarImagen('bienes-amparados')" title="Insertar imagen del expediente" style="font-size:13px;">📷</button>
+        </div>
+        <div id="s-bienes-amparados-rte" class="rte-editor" contenteditable="true"
+          data-placeholder="Descripción de los bienes que ampara la póliza para este siniestro específico..."
+          oninput="syncRteSin('bienes-amparados')"></div>
+        <textarea id="s-bienes-amparados" style="display:none;"></textarea>
+      </div>
+    </div>
+  <div class="fg full">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-        <label style="margin-bottom:0;">Observaciones</label>
+        <label style="margin-bottom:0;">Narración de los hechos</label>
       </div>
       <div class="rte-wrap">
       <div class="rte-toolbar">
-          <button type="button" onclick="rteCmdSin('observaciones','bold')" title="Negrita"><strong>N</strong></button>
-          <button type="button" onclick="rteCmdSin('observaciones','italic')" title="Cursiva"><em>K</em></button>
-          <button type="button" onclick="rteCmdSin('observaciones','underline')" title="Subrayado"><u>S</u></button>
+          <button type="button" onclick="rteCmdSin('desc','bold')" title="Negrita"><strong>N</strong></button>
+          <button type="button" onclick="rteCmdSin('desc','italic')" title="Cursiva"><em>K</em></button>
+          <button type="button" onclick="rteCmdSin('desc','underline')" title="Subrayado"><u>S</u></button>
           <span class="rte-sep"></span>
-          <button type="button" onclick="rteCmdSin('observaciones','insertUnorderedList')" title="Lista con viñetas">≡•</button>
-          <button type="button" onclick="rteCmdSin('observaciones','insertOrderedList')" title="Lista numerada">≡1</button>
+          <button type="button" onclick="rteCmdSin('desc','insertUnorderedList')" title="Lista con viñetas">≡•</button>
+          <button type="button" onclick="rteCmdSin('desc','insertOrderedList')" title="Lista numerada">≡1</button>
           <span class="rte-sep"></span>
-          <button type="button" onclick="rteCmdSin('observaciones','removeFormat')" title="Quitar formato">✕</button>
-          <span class="rte-sep"></span><button type="button" onclick="rteInsertarImagen('observaciones')" title="Insertar imagen del expediente" style="font-size:13px;">📷</button>
+          <button type="button" onclick="rteCmdSin('desc','removeFormat')" title="Quitar formato">✕</button>
+          <span class="rte-sep"></span><button type="button" onclick="rteInsertarImagen('desc')" title="Insertar imagen del expediente" style="font-size:13px;">📷</button>
+          
         </div>
-        <div id="s-observaciones-rte" class="rte-editor" contenteditable="true"
-          data-placeholder="Comentarios técnicos, notas al informe, aspectos a destacar, reservas técnicas..."
-          oninput="syncRteSin('observaciones')" style="min-height:90px;"></div>
-        <textarea id="s-observaciones" style="display:none;"></textarea>
+        <div id="s-desc-rte" class="rte-editor" contenteditable="true"
+          data-placeholder="Cómo ocurrió el siniestro, circunstancias, descripción del evento..." oninput="syncRteSin('desc')"
+          style="min-height:70px;"></div>
+        <textarea id="s-desc" style="display:none;"></textarea>
       </div>
     </div>
-    <div class="fg full">
+
+  <!-- ═══════ VII. PÓLIZA ═══════ -->
+
+  <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin:18px 0 8px;">VII. Póliza</div>
+  <div class="form-grid">
+
+  </div>
+  <div class="fg full">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-        <label style="margin-bottom:0;">Actividades a realizar</label>
+        <label style="margin-bottom:0;">Riesgos Cubiertos
+          <span style="font-size:10px;color:var(--text-ter);font-weight:400;">— riesgos de la póliza aplicables a este siniestro</span>
+        </label>
       </div>
       <div class="rte-wrap">
-      <div class="rte-toolbar">
-          <button type="button" onclick="rteCmdSin('actividades','bold')" title="Negrita"><strong>N</strong></button>
-          <button type="button" onclick="rteCmdSin('actividades','italic')" title="Cursiva"><em>K</em></button>
-          <button type="button" onclick="rteCmdSin('actividades','underline')" title="Subrayado"><u>S</u></button>
+        <div class="rte-toolbar">
+          <button type="button" onclick="rteCmdSin('riesgos-cubiertos','bold')"               title="Negrita"><strong>N</strong></button>
+          <button type="button" onclick="rteCmdSin('riesgos-cubiertos','italic')"             title="Cursiva"><em>K</em></button>
+          <button type="button" onclick="rteCmdSin('riesgos-cubiertos','underline')"          title="Subrayado"><u>S</u></button>
           <span class="rte-sep"></span>
-          <button type="button" onclick="rteCmdSin('actividades','insertUnorderedList')" title="Lista con viñetas">≡•</button>
-          <button type="button" onclick="rteCmdSin('actividades','insertOrderedList')" title="Lista numerada">≡1</button>
+          <button type="button" onclick="rteCmdSin('riesgos-cubiertos','insertUnorderedList')" title="Lista con viñetas">≡•</button>
+          <button type="button" onclick="rteCmdSin('riesgos-cubiertos','insertOrderedList')"   title="Lista numerada">≡1</button>
           <span class="rte-sep"></span>
-          <button type="button" onclick="rteCmdSin('actividades','removeFormat')" title="Quitar formato">✕</button>
-          <span class="rte-sep"></span><button type="button" onclick="rteInsertarImagen('actividades')" title="Insertar imagen del expediente" style="font-size:13px;">📷</button>
+          <button type="button" onclick="rteCmdSin('riesgos-cubiertos','removeFormat')"       title="Quitar formato">✕</button>
+          <span class="rte-sep"></span><button type="button" onclick="rteInsertarImagen('riesgos-cubiertos')" title="Insertar imagen" style="font-size:13px;">📷</button>
         </div>
-        <div id="s-actividades-rte" class="rte-editor" contenteditable="true"
-          data-placeholder="Tareas pendientes concretas, visitas programadas, gestiones en proceso..."
-          oninput="syncRteSin('actividades')" style="min-height:80px;"></div>
-        <textarea id="s-actividades" style="display:none;"></textarea>
+        <div id="s-riesgos-cubiertos-rte" class="rte-editor" contenteditable="true"
+          data-placeholder="Lista de riesgos cubiertos por la póliza que aplican a este siniestro (ej. a) Incendio, b) Rayo, c) Explosión, d) Cobertura Adicional...)..."
+          oninput="syncRteSin('riesgos-cubiertos')" style="min-height:80px;"></div>
+        <textarea id="s-riesgos-cubiertos" style="display:none;"></textarea>
       </div>
     </div>
-    <div class="fg full">
+  <div class="fg full">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+        <label style="margin-bottom:0;">Límite máximo de responsabilidad
+          <span style="font-size:10px;color:var(--text-ter);font-weight:400;">— editable, se guarda en la póliza</span>
+        </label>
+      </div>
+      <div class="rte-wrap">
+        <div class="rte-toolbar">
+          <button type="button" onclick="rteCmdSinLim('bold')"               title="Negrita"><strong>N</strong></button>
+          <button type="button" onclick="rteCmdSinLim('italic')"             title="Cursiva"><em>K</em></button>
+          <button type="button" onclick="rteCmdSinLim('underline')"          title="Subrayado"><u>S</u></button>
+          <span class="rte-sep"></span>
+          <button type="button" onclick="rteCmdSinLim('insertUnorderedList')" title="Lista con viñetas">≡•</button>
+          <button type="button" onclick="rteCmdSinLim('insertOrderedList')"   title="Lista numerada">≡1</button>
+          <span class="rte-sep"></span>
+          <button type="button" onclick="rteCmdSinLim('removeFormat')"       title="Quitar formato">✕</button>
+        </div>
+        <div id="sin-lim-texto-rte" class="rte-editor" contenteditable="true"
+          data-placeholder="Límite máximo de responsabilidad según póliza..."
+          oninput="syncSinLimTexto()" style="min-height:70px;"></div>
+        <textarea id="sin-lim-texto" style="display:none;"></textarea>
+      </div>
+    </div>
+
+  <!-- ═══════ VIII. NATURALEZA Y ALCANCE DE LOS DAÑOS ═══════ -->
+
+  <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin:18px 0 8px;">VIII. Naturaleza y Alcance de los Daños</div>
+  <div class="form-grid">
+
+  </div>
+  <div class="fg full">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+        <label style="margin-bottom:0;">Naturaleza y Alcance de los Daños</label>
+      </div>
+      <div class="rte-wrap">
+        <div class="rte-toolbar">
+          <button type="button" onclick="rteCmdSin('naturaleza-alcance','bold')"               title="Negrita"><strong>N</strong></button>
+          <button type="button" onclick="rteCmdSin('naturaleza-alcance','italic')"             title="Cursiva"><em>K</em></button>
+          <button type="button" onclick="rteCmdSin('naturaleza-alcance','underline')"          title="Subrayado"><u>S</u></button>
+          <span class="rte-sep"></span>
+          <button type="button" onclick="rteCmdSin('naturaleza-alcance','insertUnorderedList')" title="Lista con viñetas">≡•</button>
+          <button type="button" onclick="rteCmdSin('naturaleza-alcance','insertOrderedList')"   title="Lista numerada">≡1</button>
+          <span class="rte-sep"></span>
+          <button type="button" onclick="rteCmdSin('naturaleza-alcance','removeFormat')"       title="Quitar formato">✕</button>
+          <span class="rte-sep"></span><button type="button" onclick="rteInsertarImagen('naturaleza-alcance')" title="Insertar imagen" style="font-size:13px;">📷</button>
+        </div>
+        <div id="s-naturaleza-alcance-rte" class="rte-editor" contenteditable="true"
+          data-placeholder="Describir: 1) Naturaleza del daño — tipo de daño ocurrido (mecánico, eléctrico, por agua, por fuego, por impacto, corrosión, etc.). 2) Alcance del daño — extensión de la afectación (daño total o parcial, porcentaje estimado afectado, número de equipos o áreas involucradas, si el daño es reparable o implica sustitución). Ejemplo: Daño eléctrico por sobretensión en tablero principal, con afectación parcial estimada en 40% de la instalación eléctrica del piso 2. Los equipos de cómputo presentan daño total no reparable."
+          oninput="syncRteSin('naturaleza-alcance')" style="min-height:120px;"></div>
+        <textarea id="s-naturaleza-alcance" style="display:none;"></textarea>
+      </div>
+    </div>
+
+  <!-- ═══════ IX. PROCEDENCIA ═══════ -->
+
+  <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin:18px 0 8px;">IX. Procedencia</div>
+  <div class="form-grid">
+
+    <div class="fg"><label>Procedencia del reclamo</label>
+      <select id="s-procedencia">
+        <option value="procedente">Procedente</option>
+        <option value="por_determinar">Por determinar</option>
+        <option value="improcedente">Improcedente</option>
+      </select></div>
+  </div>
+
+  <div class="fg full"><label>Fundamento de procedencia</label><textarea id="s-fundamento" style="min-height:55px;" placeholder="ej. La póliza ampara el equipo afectado contra el riesgo acaecido."></textarea></div>
+
+  <!-- ═══════ X. RESERVA / XI. RECLAMACIÓN / CONSIDERANDOS ═══════ -->
+
+  <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin:18px 0 8px;">X. Reserva — Reclamación del Asegurado</div>
+  <div class="form-grid">
+
+  </div>
+  <div class="fg full">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
         <label style="margin-bottom:0;">Reclamación del Asegurado</label>
       </div>
@@ -1159,7 +978,36 @@ body.modo-lectura .readonly-hidden { display:none !important; }
         <textarea id="s-reclamacion" style="display:none;"></textarea>
       </div>
     </div>
-    <div class="fg full">
+  <div class="fg full">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+        <label style="margin-bottom:0;">Considerandos</label>
+      </div>
+      <div class="rte-wrap">
+        <div class="rte-toolbar">
+          <button type="button" onclick="rteCmdSin('considerandos','bold')" title="Negrita"><strong>N</strong></button>
+          <button type="button" onclick="rteCmdSin('considerandos','italic')" title="Cursiva"><em>K</em></button>
+          <button type="button" onclick="rteCmdSin('considerandos','underline')" title="Subrayado"><u>S</u></button>
+          <span class="rte-sep"></span>
+          <button type="button" onclick="rteCmdSin('considerandos','insertUnorderedList')" title="Lista con viñetas">≡•</button>
+          <button type="button" onclick="rteCmdSin('considerandos','insertOrderedList')" title="Lista numerada">≡1</button>
+          <span class="rte-sep"></span>
+          <button type="button" onclick="rteCmdSin('considerandos','removeFormat')" title="Quitar formato">✕</button>
+          <span class="rte-sep"></span><button type="button" onclick="rteInsertarImagen('considerandos')" title="Insertar imagen" style="font-size:13px;">📷</button>
+        </div>
+        <div id="s-considerandos-rte" class="rte-editor" contenteditable="true"
+          data-placeholder="Señalar las consideraciones necesarias para la reserva o ajuste final: bases de valuación de los daños, Valor a Riesgo, Bajo Seguro, Deducibles, Coaseguros y cualquier situación relevante para la reserva o ajuste final."
+          oninput="syncRteSin('considerandos')" style="min-height:120px;"></div>
+        <textarea id="s-considerandos" style="display:none;"></textarea>
+      </div>
+    </div>
+
+  <!-- ═══════ XI.2 RESERVA ACTUAL — Estimación de Pérdida ═══════ -->
+
+  <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin:18px 0 8px;">XI.2 Reserva Actual</div>
+  <div class="form-grid">
+
+  </div>
+  <div class="fg full">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
         <label style="margin-bottom:0;">Considerandos</label>
       </div>
@@ -1184,12 +1032,106 @@ body.modo-lectura .readonly-hidden { display:none !important; }
     <div class="fg full">
       <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">Estimación de Pérdida Actualizada</div>
       <div id="sin-estimacion-grid" class="grid-dark-wrap" style="overflow-x:auto;border-radius:4px;"></div>
+    </div
+
+  <!-- ═══════ XII. SALVAMENTO ═══════ -->
+
+  <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin:18px 0 8px;">XII. Salvamento</div>
+  <div class="form-grid">
+
+    <div class="fg"><label>Salvamento</label>
+      <select id="s-salvamento"><option value="por_determinar">Por determinar</option><option value="si">Sí</option><option value="no">No</option></select></div>
+    <div class="fg"><label>Valor estimado salvamento</label><input type="number" id="s-salv-valor" placeholder="0.00"></div>
+  </div>
+
+  <div class="fg full">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+        <label style="margin-bottom:0;">Detalle de Salvamento y Ubicación</label>
+      </div>
+      <div class="rte-wrap">
+        <div class="rte-toolbar">
+          <button type="button" onclick="rteCmdSin('salv-det','bold')" title="Negrita"><strong>N</strong></button>
+          <button type="button" onclick="rteCmdSin('salv-det','italic')" title="Cursiva"><em>K</em></button>
+          <button type="button" onclick="rteCmdSin('salv-det','underline')" title="Subrayado"><u>S</u></button>
+          <span class="rte-sep"></span>
+          <button type="button" onclick="rteCmdSin('salv-det','insertUnorderedList')" title="Lista con viñetas">≡•</button>
+          <button type="button" onclick="rteCmdSin('salv-det','insertOrderedList')" title="Lista numerada">≡1</button>
+          <span class="rte-sep"></span>
+          <button type="button" onclick="rteCmdSin('salv-det','removeFormat')" title="Quitar formato">✕</button>
+          <span class="rte-sep"></span><button type="button" onclick="rteInsertarImagen('salv-det')" title="Insertar imagen" style="font-size:13px;">📷</button>
+        </div>
+        <div id="s-salv-det-rte" class="rte-editor" contenteditable="true"
+          data-placeholder="Describir los bienes susceptibles de salvamento: tipo de bien, estado actual, ubicación física donde se encuentran, quién los custodia, valor estimado de recuperación y acciones tomadas o programadas para su disposición."
+          oninput="syncRteSin('salv-det')" style="min-height:90px;"></div>
+        <textarea id="s-salv-det" style="display:none;"></textarea>
+      </div>
     </div>
+
+  <!-- ═══════ XIII. ACTIVIDADES POR REALIZAR ═══════ -->
+
+  <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin:18px 0 8px;">XIII. Actividades por Realizar</div>
+  <div class="form-grid">
+
+  </div>
+  <div class="fg full">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+        <label style="margin-bottom:0;">Actividades a realizar</label>
+      </div>
+      <div class="rte-wrap">
+      <div class="rte-toolbar">
+          <button type="button" onclick="rteCmdSin('actividades','bold')" title="Negrita"><strong>N</strong></button>
+          <button type="button" onclick="rteCmdSin('actividades','italic')" title="Cursiva"><em>K</em></button>
+          <button type="button" onclick="rteCmdSin('actividades','underline')" title="Subrayado"><u>S</u></button>
+          <span class="rte-sep"></span>
+          <button type="button" onclick="rteCmdSin('actividades','insertUnorderedList')" title="Lista con viñetas">≡•</button>
+          <button type="button" onclick="rteCmdSin('actividades','insertOrderedList')" title="Lista numerada">≡1</button>
+          <span class="rte-sep"></span>
+          <button type="button" onclick="rteCmdSin('actividades','removeFormat')" title="Quitar formato">✕</button>
+          <span class="rte-sep"></span><button type="button" onclick="rteInsertarImagen('actividades')" title="Insertar imagen del expediente" style="font-size:13px;">📷</button>
+        </div>
+        <div id="s-actividades-rte" class="rte-editor" contenteditable="true"
+          data-placeholder="Tareas pendientes concretas, visitas programadas, gestiones en proceso..."
+          oninput="syncRteSin('actividades')" style="min-height:80px;"></div>
+        <textarea id="s-actividades" style="display:none;"></textarea>
+      </div>
+    </div>
+
+  <!-- ═══════ XIV. COMENTARIOS / OBSERVACIONES ═══════ -->
+
+  <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin:18px 0 8px;">XIV. Comentarios</div>
+  <div class="form-grid">
+
+  </div>
+  <div class="fg full">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+        <label style="margin-bottom:0;">Observaciones</label>
+      </div>
+      <div class="rte-wrap">
+      <div class="rte-toolbar">
+          <button type="button" onclick="rteCmdSin('observaciones','bold')" title="Negrita"><strong>N</strong></button>
+          <button type="button" onclick="rteCmdSin('observaciones','italic')" title="Cursiva"><em>K</em></button>
+          <button type="button" onclick="rteCmdSin('observaciones','underline')" title="Subrayado"><u>S</u></button>
+          <span class="rte-sep"></span>
+          <button type="button" onclick="rteCmdSin('observaciones','insertUnorderedList')" title="Lista con viñetas">≡•</button>
+          <button type="button" onclick="rteCmdSin('observaciones','insertOrderedList')" title="Lista numerada">≡1</button>
+          <span class="rte-sep"></span>
+          <button type="button" onclick="rteCmdSin('observaciones','removeFormat')" title="Quitar formato">✕</button>
+          <span class="rte-sep"></span><button type="button" onclick="rteInsertarImagen('observaciones')" title="Insertar imagen del expediente" style="font-size:13px;">📷</button>
+        </div>
+        <div id="s-observaciones-rte" class="rte-editor" contenteditable="true"
+          data-placeholder="Comentarios técnicos, notas al informe, aspectos a destacar, reservas técnicas..."
+          oninput="syncRteSin('observaciones')" style="min-height:90px;"></div>
+        <textarea id="s-observaciones" style="display:none;"></textarea>
+      </div>
+    </div>
+
+  <!-- ═══════ NOTAS INTERNAS ═══════ -->
+  <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin:18px 0 8px;">Notas internas</div>
+  <div class="form-grid">
     <div class="fg full"><label>Notas internas</label><textarea id="s-notas" style="min-height:50px;"></textarea></div>
   </div>
-  </div><!-- /seccion-institucional -->
 
-  <div class="modal-footer">
+class="modal-footer">
     <div id="s-modo-captura-lbl" style="font-size:11px;color:var(--text-ter);align-self:center;"></div>
     <button class="btn" onclick="cerrarModal('modal-sin')">Cancelar</button>
     <button class="btn btn-primary" onclick="guardarSiniestro()">Guardar</button>
