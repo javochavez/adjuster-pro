@@ -771,7 +771,28 @@ body.modo-lectura .readonly-hidden { display:none !important; }
     <div class="fg"><label>Salvamento</label>
       <select id="s-salvamento"><option value="por_determinar">Por determinar</option><option value="si">Sí</option><option value="no">No</option></select></div>
     <div class="fg"><label>Valor estimado salvamento</label><input type="number" id="s-salv-valor" placeholder="0.00"></div>
-    <div class="fg full"><label>Detalle salvamento / ubicación</label><input type="text" id="s-salv-det"></div>
+    <div class="fg full">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+        <label style="margin-bottom:0;">Detalle de Salvamento y Ubicación</label>
+      </div>
+      <div class="rte-wrap">
+        <div class="rte-toolbar">
+          <button type="button" onclick="rteCmdSin('salv-det','bold')" title="Negrita"><strong>N</strong></button>
+          <button type="button" onclick="rteCmdSin('salv-det','italic')" title="Cursiva"><em>K</em></button>
+          <button type="button" onclick="rteCmdSin('salv-det','underline')" title="Subrayado"><u>S</u></button>
+          <span class="rte-sep"></span>
+          <button type="button" onclick="rteCmdSin('salv-det','insertUnorderedList')" title="Lista con viñetas">≡•</button>
+          <button type="button" onclick="rteCmdSin('salv-det','insertOrderedList')" title="Lista numerada">≡1</button>
+          <span class="rte-sep"></span>
+          <button type="button" onclick="rteCmdSin('salv-det','removeFormat')" title="Quitar formato">✕</button>
+          <span class="rte-sep"></span><button type="button" onclick="rteInsertarImagen('salv-det')" title="Insertar imagen" style="font-size:13px;">📷</button>
+        </div>
+        <div id="s-salv-det-rte" class="rte-editor" contenteditable="true"
+          data-placeholder="Describir los bienes susceptibles de salvamento: tipo de bien, estado actual, ubicación física donde se encuentran, quién los custodia, valor estimado de recuperación y acciones tomadas o programadas para su disposición."
+          oninput="syncRteSin('salv-det')" style="min-height:90px;"></div>
+        <textarea id="s-salv-det" style="display:none;"></textarea>
+      </div>
+    </div>
     <div class="fg"><label>Recuperación</label>
       <select id="s-recuperacion"><option value="0">No</option><option value="1">Sí</option></select></div>
     <div class="fg"><label>Terceros responsables</label><input type="text" id="s-rec-terceros"></div>
@@ -1081,6 +1102,54 @@ body.modo-lectura .readonly-hidden { display:none !important; }
           oninput="syncRteSin('actividades')" style="min-height:80px;"></div>
         <textarea id="s-actividades" style="display:none;"></textarea>
       </div>
+    </div>
+    <div class="fg full">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+        <label style="margin-bottom:0;">Reclamación del Asegurado</label>
+      </div>
+      <div class="rte-wrap">
+        <div class="rte-toolbar">
+          <button type="button" onclick="rteCmdSin('reclamacion','bold')" title="Negrita"><strong>N</strong></button>
+          <button type="button" onclick="rteCmdSin('reclamacion','italic')" title="Cursiva"><em>K</em></button>
+          <button type="button" onclick="rteCmdSin('reclamacion','underline')" title="Subrayado"><u>S</u></button>
+          <span class="rte-sep"></span>
+          <button type="button" onclick="rteCmdSin('reclamacion','insertUnorderedList')" title="Lista con viñetas">≡•</button>
+          <button type="button" onclick="rteCmdSin('reclamacion','insertOrderedList')" title="Lista numerada">≡1</button>
+          <span class="rte-sep"></span>
+          <button type="button" onclick="rteCmdSin('reclamacion','removeFormat')" title="Quitar formato">✕</button>
+          <span class="rte-sep"></span><button type="button" onclick="rteInsertarImagen('reclamacion')" title="Insertar imagen" style="font-size:13px;">📷</button>
+        </div>
+        <div id="s-reclamacion-rte" class="rte-editor" contenteditable="true"
+          data-placeholder="Por el momento el Asegurado no ha presentado su formal reclamación a la compañía de Seguros, sin embargo, estamos en proceso de recepción de documentos, mismos que están siendo analizados."
+          oninput="syncRteSin('reclamacion')" style="min-height:90px;"></div>
+        <textarea id="s-reclamacion" style="display:none;"></textarea>
+      </div>
+    </div>
+    <div class="fg full">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+        <label style="margin-bottom:0;">Considerandos</label>
+      </div>
+      <div class="rte-wrap">
+        <div class="rte-toolbar">
+          <button type="button" onclick="rteCmdSin('considerandos','bold')" title="Negrita"><strong>N</strong></button>
+          <button type="button" onclick="rteCmdSin('considerandos','italic')" title="Cursiva"><em>K</em></button>
+          <button type="button" onclick="rteCmdSin('considerandos','underline')" title="Subrayado"><u>S</u></button>
+          <span class="rte-sep"></span>
+          <button type="button" onclick="rteCmdSin('considerandos','insertUnorderedList')" title="Lista con viñetas">≡•</button>
+          <button type="button" onclick="rteCmdSin('considerandos','insertOrderedList')" title="Lista numerada">≡1</button>
+          <span class="rte-sep"></span>
+          <button type="button" onclick="rteCmdSin('considerandos','removeFormat')" title="Quitar formato">✕</button>
+          <span class="rte-sep"></span><button type="button" onclick="rteInsertarImagen('considerandos')" title="Insertar imagen" style="font-size:13px;">📷</button>
+        </div>
+        <div id="s-considerandos-rte" class="rte-editor" contenteditable="true"
+          data-placeholder="Señalar las consideraciones necesarias para la reserva o ajuste final: bases de valuación de los daños, Valor a Riesgo, Bajo Seguro, Deducibles, Coaseguros y cualquier situación relevante para la reserva o ajuste final."
+          oninput="syncRteSin('considerandos')" style="min-height:120px;"></div>
+        <textarea id="s-considerandos" style="display:none;"></textarea>
+      </div>
+    </div>
+    <div class="fg full">
+      <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">Estimación de Pérdida Actualizada</div>
+      <div id="sin-estimacion-grid" style="overflow-x:auto;"></div>
     </div>
     <div class="fg full"><label>Notas internas</label><textarea id="s-notas" style="min-height:50px;"></textarea></div>
   </div>
@@ -3508,7 +3577,7 @@ function abrirModal(id){
      's-tramite-gnp','s-ot','s-fsin','s-hora-ocurr','s-finsp','s-finf',
      's-hora-asig','s-f1cont','s-h1cont','s-f1vis','s-h1vis',
      's-insp-persona','s-insp-cargo','s-insp-tel','s-insp-dom',
-     's-autoridades-det','s-salv-det','s-salv-valor','s-rec-terceros','s-rec-det',
+     's-autoridades-det','s-salv-valor','s-rec-terceros','s-rec-det',
      's-coas-det','s-reas-corredor','s-lugar-sin',
      's-gnp-jefe','s-gnp-oficina','s-gnp-clave-ajust',
      's-atlas-poliza','s-atlas-sin-gnp','s-atlas-pol-gnp',
@@ -3527,7 +3596,8 @@ function abrirModal(id){
     loadBienesRte('');
     loadRteSin('bienes-amparados','');
     // Reset all RTE fields
-    ['desc-riesgo','riesgos-cubiertos','naturaleza-alcance','introduccion','inspeccion-narrativa','desc','estrategias','observaciones','actividades'].forEach(s=>loadRteSin(s,''));
+    ['desc-riesgo','riesgos-cubiertos','naturaleza-alcance','introduccion','inspeccion-narrativa','desc','estrategias','observaciones','actividades','considerandos','salv-det'].forEach(s=>loadRteSin(s,''));
+    loadRteSin('reclamacion', 'Por el momento el Asegurado no ha presentado su formal reclamación a la compañía de Seguros, sin embargo, estamos en proceso de recepción de documentos, mismos que están siendo analizados.');
     loadSinLimTexto(''); loadSinGiroAseg(''); loadSinDescAseg('');
     delete g('s-inspeccion-narrativa-rte')?.dataset.editado;
     loadRteSin('introduccion', 'El presente informe preliminar se elabora en seguimiento de la designaci\u00f3n de [Compa\u00f1\u00eda], por parte de su apreciable [Funcionario], relativa a la atenci\u00f3n de la p\u00e9rdida sufrida por el Asegurado por [Describir el tipo de da\u00f1os y bienes afectados], hechos ocurridos el [Fecha del Siniestro] en su domicilio sito en [Direcci\u00f3n donde ocurrieron los da\u00f1os].\n\nSiguiendo las instrucciones de asignaci\u00f3n, de inmediato procedimos a contactar a [Persona de Contacto], quien nos [Detallar acuerdo para la inspecci\u00f3n, fecha, hora, etc.].\n\nComo acordado, el [Fecha de inspecci\u00f3n] a las [Hora], nos presentamos en [Sitio de la inspecci\u00f3n], lugar en el que fuimos atendidos por [Persona que atendi\u00f3] quien nos mostr\u00f3 los da\u00f1os sufridos.\n\nCon base en lo anterior y la informaci\u00f3n inicialmente recabada, presentamos a ustedes el presente Informe Preliminar.');
@@ -3641,6 +3711,21 @@ async function eliminar(tabla, id){
   if(currentSin) renderDetalle();
 }
 
+
+// ── ESTIMACIÓN DE PÉRDIDA en modal-sin ───────────────────────────────
+function renderEstimacionSinGrid(){
+  const wrap = g('sin-estimacion-grid');
+  if(!wrap || !currentSin) return;
+  const rvs = data.res.filter(r=>r.id_siniestro===currentSin.id);
+  if(!rvs.length){
+    wrap.innerHTML='<div style="font-size:12px;color:var(--text-ter);padding:6px 0;">Sin coberturas de reserva registradas. Captura en la pestaña Reservas.</div>';
+    return;
+  }
+  // Reuse buildCoberturaTableHTML
+  const pol=data.pol.find(p=>p.id===currentSin.id_poliza)||{};
+  wrap.innerHTML=buildCoberturaTableHTML(rvs, pol.moneda||'MXN');
+}
+
 async function guardarSiniestro(){
   const id=v('s-id');
   const d2={
@@ -3672,6 +3757,9 @@ async function guardarSiniestro(){
     salvamento:v('s-salvamento'),
     salvamento_valor_estimado:parseFloat(v('s-salv-valor'))||0,
     salvamento_detalle:v('s-salv-det')||null,
+    salvamento_detalle_html:v('s-salv-det')||null,
+    reclamacion_asegurado:v('s-reclamacion')||null,
+    considerandos:v('s-considerandos')||null,
     recuperacion:v('s-recuperacion')==='1',
     recuperacion_terceros:v('s-rec-terceros')||null,
     recuperacion_detalle:v('s-rec-det')||null,
@@ -3733,7 +3821,11 @@ function editarSiniestro(id){
   currentSin=s;  // needed for image picker and other context-aware tools
   g('sin-modal-title').textContent='Editar expediente'; g('s-id').value=s.id;
   g('s-exp').value=s.numero_exp||''; g('s-numsin').value=s.numero_siniestro||'';
-  g('s-subramo').value=s.subramo||''; g('s-causa').value=s.causa||''; g('s-riesgo').value=s.riesgo_afectado||'';
+  g('s-subramo').value=s.subramo||'';
+  loadRteSin('reclamacion', s.reclamacion_asegurado||'');
+  setTimeout(renderEstimacionSinGrid, 100);
+  loadRteSin('considerandos', s.considerandos||'');
+  loadRteSin('salv-det', s.salvamento_detalle_html||s.salvamento_detalle||''); g('s-causa').value=s.causa||''; g('s-riesgo').value=s.riesgo_afectado||'';
   loadRteSin('riesgos-cubiertos', s.riesgos_cubiertos||'');
   loadRteSin('naturaleza-alcance', s.naturaleza_alcance_danios||'');
   g('s-clave-ajust').value=s.clave_ajustador_cia||'';
@@ -3768,7 +3860,7 @@ g('s-insp-dom').value=s.inspeccion_domicilio||'';
   g('s-autoridades-det').value=s.intervencion_autoridades_detalle||'';
   g('s-salvamento').value=s.salvamento||'por_determinar';
   g('s-salv-valor').value=s.salvamento_valor_estimado||'';
-  g('s-salv-det').value=s.salvamento_detalle||'';
+  // s-salv-det now uses RTE — loaded above
   g('s-recuperacion').value=s.recuperacion?'1':'0';
   g('s-rec-terceros').value=s.recuperacion_terceros||''; g('s-rec-det').value=s.recuperacion_detalle||'';
   g('s-coaseguro').value=s.coaseguro?'1':'0'; g('s-coas-det').value=s.coaseguro_detalle||'';
@@ -5929,6 +6021,10 @@ async function descargarWord(){
     secTitle('9','Póliza de seguro'),
     ...[['Tipo de Seguro',pol.tipo_seguro||''],['Vigencia del Seguro','Desde las 12:00 hrs. del día '+fD(pol.vigencia_ini)+', hasta las 12:00 hrs. del '+fD(pol.vigencia_fin)+'.'],['Bienes Amparados',(s.bienes_amparados?s.bienes_amparados.replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ').trim():'')],['Bienes Cubiertos',(s.descripcion_danios_html?s.descripcion_danios_html.replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ').trim():s.bienes_danados)||''],['Riesgos Cubiertos',(s.riesgos_cubiertos?s.riesgos_cubiertos.replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ').trim():s.riesgo_afectado)||''],['Naturaleza y Alcance de los Daños',(s.naturaleza_alcance_danios?s.naturaleza_alcance_danios.replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ').trim():'')||''],['Sumas aseguradas', sublims.length ? sublims.map(sl=>sl.concepto+': '+(sl.moneda||'MXN')+' '+fM(sl.monto)+(sl.deducible?' (Ded.: '+sl.deducible+')':'')+(sl.coaseguro_pct?', Coas.: '+sl.coaseguro_pct+'%':'')).join(' | ')+(sublims.length>1?' | TOTAL: '+(sublims[0].moneda||'MXN')+' '+fM(sublims.reduce((a,s)=>a+(s.monto||0),0)):'') : (pol.moneda||'MXN')+' '+fM(pol.suma_asegurada)],['Límite máx. responsabilidad',(pol.limite_max_texto?pol.limite_max_texto.replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ').trim():'')],['Deducible',dedTxt],['Coaseguro',s.coaseguro?(s.coaseguro_detalle||'Sí'):'N/A']].map(([label,value])=>para2([txt(label+'  ',{bold:true,size:20}),txt(value,{size:20})],{sb:60,sa:60,indent:720})),
     ep(),
+    secTitle('7','Reclamación del Asegurado'),
+    body2((s.reclamacion_asegurado?s.reclamacion_asegurado.replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ').trim():'')||'Por el momento el Asegurado no ha presentado su formal reclamación a la compañía de Seguros, sin embargo, estamos en proceso de recepción de documentos, mismos que están siendo analizados.'),ep(),
+    secTitle('8','Considerandos'),
+    body2((s.considerandos?s.considerandos.replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ').trim():'')||''),ep(),
     secTitle('10','Determinación de la reserva'),
     para2([txt('10.1  RECLAMACIÓN',{bold:true,size:20,color:BLUE})],{sb:120,sa:60}),
     body2('El Asegurado aún no presenta su reclamación formal, pero será por el importe de reemplazo de los elementos afectados, según estimamos a continuación:'),ep(),
