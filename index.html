@@ -5826,7 +5826,7 @@ async function descargarWord(){
     'Detalle de Salvamento y Ubicación': s.salvamento_detalle_html||s.salvamento_detalle||'',
     'Actividades':                    s.actividades||'',
     'Observaciones':                  s.observaciones||'',
-    'Reservas':                       reservaGrid.split('\n').map(l=>`<p>${l.replace(/ /g,'&nbsp;')}</p>`).join(''),
+    'Reservas':                       '__OOXML__'+rvGridOoxml(s.id),
     'Reserva en Letra':               `<p><strong>${moneda} ${fM(totReserva)}</strong> (${numeroALetras(totReserva,moneda)})</p>`,
   };
 
@@ -5950,9 +5950,14 @@ async function descargarWord(){
       if(!rawHtml) continue;
       const marker=`[${ph}]`;
 
-      // Build OOXML paragraphs from HTML
-      const paraList=htmlToOoxmlParas(rawHtml);
-      const ooxmlBlock=paraList.join('');
+      // Build OOXML: check for raw OOXML sentinel
+      let ooxmlBlock;
+      if(rawHtml.startsWith('__OOXML__')){
+        ooxmlBlock=rawHtml.slice(9); // strip sentinel, use raw OOXML
+      } else {
+        const paraList=htmlToOoxmlParas(rawHtml);
+        ooxmlBlock=paraList.join('');
+      }
 
       // Find paragraph where concatenated run text contains the marker
       // (marker may be split across multiple <w:r> elements)
@@ -6557,33 +6562,123 @@ function reservaEnLetra(sinId){
   }catch(e){ return ''; }
 }
 
-function rvGridTexto(sinId){
-  // Builds a plain-text grid of latest reservas for Word
+function rvGridOoxml(sinId){
+  // Build a Word OOXML table replicating the screen reserva grid exactly
   try{
-    const rvs=(data.reservas||[]).filter(r=>r.id_siniestro===sinId);
+    const rvs=(data.res||[]).filter(r=>r.id_siniestro===sinId);
     if(!rvs.length) return '';
-    const fechas=[...new Set(rvs.map(r=>r.fecha))].sort().reverse();
-    const latest=rvs.filter(r=>r.fecha===fechas[0]);
-    const moneda=latest[0]?.moneda||'MXN';
-    let lines=[];
-    const col1=30, col2=18;
-    const sep='─'.repeat(col1+col2+3);
-    lines.push(sep);
-    lines.push(('COBERTURA'.padEnd(col1))+'  '+('RESERVA'.padStart(col2)));
-    lines.push(sep);
-    let total=0;
-    for(const r of latest){
-      const cob=(r.cobertura||'Sin cobertura').slice(0,col1).padEnd(col1);
-      const monto=fM(parseFloat(r.monto_reserva)||0).padStart(col2);
-      lines.push(`${cob}  ${monto}`);
-      total+=parseFloat(r.monto_reserva)||0;
+
+    // Latest row per concepto (same logic as renderReservaGrid)
+    const vigMap={};
+    rvs.forEach(r=>{ if(!vigMap[r.concepto]||r.id>vigMap[r.concepto].id) vigMap[r.concepto]=r; });
+    const rows=Object.values(vigMap);
+    if(!rows.length) return '';
+
+    const moneda=rows[0]?.moneda||'MXN';
+    const fN=n=>fmtMXN(n||0);
+    const fP=n=>n===0?'—':n.toFixed(2)+'%';
+    const showTotal=rows.length>1;
+
+    // Calculate per row
+    let totBruta=0,totPerdida=0,totDed=0,totCoas=0,totBajo=0,totNeta=0;
+    const calc=rows.map(r=>{
+      const bruta=r.monto||0;
+      const perdida=r.monto_perdida_estimada||r.monto||0;
+      const dep=r.depreciacion_pct||0;
+      const ded=r.deducible||0;
+      const coasPct=r.coaseguro_pct||0;
+      const coas=r.monto_coaseguro||((perdida-ded)*(coasPct/100));
+      const bajo=r.monto_bajo_seguro||0;
+      const neta=perdida-bajo-ded-coas;
+      totBruta+=bruta;totPerdida+=perdida;totDed+=ded;totCoas+=coas;totBajo+=bajo;totNeta+=neta;
+      return {r,bruta,perdida,dep,ded,coasPct,coas,bajo,neta};
+    });
+
+    const ROWS_DEF=[
+      {label:'Reserva bruta',                   key:'bruta',    fmt:'money',tot:totBruta},
+      {label:'Depreciación %',                   key:'dep',      fmt:'pct',  tot:''},
+      {label:'Monto Pérdida Ajustada',           key:'perdida',  fmt:'money',tot:totPerdida},
+      {label:'Deducible',                        key:'ded',      fmt:'money',tot:totDed},
+      {label:'Monto Pérdida Indemnizable',       key:'indemniz', fmt:'money',tot:totPerdida-totDed},
+      {label:'Coaseguro a cargo del Asegurado',  key:'coas',     fmt:'money',tot:totCoas},
+      {label:'Bajo Seguro',                      key:'bajo',     fmt:'money',tot:totBajo},
+      {label:'Reserva Neta',                     key:'neta',     fmt:'money',tot:totNeta,bold:true,accent:true},
+      {label:'Bases de la reserva',              key:'bases',    fmt:'text', tot:''},
+    ];
+
+    // OOXML helpers
+    const xe=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const numCols=calc.length+(showTotal?1:0)+1; // +1 label col
+    const labelW=2400, valW=1600;
+    const totalW=labelW+valW*numCols;
+
+    // Grid col definitions
+    let tblGrid=`<w:tblGrid><w:gridCol w:w="${labelW}"/>`;
+    calc.forEach(()=>tblGrid+=`<w:gridCol w:w="${valW}"/>`);
+    if(showTotal) tblGrid+=`<w:gridCol w:w="${valW}"/>`;
+    tblGrid+='</w:tblGrid>';
+
+    function cell(text,bg,bold,right,color){
+      const shd=bg?`<w:shd w:val="clear" w:color="auto" w:fill="${bg}"/>`:'';
+      const jc=right?'<w:jc w:val="right"/>':'';
+      const b=bold?'<w:b/><w:bCs/>':'';
+      const clr=color?`<w:color w:val="${color}"/>`:'';
+      return `<w:tc><w:tcPr><w:tcW w:w="0" w:type="auto"/>${shd}</w:tcPr>`+
+        `<w:p><w:pPr><w:pStyle w:val="Sinespaciado"/><w:spacing w:after="60" w:line="240" w:lineRule="auto"/>${jc}</w:pPr>`+
+        `<w:r><w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>${b}${clr}<w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr>`+
+        `<w:t xml:space="preserve">${xe(text)}</w:t></w:r></w:p></w:tc>`;
     }
-    lines.push(sep);
-    lines.push(('TOTAL ('+moneda+')').padEnd(col1)+'  '+fM(total).padStart(col2));
-    lines.push(sep);
-    return lines.join('\n');
-  }catch(e){ return ''; }
+
+    // Header row
+    let tblRows='';
+    let hdr=`<w:tr><w:trPr><w:trHeight w:val="340"/></w:trPr>`;
+    hdr+=cell('Concepto','002060',true,false,'FFFFFF');
+    calc.forEach(item=>hdr+=cell(item.r.concepto||'',  '002060',true,true,'FFFFFF'));
+    if(showTotal) hdr+=cell('TOTAL','002060',true,true,'FFFFFF');
+    hdr+='</w:tr>';
+    tblRows+=hdr;
+
+    // Data rows
+    ROWS_DEF.forEach((rd,ri)=>{
+      const isAccent=rd.accent;
+      const bg=isAccent?'E8EAF6':(ri%2===0?'F5F5FF':'FFFFFF');
+      const topBorder=isAccent?'<w:top w:val="single" w:sz="4" w:space="0" w:color="002060"/>':'';
+      let row=`<w:tr><w:trPr><w:trHeight w:val="320"/></w:trPr>`;
+      row+=cell(rd.label,bg,rd.bold||false,false,isAccent?'002060':null);
+      calc.forEach(item=>{
+        let val;
+        if(rd.key==='indemniz') val=item.perdida-item.ded;
+        else if(rd.key==='bases') val=item.r.bases_determinacion||'—';
+        else val=item[rd.key];
+        let disp;
+        if(rd.fmt==='pct') disp=fP(val);
+        else if(rd.fmt==='text') disp=String(val||'—');
+        else disp=(val===0&&rd.key!=='ded'&&rd.key!=='coas'&&rd.key!=='bajo'?'—':moneda+' '+fN(val));
+        row+=cell(disp,bg,rd.bold||false,rd.fmt!=='text',isAccent?'002060':null);
+      });
+      if(showTotal){
+        let tDisp;
+        if(rd.fmt==='pct'||rd.key==='bases') tDisp='';
+        else tDisp=(rd.tot===''||rd.tot===0&&rd.key!=='ded'&&rd.key!=='coas'?'—':moneda+' '+fN(rd.tot));
+        row+=cell(tDisp,bg,true,true,isAccent?'002060':null);
+      }
+      row+='</w:tr>';
+      tblRows+=row;
+    });
+
+    return `<w:tbl><w:tblPr><w:tblW w:w="${totalW}" w:type="dxa"/>`+
+      `<w:tblBorders>`+
+      `<w:top w:val="single" w:sz="4" w:space="0" w:color="002060"/>`+
+      `<w:left w:val="single" w:sz="4" w:space="0" w:color="002060"/>`+
+      `<w:bottom w:val="single" w:sz="4" w:space="0" w:color="002060"/>`+
+      `<w:right w:val="single" w:sz="4" w:space="0" w:color="002060"/>`+
+      `<w:insideH w:val="single" w:sz="2" w:space="0" w:color="AAAACC"/>`+
+      `<w:insideV w:val="single" w:sz="2" w:space="0" w:color="AAAACC"/>`+
+      `</w:tblBorders></w:tblPr>${tblGrid}${tblRows}</w:tbl>`;
+  }catch(e){ console.error('rvGridOoxml error:',e); return ''; }
 }
+
+
 
 function numeroALetras(num, moneda){
   const unidades=['','UNO','DOS','TRES','CUATRO','CINCO','SEIS','SIETE','OCHO','NUEVE',
