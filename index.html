@@ -1766,6 +1766,7 @@ async function loadAll(){
   data.ajust  = ajust.data||[];  data.ofic    = ofic.data||[];
   data.sinajust= sinajust.data||[];
   data.todos  = todos.data||[];
+  data.graf   = graf.data||[];
   renderAll();
 }
 
@@ -4181,24 +4182,50 @@ async function grafSubirQueue(){
   if(!currentSin||!grafQueue.length) return;
   const btn=g('graf-upload-btn');
   if(btn){btn.disabled=true;btn.textContent='Subiendo…';}
+  let ok=0, fail=0;
   for(const q of grafQueue){
     try{
-      const ext=q.file.name.split('.').pop()||'jpg';
-      const path=`${currentSin.id}/${q.tipo}_${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
-      const {error:upErr}=await db.storage.from(GRAF_BUCKET).upload(path,q.file,{contentType:q.file.type,upsert:false});
-      if(upErr) throw upErr;
-      const {data:urlData}=db.storage.from(GRAF_BUCKET).getPublicUrl(path);
-      await db.from('graficos_expediente').insert({
-        id_siniestro:currentSin.id, tipo:q.tipo,
-        etiqueta:q.etiqueta||null, storage_path:path,
-        url:urlData?.publicUrl||null, nombre_archivo:q.file.name
+      const ext=(q.file.name.split('.').pop()||'jpg').toLowerCase();
+      const safeName=q.file.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+      const path=`${currentSin.id}/${q.tipo}_${Date.now()}_${safeName}`;
+      // Try storage upload
+      const {data:upData, error:upErr}=await db.storage.from(GRAF_BUCKET).upload(path, q.file, {
+        contentType: q.file.type||'image/jpeg',
+        upsert: false,
+        cacheControl: '3600'
       });
-    } catch(err){ toast('Error al subir '+q.file.name+': '+(err.message||err)); }
+      if(upErr){
+        // Show full error for diagnosis
+        const msg = upErr.message||upErr.error||JSON.stringify(upErr);
+        toast('Error Storage: '+msg);
+        console.error('Storage error:', upErr);
+        fail++;
+        continue;
+      }
+      const {data:urlData}=db.storage.from(GRAF_BUCKET).getPublicUrl(path);
+      const {error:dbErr}=await db.from('graficos_expediente').insert({
+        id_siniestro: currentSin.id,
+        tipo:         q.tipo,
+        etiqueta:     q.etiqueta||null,
+        storage_path: path,
+        url:          urlData?.publicUrl||null,
+        nombre_archivo: q.file.name
+      });
+      if(dbErr){
+        toast('Error BD: '+(dbErr.message||JSON.stringify(dbErr)));
+        console.error('DB error:', dbErr);
+        fail++;
+      } else { ok++; }
+    } catch(err){
+      toast('Error inesperado: '+(err.message||String(err)));
+      console.error('Unexpected error:', err);
+      fail++;
+    }
   }
   grafCancelarQueue();
   await loadAll();
   renderGrafGallery(currentSin.id);
-  toast('Imagen(es) subida(s).');
+  if(ok>0) toast(ok+' imagen'+(ok>1?'es':'')+' subida'+(ok>1?'s':'')+(fail>0?' ('+fail+' con error)':'')+'.');
 }
 
 function grafCancelarQueue(){
