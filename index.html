@@ -117,7 +117,7 @@ td { padding:9px 10px; vertical-align:middle; }
 .b-pagado   { background:rgba(20,90,40,.25); color:#a5d6a7; }
 
 /* ── MODALS ── */
-.overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:200; }
+.overlay { display:none; position:fixed; top:0; left:0; right:0; bottom:0; width:100%; height:100%; background:rgba(0,0,0,.55); z-index:9999; }
 .overlay.open { display:flex; align-items:flex-start; justify-content:center; overflow-y:auto; }
 #modal-sin .modal { padding:0; max-height:92vh; display:flex; flex-direction:column; overflow:hidden; margin:4vh auto; }
 #modal-sin .modal-title { padding:1.25rem 1.5rem 0.75rem; flex-shrink:0; border-bottom:1px solid var(--border); margin-bottom:0; }
@@ -3731,7 +3731,9 @@ function abrirModal(id){
       }
     }
   }
-  g(id).classList.add('open');
+  const _ov = document.getElementById(id);
+  if(_ov && _ov.parentNode !== document.body) document.body.appendChild(_ov);
+  _ov.classList.add('open');
 }
 function cerrarModal(id){ g(id).classList.remove('open'); }
 
