@@ -5797,11 +5797,13 @@ async function descargarWord(){
 
   // Decode base64 → Uint8Array
   // Debug: verify JSZip loaded and base64 is valid
+  console.log('About to load ZIP, b64 length:', MODEL_B64.length);
   let zip;
   try {
     zip = await JSZip.loadAsync(MODEL_B64, {base64:true});
-    } catch(zipErr) {
-    console.error('ZIP load error:', zipErr.message, zipErr);
+    console.log('ZIP loaded OK, files:', Object.keys(zip.files).length);
+  } catch(zipErr) {
+    console.error('ZIP load FAILED:', zipErr.message);
     toast('Error ZIP: '+zipErr.message);
     return;
   }
