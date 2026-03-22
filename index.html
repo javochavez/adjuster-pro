@@ -3592,6 +3592,12 @@ function editarSiniestro(id){
   g('s-giro').value=s.giro_asegurado||'';
   if(g('s-dest-nombre')) g('s-dest-nombre').value=s.destinatario_nombre||'';
   if(g('s-dest-cargo'))  g('s-dest-cargo').value=s.destinatario_cargo||'';
+  // Populate and restore funcionario selector
+  const polFun=data.pol.find(p=>p.id===s.id_poliza)||{};
+  poblarFuncionarioDestSin(polFun.id_aseguradora||0);
+  if(s.id_contacto_dest && g('s-funcionario-dest')){
+    g('s-funcionario-dest').value=s.id_contacto_dest;
+  }
   loadRteSin('desc', s.descripcion||'');
   loadRteSin('desc-riesgo', s.descripcion_riesgo||'');
   mostrarDescAsegSin(s.id_poliza);
