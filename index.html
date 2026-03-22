@@ -5878,6 +5878,7 @@ async function descargarWord(){
     }catch(fe){ console.error('fill error:',fname,fe.message,fe.stack?.slice(0,200)); }
   }
   console.log('Fill loop done');
+  console.log('Generating ZIP output...');
 
   // ── Replace localización images ───────────────────────────────────
   const grafLoc=(data.graf||[]).filter(g=>g.id_siniestro===s.id&&g.tipo==='localizacion'&&g.url);
@@ -5902,8 +5903,17 @@ async function descargarWord(){
   }
 
   // ── Generate and download ─────────────────────────────────────────
-  const outBytes=await zip.generateAsync({type:'uint8array',compression:'DEFLATE'});
-  const blob=new Blob([outBytes],{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
+  let outBytes, blob;
+  try {
+    outBytes=await zip.generateAsync({type:'uint8array',compression:'DEFLATE'});
+    console.log('generateAsync OK, size:',outBytes.length);
+    blob=new Blob([outBytes],{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
+    console.log('Blob OK, size:',blob.size);
+  } catch(ge){
+    console.error('generateAsync FAILED:',ge.message,ge.stack?.slice(0,300));
+    toast('Error generando ZIP: '+ge.message);
+    return;
+  }
   const tipoStr=(lastInf.tipo||'preliminar').toUpperCase().replace(/\s+/g,'_');
   const filename=(s.numero_exp||'INFORME')+'_'+tipoStr+'.docx';
 
