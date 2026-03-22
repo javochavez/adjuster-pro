@@ -5781,6 +5781,10 @@ async function descargarWord(){
     'INSERTAR TABLA DE CONTENIDO':    '[Actualice la tabla de contenido en Word: Referencias → Actualizar tabla]',
   };
 
+  // Debug fields
+  console.log('Fields keys:', Object.keys(fields).slice(0,5));
+  console.log('Fecha value:', fields['Fecha']);
+  console.log('ASEGURADORA:', fields['ASEGURADORA']);
   // ── OOXML fill engine (browser) ───────────────────────────────────
   // Load JSZip
   if(!window.JSZip){
@@ -5811,76 +5815,55 @@ async function descargarWord(){
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
   function fillXml(xml){
-    // Safe strategy: replace text only inside <w:t> tags, never restructure XML.
-    // Handles both: (a) marker intact in one <w:t>, (b) marker split across runs.
-    let result = xml;
+    // Step 1: For every <w:p>, collect the full rendered text and map it.
+    // If the paragraph text contains a marker, rebuild that paragraph's runs
+    // replacing the marker in the concatenated text and writing a single clean run.
+    // This handles markers split arbitrarily across <w:r> elements.
 
-    for(const [ph,val] of Object.entries(fields)){
-      const marker='['+ph+']';
-      const safeVal=xmlEsc(String(val||''));
-      let safety=0;
+    const xmlEscLocal=(s)=>String(s||'')
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
-      while(result.includes(marker) && safety++<20){
-        // Case 1: marker is fully contained in a single <w:t>...</w:t>
-        const wtRe=/<w:t([^>]*)>([^<]*)<\/w:t>/g;
-        let m, found=false;
-        while((m=wtRe.exec(result))!==null){
-          if(m[2].includes(marker)){
-            const newText=m[2].replace(marker,String(val||''));
-            const sp=(newText!==newText.trim()||newText.includes('  '))?' xml:space="preserve"':'';
-            result=result.slice(0,m.index)+'<w:t'+sp+'>'+xmlEsc(newText)+'</w:t>'+result.slice(m.index+m[0].length);
-            found=true; break;
-          }
+    // Replace each <w:p>...</w:p> block
+    let result = xml.replace(/<w:p[ >][\s\S]*?<\/w:p>/g, para => {
+      // Collect full rendered text across all runs
+      const texts=[];
+      para.replace(/<w:t[^>]*>([^<]*)<\/w:t>/g, (_,t) => { texts.push(t); });
+      const full = texts.join('');
+
+      // Check if any field marker appears in the full text
+      let matched = false;
+      let newFull = full;
+      for(const [ph,val] of Object.entries(fields)){
+        const marker='['+ph+']';
+        if(full.includes(marker)){
+          newFull = newFull.replace(marker, String(val||''));
+          matched = true;
         }
-        if(found) continue;
-
-        // Case 2: marker is split across runs — collect all <w:t> in sequence,
-        // join them, replace, then put entire new text in the first <w:t> and
-        // clear the subsequent ones. We do this at the raw text level without
-        // restructuring any wrapping elements.
-        //
-        // Find contiguous sequence of <w:t>...</w:t> whose concatenation contains marker.
-        // Strategy: find the marker char by char across <w:t> boundaries.
-        let allTMatches=[];
-        const allTRe=/<w:t[^>]*>[^<]*<\/w:t>/g;
-        let tm;
-        while((tm=allTRe.exec(result))!==null) allTMatches.push({full:tm[0],idx:tm.index,
-          text:tm[0].replace(/<w:t[^>]*>/,'').replace(/<\/w:t>/,'')});
-
-        // Find window of consecutive <w:t> whose text joined contains marker
-        let found2=false;
-        for(let i=0;i<allTMatches.length;i++){
-          for(let j=i;j<Math.min(i+15,allTMatches.length);j++){
-            const combined=allTMatches.slice(i,j+1).map(t=>t.text).join('');
-            if(combined.includes(marker)){
-              // Replace: put new text in first <w:t>, blank rest
-              const newCombined=combined.replace(marker,String(val||''));
-              let first=true;
-              let rebuilt='';
-              for(let k=i;k<=j;k++){
-                const orig=allTMatches[k].full;
-                if(first){
-                  const sp=(newCombined!==newCombined.trim()||newCombined.includes('  '))?' xml:space="preserve"':'';
-                  rebuilt+='<w:t'+sp+'>'+xmlEsc(newCombined)+'</w:t>';
-                  first=false;
-                } else {
-                  rebuilt+='<w:t></w:t>';
-                }
-              }
-              // Replace in result from first match idx to end of last
-              const replStart=allTMatches[i].idx;
-              const replEnd=allTMatches[j].idx+allTMatches[j].full.length;
-              result=result.slice(0,replStart)+rebuilt+result.slice(replEnd);
-              found2=true; break;
-            }
-          }
-          if(found2) break;
-        }
-        if(!found2) break;
       }
-    }
+      if(!matched) return para;
+
+      // Rebuild paragraph: keep <w:pPr>, keep drawings, replace all text runs with one clean run
+      const pPr  = para.match(/<w:pPr>[\s\S]*?<\/w:pPr>/)?.[0] || '';
+      // Keep any runs that contain drawings (images)
+      const imgRuns = [];
+      para.replace(/<w:r[^>]*>[\s\S]*?<\/w:r>/g, run => {
+        if(run.includes('<w:drawing>')) imgRuns.push(run);
+      });
+      // Detect bold and size from first run in paragraph
+      const boldPara = /<w:b\/>/.test(para);
+      const szM = para.match(/<w:sz w:val="(\d+)"/);
+      const sz  = szM ? szM[1] : '24';
+      const openTag = para.match(/^<w:p[^>]*>/)?.[0] || '<w:p>';
+
+      const space = (newFull !== newFull.trim() || newFull.includes('  ')) ? ' xml:space="preserve"' : '';
+      const newRun = `<w:r><w:rPr><w:rFonts w:ascii="Courier New" w:hAnsi="Courier New"/>${boldPara?'<w:b/><w:bCs/>':''}<w:sz w:val="${sz}"/><w:szCs w:val="${sz}"/></w:rPr><w:t${space}>${xmlEscLocal(newFull)}</w:t></w:r>`;
+
+      return `${openTag}${pPr}${imgRuns.join('')}${newRun}</w:p>`;
+    });
+
     return result;
   }
+
 
   // Fill all XML files
   for(const fname of ['word/document.xml','word/header1.xml','word/header2.xml',
