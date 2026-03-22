@@ -723,7 +723,7 @@ body.modo-lectura .readonly-hidden { display:none !important; }
       </div>
     </div>
     <div class="fg full">
-      <label>Descripción de los daños <span style="font-size:10px;color:var(--text-ter);font-weight:400;">(texto enriquecido)</span></label>
+      <label>Bienes afectados y daños sufridos <span style="font-size:10px;color:var(--text-ter);font-weight:400;">(texto enriquecido)</span></label>
       <div class="rte-wrap">
         <div class="rte-toolbar">
           <button type="button" onclick="rteCmd('bold')"        title="Negrita"><strong>N</strong></button>
@@ -736,7 +736,7 @@ body.modo-lectura .readonly-hidden { display:none !important; }
           <button type="button" onclick="rteCmd('removeFormat')" title="Quitar formato">✕</button>
         </div>
         <div id="s-bienes-rte" class="rte-editor" contenteditable="true"
-          data-placeholder="Descripción detallada de los bienes afectados y los daños observados..."
+          data-placeholder="Detallar los bienes afectados y los daños sufridos..."
           oninput="syncBienesRte()"></div>
         <textarea id="s-bienes" style="display:none;"></textarea>
       </div>
@@ -5706,7 +5706,7 @@ async function descargarWord(){
     ...pHechos, ep(),
     secTitle('5','Causa del siniestro'),
     body2(s.causa||''),ep(),
-    secTitle('6','Bienes afectados'),
+    secTitle('6','Bienes afectados y daños sufridos'),
     ...pBienes, ep(),
     secTitle('7','Alcance del daño'),
     body2(s.situacion_actual||''),ep(),
@@ -6037,7 +6037,7 @@ async function descargarWordGNP(){
       new TableRow({children:[lbl('Domicilio asegurado / Teléfono',W2),val((pol.domicilio_legal||'')+(s.inspeccion_tel?' / '+s.inspeccion_tel:''),W2)]}),
       new TableRow({children:[lbl('Ubicación Afectada',W2),val(s.inspeccion_domicilio||s.lugar_siniestro||'',W2)]}),
       new TableRow({children:[lbl('Lugar del siniestro',W2),val(s.lugar_siniestro||'',W2)]}),
-      new TableRow({children:[lbl('Bienes dañados',W2),val(s.bienes_danados||'',W2)]}),
+      new TableRow({children:[lbl('Bienes afectados y daños sufridos',W2),val(s.bienes_danados||'',W2)]}),
       new TableRow({children:[lbl('Intervención de Autoridades',W2),val(s.intervencion_autoridades?(s.intervencion_autoridades_detalle||'Sí'):'No',W2)]}),
     ]}),
     ep(),
@@ -6547,7 +6547,7 @@ function buildFormalGenerico(s, secs, aseg){
   }
 
   if(secs.includes('inspeccion')){
-    h += `<div class="sec-title">6 &nbsp; Bienes afectados</div>
+    h += `<div class="sec-title">6 &nbsp; Bienes afectados y daños sufridos</div>
     <div class="narrative">${s.descripcion_danios_html||s.bienes_danados||''}</div>`;
 
     h += `<div class="sec-title">7 &nbsp; Alcance del daño</div>
