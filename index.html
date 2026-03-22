@@ -842,6 +842,30 @@ body.modo-lectura .readonly-hidden { display:none !important; }
     </div>
     <div class="fg full">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+    <div class="fg full">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+        <label style="margin-bottom:0;">Riesgos Cubiertos
+          <span style="font-size:10px;color:var(--text-ter);font-weight:400;">— riesgos de la póliza aplicables a este siniestro</span>
+        </label>
+      </div>
+      <div class="rte-wrap">
+        <div class="rte-toolbar">
+          <button type="button" onclick="rteCmdSin('riesgos-cubiertos','bold')"               title="Negrita"><strong>N</strong></button>
+          <button type="button" onclick="rteCmdSin('riesgos-cubiertos','italic')"             title="Cursiva"><em>K</em></button>
+          <button type="button" onclick="rteCmdSin('riesgos-cubiertos','underline')"          title="Subrayado"><u>S</u></button>
+          <span class="rte-sep"></span>
+          <button type="button" onclick="rteCmdSin('riesgos-cubiertos','insertUnorderedList')" title="Lista con viñetas">≡•</button>
+          <button type="button" onclick="rteCmdSin('riesgos-cubiertos','insertOrderedList')"   title="Lista numerada">≡1</button>
+          <span class="rte-sep"></span>
+          <button type="button" onclick="rteCmdSin('riesgos-cubiertos','removeFormat')"       title="Quitar formato">✕</button>
+          <span class="rte-sep"></span><button type="button" onclick="rteInsertarImagen('riesgos-cubiertos')" title="Insertar imagen" style="font-size:13px;">📷</button>
+        </div>
+        <div id="s-riesgos-cubiertos-rte" class="rte-editor" contenteditable="true"
+          data-placeholder="Lista de riesgos cubiertos por la póliza que aplican a este siniestro (ej. a) Incendio, b) Rayo, c) Explosión, d) Cobertura Adicional...)..."
+          oninput="syncRteSin('riesgos-cubiertos')" style="min-height:80px;"></div>
+        <textarea id="s-riesgos-cubiertos" style="display:none;"></textarea>
+      </div>
+    </div>
         <label style="margin-bottom:0;">Descripción general del riesgo asegurado</label>
       </div>
       <div class="rte-wrap">
@@ -3435,7 +3459,7 @@ function abrirModal(id){
     loadBienesRte('');
     loadRteSin('bienes-amparados','');
     // Reset all RTE fields
-    ['desc-riesgo','introduccion','inspeccion-narrativa','desc','estrategias','observaciones','actividades'].forEach(s=>loadRteSin(s,''));
+    ['desc-riesgo','riesgos-cubiertos','introduccion','inspeccion-narrativa','desc','estrategias','observaciones','actividades'].forEach(s=>loadRteSin(s,''));
     loadSinGiroAseg(''); loadSinDescAseg('');
     delete g('s-inspeccion-narrativa-rte')?.dataset.editado;
     loadRteSin('introduccion', 'El presente informe preliminar se elabora en seguimiento de la designaci\u00f3n de [Compa\u00f1\u00eda], por parte de su apreciable [Funcionario], relativa a la atenci\u00f3n de la p\u00e9rdida sufrida por el Asegurado por [Describir el tipo de da\u00f1os y bienes afectados], hechos ocurridos el [Fecha del Siniestro] en su domicilio sito en [Direcci\u00f3n donde ocurrieron los da\u00f1os].\n\nSiguiendo las instrucciones de asignaci\u00f3n, de inmediato procedimos a contactar a [Persona de Contacto], quien nos [Detallar acuerdo para la inspecci\u00f3n, fecha, hora, etc.].\n\nComo acordado, el [Fecha de inspecci\u00f3n] a las [Hora], nos presentamos en [Sitio de la inspecci\u00f3n], lugar en el que fuimos atendidos por [Persona que atendi\u00f3] quien nos mostr\u00f3 los da\u00f1os sufridos.\n\nCon base en lo anterior y la informaci\u00f3n inicialmente recabada, presentamos a ustedes el presente Informe Preliminar.');
@@ -3557,6 +3581,7 @@ async function guardarSiniestro(){
     subramo:v('s-subramo')||null,
     causa:v('s-causa')||null,
     riesgo_afectado:v('s-riesgo')||null,
+    riesgos_cubiertos:v('s-riesgos-cubiertos')||null,
     referencia_ajustadora:v('s-exp')||null, clave_ajustador_cia:v('s-clave-ajust')||null,
     id_contacto_dest:parseInt(v('s-funcionario-dest'))||null,
     destinatario_nombre:v('s-dest-nombre')||null, destinatario_cargo:v('s-dest-cargo')||null,
@@ -3639,6 +3664,7 @@ function editarSiniestro(id){
   g('sin-modal-title').textContent='Editar expediente'; g('s-id').value=s.id;
   g('s-exp').value=s.numero_exp||''; g('s-numsin').value=s.numero_siniestro||'';
   g('s-subramo').value=s.subramo||''; g('s-causa').value=s.causa||''; g('s-riesgo').value=s.riesgo_afectado||'';
+  loadRteSin('riesgos-cubiertos', s.riesgos_cubiertos||'');
   g('s-clave-ajust').value=s.clave_ajustador_cia||'';
   g('s-giro').value=s.giro_asegurado||'';
   if(g('s-dest-nombre')) g('s-dest-nombre').value=s.destinatario_nombre||'';
@@ -5797,7 +5823,7 @@ async function descargarWord(){
     secTitle('8','Procedencia'),
     body2(s.fundamento||'De acuerdo como se dieron los hechos, condiciones contractuales de la póliza y bienes afectados; el siniestro es de carácter '+procTxt.split(' (')[0]+', y al momento no se tiene exclusión alguna aplicable.'),ep(),
     secTitle('9','Póliza de seguro'),
-    ...[['Tipo de Seguro',pol.tipo_seguro||''],['Vigencia del Seguro','Desde las 12:00 hrs. del día '+fD(pol.vigencia_ini)+', hasta las 12:00 hrs. del '+fD(pol.vigencia_fin)+'.'],['Bienes Amparados',(s.bienes_amparados?s.bienes_amparados.replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ').trim():'')],['Bienes Cubiertos',(s.descripcion_danios_html?s.descripcion_danios_html.replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ').trim():s.bienes_danados)||''],['Riesgos Cubiertos',s.riesgo_afectado||''],['Sumas aseguradas', sublims.length ? sublims.map(sl=>sl.concepto+': '+(sl.moneda||'MXN')+' '+fM(sl.monto)+(sl.deducible?' (Ded.: '+sl.deducible+')':'')+(sl.coaseguro_pct?', Coas.: '+sl.coaseguro_pct+'%':'')).join(' | ')+(sublims.length>1?' | TOTAL: '+(sublims[0].moneda||'MXN')+' '+fM(sublims.reduce((a,s)=>a+(s.monto||0),0)):'') : (pol.moneda||'MXN')+' '+fM(pol.suma_asegurada)],['Deducible',dedTxt],['Coaseguro',s.coaseguro?(s.coaseguro_detalle||'Sí'):'N/A']].map(([label,value])=>para2([txt(label+'  ',{bold:true,size:20}),txt(value,{size:20})],{sb:60,sa:60,indent:720})),
+    ...[['Tipo de Seguro',pol.tipo_seguro||''],['Vigencia del Seguro','Desde las 12:00 hrs. del día '+fD(pol.vigencia_ini)+', hasta las 12:00 hrs. del '+fD(pol.vigencia_fin)+'.'],['Bienes Amparados',(s.bienes_amparados?s.bienes_amparados.replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ').trim():'')],['Bienes Cubiertos',(s.descripcion_danios_html?s.descripcion_danios_html.replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ').trim():s.bienes_danados)||''],['Riesgos Cubiertos',(s.riesgos_cubiertos?s.riesgos_cubiertos.replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ').trim():s.riesgo_afectado)||''],['Sumas aseguradas', sublims.length ? sublims.map(sl=>sl.concepto+': '+(sl.moneda||'MXN')+' '+fM(sl.monto)+(sl.deducible?' (Ded.: '+sl.deducible+')':'')+(sl.coaseguro_pct?', Coas.: '+sl.coaseguro_pct+'%':'')).join(' | ')+(sublims.length>1?' | TOTAL: '+(sublims[0].moneda||'MXN')+' '+fM(sublims.reduce((a,s)=>a+(s.monto||0),0)):'') : (pol.moneda||'MXN')+' '+fM(pol.suma_asegurada)],['Deducible',dedTxt],['Coaseguro',s.coaseguro?(s.coaseguro_detalle||'Sí'):'N/A']].map(([label,value])=>para2([txt(label+'  ',{bold:true,size:20}),txt(value,{size:20})],{sb:60,sa:60,indent:720})),
     ep(),
     secTitle('10','Determinación de la reserva'),
     para2([txt('10.1  RECLAMACIÓN',{bold:true,size:20,color:BLUE})],{sb:120,sa:60}),
@@ -6651,7 +6677,7 @@ function buildFormalGenerico(s, secs, aseg){
       ['Bienes Amparados', pol.bienes_amparados||''],
       ['Bienes Amparados', s.bienes_amparados||''],
       ['Bienes Cubiertos', s.descripcion_danios_html||s.bienes_danados||''],
-      ['Riesgos Cubiertos', s.riesgo_afectado||''],
+      ['Riesgos Cubiertos', s.riesgos_cubiertos||s.riesgo_afectado||''],
       ['Sumas aseguradas', sublims.length?sublims.map(sl=>sl.concepto+': '+(sl.moneda||'MXN')+' '+fM(sl.monto)+(sl.deducible?' (Ded.: '+sl.deducible+')':'')+(sl.coaseguro_pct?', Coas.: '+sl.coaseguro_pct+'%':'')).join(' | ')+(sublims.length>1?' | TOTAL: '+(sublims[0].moneda||'MXN')+' '+fM(sublims.reduce((a,s)=>a+(s.monto||0),0)):''):`${pol.moneda||'MXN'} ${fM(pol.suma_asegurada)}`],
       ['Deducible', dedTxt],
       ['Coaseguro', s.coaseguro?(s.coaseguro_detalle||'Sí'):'N/A'],
