@@ -259,11 +259,15 @@ body.modo-lectura .readonly-hidden { display:none !important; }
   border-bottom: 1px solid var(--border);
 }
 .overlay > .modal .modal-footer {
+  position: sticky;
+  bottom: 0;
   padding: 0.9rem 1.5rem;
   border-top: 1px solid var(--border);
   display: flex;
   gap: 8px;
   justify-content: flex-end;
+  background: var(--surface);
+  z-index: 10;
 }
 .overlay > .modal > *:not(.modal-title):not(.modal-footer) {
   padding: 0 1.5rem;
