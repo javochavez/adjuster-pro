@@ -7695,7 +7695,7 @@ async function mobGuardarBitacora(){
     tipo_actividad:   tipo,
     nota
   };
-  const {error} = await db.from('bitacora').insert(row);
+  const {error} = await db.from('bitacora_ajustador').insert(row);
   if(error){ toast('Error: '+error.message); return; }
   toast('✓ Bitácora guardada');
   await loadAll();
@@ -7788,7 +7788,7 @@ async function mobCompletarTodo(id){
 // ── FOTOS ─────────────────────────────────────────────────────
 function mobRenderFoto(body){
   const fotos = mobCurrentSin
-    ? (data.grf||[]).filter(g2=>g2.id_siniestro===mobCurrentSin.id).slice(-6).reverse()
+    ? (data.graf||[]).filter(g2=>g2.id_siniestro===mobCurrentSin.id).slice(-6).reverse()
     : [];
 
   body.innerHTML = `
@@ -7853,11 +7853,11 @@ async function mobGuardarFoto(){
   toast('Subiendo foto…');
   const ext = file.name.split('.').pop();
   const path = `siniestros/${mobCurrentSin.id}/${Date.now()}.${ext}`;
-  const {error: upErr} = await db.storage.from('graficos').upload(path, file);
+  const {error: upErr} = await db.storage.from('graficos-expediente').upload(path, file);
   if(upErr){ toast('Error subiendo: '+upErr.message); return; }
-  const { data: urlData } = db.storage.from('graficos').getPublicUrl(path);
+  const { data: urlData } = db.storage.from('graficos-expediente').getPublicUrl(path);
   const url = urlData?.publicUrl;
-  const {error: dbErr} = await db.from('graficos').insert({
+  const {error: dbErr} = await db.from('graficos_expediente').insert({
     id_siniestro: mobCurrentSin.id, url, tipo, etiqueta
   });
   if(dbErr){ toast('Error guardando: '+dbErr.message); return; }
