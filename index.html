@@ -7668,7 +7668,7 @@ function mobRenderBitacora(body){
     ${bits.length ? bits.map(b=>`
       <div class="mob-card">
         <div class="mob-card-title">${b.tipo_actividad||'—'}</div>
-        <div class="mob-card-sub">${b.fecha||''} ${b.hora||''} · ${b.horas_atencion||0}h ${b.minutos_atencion||0}m</div>
+        <div class="mob-card-sub">${b.fecha||''} ${b.hora||''} · ${b.horas||0}h ${b.minutos||0}m</div>
         ${b.nota?`<div style="font-size:12px;color:var(--text-sec);margin-top:4px;">${b.nota.slice(0,80)}${b.nota.length>80?'…':''}</div>`:''}
       </div>`).join('') : '<div class="mob-empty">Sin entradas aún</div>'}
   `;
@@ -7688,12 +7688,12 @@ async function mobGuardarBitacora(){
   const tipo = tipoSel==='__otro__' ? (g('mbit-tipo-otro')?.value?.trim()||'Otro') : tipoSel;
   const row = {
     id_siniestro: mobCurrentSin.id,
-    fecha:        g('mbit-fecha')?.value,
-    hora:         g('mbit-hora')?.value,
-    horas_atencion:   parseInt(g('mbit-horas')?.value)||0,
-    minutos_atencion: parseInt(g('mbit-minutos')?.value)||0,
-    tipo_actividad:   tipo,
-    nota
+    fecha:        g('mbit-fecha')?.value || new Date().toISOString().slice(0,10),
+    hora:         g('mbit-hora')?.value  || new Date().toTimeString().slice(0,8),
+    horas:        parseInt(g('mbit-horas')?.value)||0,
+    minutos:      parseInt(g('mbit-minutos')?.value)||0,
+    nota:         `[${tipo}] ${nota}`,
+    usuario:      g('user-lbl')?.textContent||''
   };
   const {error} = await db.from('bitacora_ajustador').insert(row);
   if(error){ toast('Error: '+error.message); return; }
