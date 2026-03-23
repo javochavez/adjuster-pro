@@ -225,7 +225,7 @@ body.modo-lectura .readonly-hidden { display:none !important; }
 @media(max-width:700px){
   .dash-grid,.fin-grid{ grid-template-columns:1fr 1fr; }
   .form-grid{ grid-template-columns:1fr; }
-  .modal{ width:96vw; }
+  @media(max-width:700px){ .overlay > .modal { width:96vw; } }
   .topbar{ flex-wrap:wrap; height:auto; padding:8px; }
 }
 
@@ -243,9 +243,14 @@ body.modo-lectura .readonly-hidden { display:none !important; }
   position: relative;
   top: 4vh;
   margin: 0 auto 4vh;
+  width: 640px;
   max-width: calc(100vw - 24px);
   max-height: 92vh;
   overflow-y: auto;
+  background: var(--surface);
+  border: 1px solid var(--border-md);
+  border-radius: var(--rl);
+  padding: 1.5rem;
 }
 #modal-sin .modal { display:flex; flex-direction:column; overflow:hidden; padding:0; }
 #modal-sin .modal-title {
