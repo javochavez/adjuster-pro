@@ -3774,14 +3774,10 @@ function abrirModal(id){
   }
   g(id).classList.add('open');
   // Reset scroll position after render
-  requestAnimationFrame(()=>{
+  setTimeout(()=>{
     const _sc = document.querySelector('#'+id+' .modal-scroll');
     if(_sc) _sc.scrollTop = 0;
-    const _mo = document.querySelector('#'+id+' .modal');
-    if(_mo) _mo.scrollTop = 0;
-    const _ov = g(id);
-    if(_ov) _ov.scrollTop = 0;
-  });
+  }, 50);
 }
 function cerrarModal(id){ g(id).classList.remove('open'); }
 
@@ -3998,16 +3994,15 @@ function editarSiniestro(id){
     if(g('s-atlas-poliza'))   {let _e=g('s-atlas-poliza');if(_e)_e.value=s.atlas_poliza_coaseg||'';}
     if(g('s-atlas-sin-gnp'))  {let _e=g('s-atlas-sin-gnp');if(_e)_e.value=s.atlas_sinies_coaseg||'';}
   }
+  // Lock scroll before showing to prevent browser scroll-to-focused-element
+  const _msc=document.querySelector('#modal-sin .modal-scroll');
+  if(_msc){ _msc.style.overflowY='hidden'; _msc.scrollTop=0; }
   g('modal-sin').classList.add('open');
-  // Reset scroll to top after RTE content loads
-  requestAnimationFrame(()=>{
-    requestAnimationFrame(()=>{
-      const _sc=document.querySelector('#modal-sin .modal-scroll');
-      if(_sc) _sc.scrollTop=0;
-      if(document.activeElement && document.activeElement !== document.body)
-        document.activeElement.blur();
-    });
-  });
+  setTimeout(()=>{
+    if(_msc){ _msc.scrollTop=0; _msc.style.overflowY='auto'; }
+    if(document.activeElement && document.activeElement!==document.body)
+      document.activeElement.blur();
+  }, 30);
 }
 
 // ── GRID COBERTURAS PÓLIZA ─────────────────────────────────────────
