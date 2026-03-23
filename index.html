@@ -2,7 +2,13 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="AdjusterPro">
+<meta name="theme-color" content="#1a1f2e">
+<link rel="manifest" href="/manifest.json">
 <title>AdjusterPro JChA — Gestión de Siniestros</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js"></script>
@@ -275,6 +281,154 @@ body.modo-lectura .readonly-hidden { display:none !important; }
 .overlay > .modal > div:not([class*="modal"]) {
   padding: 0.5rem 1.5rem;
 }
+
+/* ── MOBILE PWA ── */
+@media (max-width: 767px) {
+  html, body { overflow: auto !important; height: auto !important; }
+  #app { height: auto !important; overflow: visible !important; }
+  .body-wrap { flex-direction: column; overflow: visible !important; height: auto !important; }
+  .sidebar { display: none !important; }
+  .main { padding: 0 !important; overflow: visible !important; }
+  .topbar { display: none !important; }
+
+  /* Mobile shell */
+  #mobile-shell { display: flex !important; }
+  #desktop-app  { display: none !important; }
+}
+@media (min-width: 768px) {
+  #mobile-shell { display: none !important; }
+  #desktop-app  { display: block !important; }
+}
+
+/* Mobile shell styles */
+#mobile-shell {
+  display: none;
+  flex-direction: column;
+  height: 100vh;
+  background: var(--bg);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  overflow: hidden;
+}
+.mob-header {
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border-md);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+.mob-header-brand { font-weight: 700; font-size: 16px; color: var(--accent-lt); }
+.mob-header-exp { font-size: 12px; color: var(--text-sec); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mob-body { flex: 1; overflow-y: auto; padding: 12px; -webkit-overflow-scrolling: touch; }
+.mob-nav {
+  background: var(--bg2);
+  border-top: 1px solid var(--border-md);
+  display: flex;
+  flex-shrink: 0;
+}
+.mob-nav-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 10px 4px 8px;
+  background: none;
+  border: none;
+  color: var(--text-sec);
+  font-size: 10px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: color .15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.mob-nav-btn.active { color: var(--accent-lt); }
+.mob-nav-btn .icon { font-size: 22px; line-height: 1; }
+
+/* Mobile form elements — touch-friendly */
+.mob-form { display: flex; flex-direction: column; gap: 12px; }
+.mob-field { display: flex; flex-direction: column; gap: 4px; }
+.mob-field label { font-size: 11px; color: var(--text-sec); text-transform: uppercase; letter-spacing: .05em; }
+.mob-field input, .mob-field select, .mob-field textarea {
+  background: var(--surface);
+  border: 1px solid var(--border-md);
+  border-radius: var(--r);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 16px; /* prevent iOS zoom */
+  padding: 12px;
+  width: 100%;
+  box-sizing: border-box;
+  -webkit-appearance: none;
+}
+.mob-field textarea { min-height: 90px; resize: vertical; }
+.mob-row { display: flex; gap: 10px; }
+.mob-row .mob-field { flex: 1; }
+
+.mob-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--rl);
+  padding: 12px;
+  margin-bottom: 8px;
+}
+.mob-card-title { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+.mob-card-sub { font-size: 11px; color: var(--text-sec); }
+
+.mob-btn-primary {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--r);
+  padding: 14px;
+  font-size: 16px;
+  font-family: inherit;
+  font-weight: 600;
+  width: 100%;
+  cursor: pointer;
+  margin-top: 8px;
+  -webkit-tap-highlight-color: transparent;
+}
+.mob-btn-secondary {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border-md);
+  border-radius: var(--r);
+  padding: 12px;
+  font-size: 14px;
+  font-family: inherit;
+  width: 100%;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.mob-exp-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--rl);
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.mob-exp-item.selected { border-color: var(--accent); background: rgba(96,165,250,.08); }
+.mob-exp-ref { font-size: 13px; font-weight: 600; }
+.mob-exp-sub { font-size: 11px; color: var(--text-sec); margin-top: 2px; }
+.mob-section-title {
+  font-size: 11px; color: var(--text-ter);
+  text-transform: uppercase; letter-spacing: .07em;
+  margin: 16px 0 8px;
+}
+.mob-empty { text-align: center; color: var(--text-ter); font-size: 13px; padding: 40px 20px; }
+.mob-badge {
+  display: inline-block; padding: 2px 8px;
+  border-radius: 999px; font-size: 10px; font-weight: 600;
+}
+.mob-badge.alta { background: rgba(239,68,68,.15); color: #f87171; }
+.mob-badge.media { background: rgba(234,179,8,.15); color: #fbbf24; }
+.mob-badge.baja { background: rgba(34,197,94,.15); color: #4ade80; }
+.mob-todo-done { opacity: .5; text-decoration: line-through; }
+
 </style>
 </head>
 <body>
@@ -294,7 +448,42 @@ body.modo-lectura .readonly-hidden { display:none !important; }
 </div>
 
 <!-- APP -->
-<div id="app">
+
+<!-- ── MOBILE PWA SHELL ── -->
+<div id="mobile-shell">
+
+  <!-- Header -->
+  <div class="mob-header">
+    <span class="mob-header-brand">AASA</span>
+    <span class="mob-header-exp" id="mob-exp-label">Sin expediente seleccionado</span>
+    <button class="mob-btn-secondary" style="width:auto;padding:6px 12px;font-size:12px;" onclick="mobCambiarExp()">Cambiar</button>
+  </div>
+
+  <!-- Body -->
+  <div class="mob-body" id="mob-body">
+    <!-- Loaded by JS -->
+  </div>
+
+  <!-- Bottom nav -->
+  <nav class="mob-nav">
+    <button class="mob-nav-btn active" id="mob-nav-bit" onclick="mobTab('bitacora')">
+      <span class="icon">⏱</span>Bitácora
+    </button>
+    <button class="mob-nav-btn" id="mob-nav-todo" onclick="mobTab('todo')">
+      <span class="icon">✅</span>ToDo
+    </button>
+    <button class="mob-nav-btn" id="mob-nav-foto" onclick="mobTab('foto')">
+      <span class="icon">📷</span>Fotos
+    </button>
+    <button class="mob-nav-btn" id="mob-nav-nota" onclick="mobTab('nota')">
+      <span class="icon">📝</span>Nota
+    </button>
+  </nav>
+
+</div>
+<!-- ── END MOBILE SHELL ── -->
+
+<div id="desktop-app"><div id="app">
   <div class="topbar">
     <div class="brand" style="display:flex;align-items:center;gap:10px;"><img src="data:image/jpeg;base64,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" alt="AASA" style="height:28px;width:auto;background:#fff;border-radius:4px;padding:2px 6px;"><span style="color:var(--accent-lt);font-weight:600;letter-spacing:.02em;">JChA</span><span style="font-size:11px;font-weight:400;color:var(--text-sec);">Gestión de Siniestros</span></div>
     <div class="topbar-mid">
@@ -563,7 +752,7 @@ body.modo-lectura .readonly-hidden { display:none !important; }
 
     </div>
   </div>
-</div>
+</div></div>
 
 <!-- ── MODALS ── -->
 
@@ -7329,6 +7518,396 @@ function switchMain(tab,btn){
   const {data:{session}}=await db.auth.getSession();
   if(session&&(ALLOWED.includes(session.user.email)||READONLY.includes(session.user.email))) mostrarApp(session.user.email);
 })();
+
+
+// ════════════════════════════════════════════════════════════
+// MOBILE PWA — Campo functions
+// ════════════════════════════════════════════════════════════
+let mobCurrentSin = null;
+let mobCurrentTab = 'bitacora';
+
+function mobIsMobile(){ return window.innerWidth < 768; }
+
+function mobInit(){
+  if(!mobIsMobile()) return;
+  // Show mobile shell, hide desktop
+  g('mobile-shell').style.display='flex';
+  g('desktop-app').style.display='none';
+  // Init with first available expediente or prompt selection
+  const sins = data.sin||[];
+  if(sins.length > 0){
+    mobSetExp(sins[0].id);
+  }
+  mobTab('bitacora');
+}
+
+function mobSetExp(id){
+  mobCurrentSin = (data.sin||[]).find(s=>s.id===id)||null;
+  currentSin = mobCurrentSin; // sync with desktop currentSin
+  if(mobCurrentSin){
+    const pol = (data.pol||[]).find(p=>p.id===mobCurrentSin.id_poliza)||{};
+    const asdo = (data.asdo||[]).find(a=>a.id===pol.id_asegurado)||{};
+    g('mob-exp-label').textContent = mobCurrentSin.numero_exp + (asdo.nombre?' — '+asdo.nombre.split(' ')[0]:'');
+  } else {
+    g('mob-exp-label').textContent = 'Sin expediente';
+  }
+  mobTab(mobCurrentTab); // refresh current tab
+}
+
+function mobCambiarExp(){
+  const sins = (data.sin||[]).slice().sort((a,b)=>b.id-a.id);
+  const body = g('mob-body');
+  body.innerHTML = `
+    <div class="mob-section-title">Seleccionar expediente</div>
+    <input type="text" class="mob-field input" id="mob-exp-search"
+      placeholder="Buscar por Ref., Asegurado..."
+      style="background:var(--surface);border:1px solid var(--border-md);border-radius:var(--r);
+             color:var(--text);font-size:16px;padding:12px;width:100%;box-sizing:border-box;margin-bottom:10px;"
+      oninput="mobFiltrarExp(this.value)">
+    <div id="mob-exp-list"></div>
+  `;
+  mobRenderExpList(sins);
+}
+
+function mobFiltrarExp(q){
+  const sins = (data.sin||[]).slice().sort((a,b)=>b.id-a.id);
+  const filtered = q.trim() ? sins.filter(s=>{
+    const pol=(data.pol||[]).find(p=>p.id===s.id_poliza)||{};
+    const asdo=(data.asdo||[]).find(a=>a.id===pol.id_asegurado)||{};
+    const hay = (s.numero_exp+' '+(asdo.nombre||'')+(pol.numero||'')).toLowerCase();
+    return hay.includes(q.toLowerCase());
+  }) : sins;
+  mobRenderExpList(filtered);
+}
+
+function mobRenderExpList(sins){
+  const list = g('mob-exp-list');
+  if(!list) return;
+  if(!sins.length){ list.innerHTML='<div class="mob-empty">Sin resultados</div>'; return; }
+  list.innerHTML = sins.slice(0,30).map(s=>{
+    const pol=(data.pol||[]).find(p=>p.id===s.id_poliza)||{};
+    const asdo=(data.asdo||[]).find(a=>a.id===pol.id_asegurado)||{};
+    const aseg=(data.aseg||[]).find(a=>a.id===pol.id_aseguradora)||{};
+    const sel = mobCurrentSin?.id===s.id ? ' selected' : '';
+    return `<div class="mob-exp-item${sel}" onclick="mobSetExp(${s.id})">
+      <div class="mob-exp-ref">${s.numero_exp||'—'}</div>
+      <div class="mob-exp-sub">${asdo.nombre||'—'} · ${aseg.nombre||'—'}</div>
+    </div>`;
+  }).join('');
+}
+
+function mobTab(tab){
+  mobCurrentTab = tab;
+  // Update nav buttons
+  ['bit','todo','foto','nota'].forEach(t=>{
+    const btn = g('mob-nav-'+t);
+    if(btn) btn.classList.toggle('active', tab===({'bit':'bitacora','todo':'todo','foto':'foto','nota':'nota'}[t]));
+  });
+  const body = g('mob-body');
+  if(!body) return;
+
+  if(tab==='bitacora') mobRenderBitacora(body);
+  else if(tab==='todo') mobRenderTodo(body);
+  else if(tab==='foto') mobRenderFoto(body);
+  else if(tab==='nota') mobRenderNota(body);
+}
+
+// ── BITÁCORA ──────────────────────────────────────────────────
+function mobRenderBitacora(body){
+  const today = new Date().toISOString().slice(0,10);
+  const now   = new Date().toTimeString().slice(0,5);
+  const bits  = mobCurrentSin ? (data.bit||[]).filter(b=>b.id_siniestro===mobCurrentSin.id)
+    .slice().sort((a,b)=>b.id-a.id).slice(0,10) : [];
+
+  body.innerHTML = `
+    <div class="mob-section-title">Nueva entrada de bitácora</div>
+    <div class="mob-form">
+      <div class="mob-row">
+        <div class="mob-field">
+          <label>Fecha</label>
+          <input type="date" id="mbit-fecha" value="${today}">
+        </div>
+        <div class="mob-field">
+          <label>Hora</label>
+          <input type="time" id="mbit-hora" value="${now}">
+        </div>
+      </div>
+      <div class="mob-row">
+        <div class="mob-field">
+          <label>Horas</label>
+          <input type="number" id="mbit-horas" value="0" min="0" max="23" inputmode="numeric">
+        </div>
+        <div class="mob-field">
+          <label>Minutos</label>
+          <input type="number" id="mbit-minutos" value="0" min="0" max="59" inputmode="numeric">
+        </div>
+      </div>
+      <div class="mob-field">
+        <label>Tipo de actividad</label>
+        <select id="mbit-tipo" onchange="mobBitTipoChange()">
+          <option value="Inspección">Inspección</option>
+          <option value="Informe">Informe</option>
+          <option value="Reunión">Reunión</option>
+          <option value="Traslado">Traslado</option>
+          <option value="Conferencia telefónica">Conferencia telefónica</option>
+          <option value="__otro__">Otro…</option>
+        </select>
+      </div>
+      <div class="mob-field" id="mbit-otro-wrap" style="display:none;">
+        <label>Especificar</label>
+        <input type="text" id="mbit-tipo-otro" placeholder="Tipo de actividad">
+      </div>
+      <div class="mob-field">
+        <label>Nota de actividad</label>
+        <textarea id="mbit-nota" placeholder="Descripción detallada de la actividad..."></textarea>
+      </div>
+      <button class="mob-btn-primary" onclick="mobGuardarBitacora()">💾 Guardar entrada</button>
+    </div>
+
+    <div class="mob-section-title">Últimas entradas</div>
+    ${bits.length ? bits.map(b=>`
+      <div class="mob-card">
+        <div class="mob-card-title">${b.tipo_actividad||'—'}</div>
+        <div class="mob-card-sub">${b.fecha||''} ${b.hora||''} · ${b.horas_atencion||0}h ${b.minutos_atencion||0}m</div>
+        ${b.nota?`<div style="font-size:12px;color:var(--text-sec);margin-top:4px;">${b.nota.slice(0,80)}${b.nota.length>80?'…':''}</div>`:''}
+      </div>`).join('') : '<div class="mob-empty">Sin entradas aún</div>'}
+  `;
+}
+
+function mobBitTipoChange(){
+  const sel = g('mbit-tipo')?.value;
+  const wrap = g('mbit-otro-wrap');
+  if(wrap) wrap.style.display = sel==='__otro__' ? 'flex' : 'none';
+}
+
+async function mobGuardarBitacora(){
+  if(!mobCurrentSin){ toast('Selecciona un expediente primero'); return; }
+  const nota = g('mbit-nota')?.value?.trim();
+  if(!nota){ toast('La nota no puede estar vacía'); return; }
+  const tipoSel = g('mbit-tipo')?.value;
+  const tipo = tipoSel==='__otro__' ? (g('mbit-tipo-otro')?.value?.trim()||'Otro') : tipoSel;
+  const row = {
+    id_siniestro: mobCurrentSin.id,
+    fecha:        g('mbit-fecha')?.value,
+    hora:         g('mbit-hora')?.value,
+    horas_atencion:   parseInt(g('mbit-horas')?.value)||0,
+    minutos_atencion: parseInt(g('mbit-minutos')?.value)||0,
+    tipo_actividad:   tipo,
+    nota
+  };
+  const {error} = await db.from('bitacora').insert(row);
+  if(error){ toast('Error: '+error.message); return; }
+  toast('✓ Bitácora guardada');
+  await loadAll();
+  mobTab('bitacora');
+}
+
+// ── TODO ──────────────────────────────────────────────────────
+function mobRenderTodo(body){
+  const todos = mobCurrentSin
+    ? (data.todos||[]).filter(t=>t.id_siniestro===mobCurrentSin.id).slice().sort((a,b)=>a.completado-b.completado||b.id-a.id)
+    : [];
+
+  const ajusts = (data.ajus||[]);
+  const ajOpts = ajusts.map(a=>`<option value="${a.id}">${a.nombre}</option>`).join('');
+
+  body.innerHTML = `
+    <div class="mob-section-title">Nuevo ToDo</div>
+    <div class="mob-form">
+      <div class="mob-field">
+        <label>Actividad / Tarea</label>
+        <textarea id="mtodo-desc" placeholder="Descripción de la tarea pendiente..."></textarea>
+      </div>
+      <div class="mob-row">
+        <div class="mob-field">
+          <label>Fecha límite</label>
+          <input type="date" id="mtodo-fecha">
+        </div>
+        <div class="mob-field">
+          <label>Prioridad</label>
+          <select id="mtodo-prioridad">
+            <option value="alta">🔴 Alta</option>
+            <option value="media" selected>🟡 Media</option>
+            <option value="baja">🟢 Baja</option>
+          </select>
+        </div>
+      </div>
+      <div class="mob-field">
+        <label>Asignado a</label>
+        <select id="mtodo-ajustador"><option value="">— Sin asignar —</option>${ajOpts}</select>
+      </div>
+      <div class="mob-field">
+        <label>Notas</label>
+        <textarea id="mtodo-notas" style="min-height:60px;" placeholder="Contexto adicional..."></textarea>
+      </div>
+      <button class="mob-btn-primary" onclick="mobGuardarTodo()">💾 Guardar ToDo</button>
+    </div>
+
+    <div class="mob-section-title">Pendientes</div>
+    ${todos.length ? todos.map(t=>`
+      <div class="mob-card${t.completado?' mob-todo-done':''}">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+          <div style="flex:1;">
+            <div class="mob-card-title">${t.descripcion||'—'}</div>
+            <div class="mob-card-sub">${t.fecha_limite||'Sin fecha'} · <span class="mob-badge ${t.prioridad||'media'}">${t.prioridad||'media'}</span></div>
+          </div>
+          ${!t.completado?`<button onclick="mobCompletarTodo(${t.id})" style="background:var(--accent);color:#fff;border:none;border-radius:var(--r);padding:6px 10px;font-size:12px;cursor:pointer;">✓</button>`:''}
+        </div>
+      </div>`).join('') : '<div class="mob-empty">Sin tareas pendientes</div>'}
+  `;
+}
+
+async function mobGuardarTodo(){
+  if(!mobCurrentSin){ toast('Selecciona un expediente primero'); return; }
+  const desc = g('mtodo-desc')?.value?.trim();
+  if(!desc){ toast('La descripción es obligatoria'); return; }
+  const row = {
+    id_siniestro:  mobCurrentSin.id,
+    descripcion:   desc,
+    fecha_limite:  g('mtodo-fecha')?.value||null,
+    prioridad:     g('mtodo-prioridad')?.value,
+    id_ajustador:  parseInt(g('mtodo-ajustador')?.value)||null,
+    notas:         g('mtodo-notas')?.value||null,
+    completado:    false
+  };
+  const {error} = await db.from('todos').insert(row);
+  if(error){ toast('Error: '+error.message); return; }
+  toast('✓ ToDo guardado');
+  await loadAll();
+  mobTab('todo');
+}
+
+async function mobCompletarTodo(id){
+  const {error} = await db.from('todos').update({completado:true}).eq('id',id);
+  if(error){ toast('Error: '+error.message); return; }
+  toast('✓ Completado');
+  await loadAll();
+  mobTab('todo');
+}
+
+// ── FOTOS ─────────────────────────────────────────────────────
+function mobRenderFoto(body){
+  const fotos = mobCurrentSin
+    ? (data.grf||[]).filter(g2=>g2.id_siniestro===mobCurrentSin.id).slice(-6).reverse()
+    : [];
+
+  body.innerHTML = `
+    <div class="mob-section-title">Agregar foto</div>
+    <div class="mob-form">
+      <div class="mob-field">
+        <label>Tipo / Sección</label>
+        <select id="mfoto-tipo">
+          <option value="localizacion">Localización</option>
+          <option value="inspeccion">Inspección</option>
+          <option value="daños">Daños</option>
+          <option value="salvamento">Salvamento</option>
+          <option value="general">General</option>
+        </select>
+      </div>
+      <div class="mob-field">
+        <label>Etiqueta / Descripción</label>
+        <input type="text" id="mfoto-etiqueta" placeholder="Ej: Fachada principal, interior sala...">
+      </div>
+      <div class="mob-field">
+        <label>Foto</label>
+        <input type="file" id="mfoto-file" accept="image/*" capture="environment"
+          style="background:var(--surface);border:1px solid var(--border-md);border-radius:var(--r);
+                 color:var(--text);font-size:14px;padding:10px;width:100%;box-sizing:border-box;"
+          onchange="mobFotoPreview(this)">
+      </div>
+      <div id="mfoto-preview" style="display:none;margin-top:4px;">
+        <img id="mfoto-img" style="width:100%;border-radius:var(--r);max-height:200px;object-fit:cover;">
+      </div>
+      <button class="mob-btn-primary" onclick="mobGuardarFoto()">📤 Subir foto</button>
+    </div>
+
+    <div class="mob-section-title">Fotos recientes</div>
+    ${fotos.length ? `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+      ${fotos.map(f=>`<div style="position:relative;">
+        <img src="${f.url}" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:var(--r);">
+        <div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.6);color:#fff;font-size:10px;padding:4px;border-radius:0 0 var(--r) var(--r);">${f.etiqueta||f.tipo||''}</div>
+      </div>`).join('')}
+    </div>` : '<div class="mob-empty">Sin fotos aún</div>'}
+  `;
+}
+
+function mobFotoPreview(input){
+  const file = input.files[0];
+  if(!file) return;
+  const preview = g('mfoto-preview');
+  const img = g('mfoto-img');
+  if(preview && img){
+    img.src = URL.createObjectURL(file);
+    preview.style.display = 'block';
+  }
+}
+
+async function mobGuardarFoto(){
+  if(!mobCurrentSin){ toast('Selecciona un expediente primero'); return; }
+  const input = g('mfoto-file');
+  if(!input?.files?.length){ toast('Selecciona una foto'); return; }
+  const file = input.files[0];
+  const tipo = g('mfoto-tipo')?.value||'general';
+  const etiqueta = g('mfoto-etiqueta')?.value?.trim()||'';
+
+  toast('Subiendo foto…');
+  const ext = file.name.split('.').pop();
+  const path = `siniestros/${mobCurrentSin.id}/${Date.now()}.${ext}`;
+  const {error: upErr} = await db.storage.from('graficos').upload(path, file);
+  if(upErr){ toast('Error subiendo: '+upErr.message); return; }
+  const { data: urlData } = db.storage.from('graficos').getPublicUrl(path);
+  const url = urlData?.publicUrl;
+  const {error: dbErr} = await db.from('graficos').insert({
+    id_siniestro: mobCurrentSin.id, url, tipo, etiqueta
+  });
+  if(dbErr){ toast('Error guardando: '+dbErr.message); return; }
+  toast('✓ Foto subida');
+  await loadAll();
+  mobTab('foto');
+}
+
+// ── NOTA RÁPIDA ───────────────────────────────────────────────
+function mobRenderNota(body){
+  const notas_raw = mobCurrentSin?.notas_internas||'';
+  body.innerHTML = `
+    <div class="mob-section-title">Notas internas del expediente</div>
+    <div class="mob-form">
+      <div class="mob-field">
+        <label>Agregar nota (se añade al inicio)</label>
+        <textarea id="mnota-nueva" placeholder="Escribe aquí tu nota rápida..." style="min-height:100px;"></textarea>
+      </div>
+      <button class="mob-btn-primary" onclick="mobGuardarNota()">💾 Agregar nota</button>
+    </div>
+    <div class="mob-section-title">Notas actuales</div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:12px;font-size:13px;color:var(--text-sec);white-space:pre-wrap;min-height:60px;">${notas_raw||'Sin notas'}</div>
+  `;
+}
+
+async function mobGuardarNota(){
+  if(!mobCurrentSin){ toast('Selecciona un expediente primero'); return; }
+  const nueva = g('mnota-nueva')?.value?.trim();
+  if(!nueva){ toast('Escribe una nota primero'); return; }
+  const now = new Date().toLocaleString('es-MX');
+  const anterior = mobCurrentSin.notas_internas||'';
+  const actualizada = `[${now}] ${nueva}\n${anterior}`;
+  const {error} = await db.from('siniestros').update({notas_internas:actualizada}).eq('id',mobCurrentSin.id);
+  if(error){ toast('Error: '+error.message); return; }
+  mobCurrentSin.notas_internas = actualizada;
+  toast('✓ Nota guardada');
+  mobTab('nota');
+}
+
+// ── INIT HOOK ─────────────────────────────────────────────────
+// Hook into mostrarApp to init mobile after data loads
+const _origMostrarApp = typeof mostrarApp === 'function' ? mostrarApp : null;
+// Will be called after loadAll in mostrarApp
+const _origLoadAll = loadAll;
+loadAll = async function(...args){
+  const result = await _origLoadAll.apply(this, args);
+  if(mobIsMobile() && data.sin) mobInit();
+  return result;
+};
+
 </script>
 </body>
 </html></div>
