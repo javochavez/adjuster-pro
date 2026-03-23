@@ -225,7 +225,7 @@ body.modo-lectura .readonly-hidden { display:none !important; }
 @media(max-width:700px){
   .dash-grid,.fin-grid{ grid-template-columns:1fr 1fr; }
   .form-grid{ grid-template-columns:1fr; }
-  @media(max-width:700px){ .overlay > .modal { width:96vw; } }
+  
   .topbar{ flex-wrap:wrap; height:auto; padding:8px; }
 }
 
@@ -238,61 +238,43 @@ body.modo-lectura .readonly-hidden { display:none !important; }
   background: rgba(0,0,0,0.6);
   z-index: 9999;
   overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
   padding-top: 52px;
   box-sizing: border-box;
 }
 .overlay.open { display: block; }
 .overlay > .modal {
-  margin: 4vh auto;
+  position: relative;
+  margin: 2vh auto 4vh;
   width: 760px;
   max-width: calc(100vw - 24px);
   background: var(--surface);
   border: 1px solid var(--border-md);
   border-radius: var(--rl);
-  padding: 0;
+  overflow: hidden;
 }
 .overlay > .modal .modal-title {
   padding: 1.25rem 1.5rem;
   font-size: 15px;
   font-weight: 700;
   border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: -52px;
+  background: var(--surface);
+  z-index: 10;
 }
 .overlay > .modal .modal-footer {
-  position: sticky;
-  bottom: 0;
   padding: 0.9rem 1.5rem;
   border-top: 1px solid var(--border);
   display: flex;
   gap: 8px;
   justify-content: flex-end;
   background: var(--surface);
+  position: sticky;
+  bottom: 0;
   z-index: 10;
 }
-.overlay > .modal > *:not(.modal-title):not(.modal-footer) {
-  padding: 0 1.5rem;
-}
-.overlay {
-  display: none;
-  position: fixed;
-  top: 0; left: 0;
-  width: 100vw; height: 100vh;
-  background: rgba(0,0,0,0.6);
-  z-index: 9999;
-  align-items: flex-start;
-  justify-content: center;
-  padding: 4vh 12px;
-  box-sizing: border-box;
-}
-.overlay.open { display: flex; }
-.overlay > .modal {
-  width: 640px;
-  max-width: 100%;
-  background: var(--surface);
-  border: 1px solid var(--border-md);
-  border-radius: var(--rl);
-  padding: 1.5rem;
-  flex-shrink: 0;
+.overlay > .modal > div:not([class*="modal"]) {
+  padding: 0.5rem 1.5rem;
 }
 </style>
 </head>
