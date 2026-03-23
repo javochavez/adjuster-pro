@@ -429,6 +429,32 @@ body.modo-lectura .readonly-hidden { display:none !important; }
 .mob-badge.baja { background: rgba(34,197,94,.15); color: #4ade80; }
 .mob-todo-done { opacity: .5; text-decoration: line-through; }
 
+
+/* ── RTE INSERT FIELD DROPDOWN ── */
+.rte-fields-wrap { position:relative; display:inline-block; }
+.rte-fields-btn { background:none; border:none; color:var(--text-sec); cursor:pointer;
+  font-size:12px; padding:2px 5px; border-radius:3px; font-family:monospace; font-weight:700; }
+.rte-fields-btn:hover { background:var(--surface2); color:var(--text); }
+.rte-fields-drop {
+  display: none;
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  background: var(--surface);
+  border: 1px solid var(--border-md);
+  border-radius: var(--r);
+  box-shadow: 0 8px 24px rgba(0,0,0,.3);
+  z-index: 9999;
+  min-width: 220px;
+  padding: 4px 0;
+}
+.rte-fields-drop.open { display: block; }
+.rte-fields-group { font-size:10px; color:var(--text-ter); text-transform:uppercase;
+  letter-spacing:.07em; padding:6px 10px 2px; }
+.rte-field-item { display:block; width:100%; text-align:left; background:none; border:none;
+  color:var(--text); font-size:12px; padding:5px 14px; cursor:pointer; font-family:inherit; }
+.rte-field-item:hover { background:var(--surface2); color:var(--accent-lt); }
+
 </style>
 </head>
 <body>
@@ -973,6 +999,11 @@ body.modo-lectura .readonly-hidden { display:none !important; }
           <span class="rte-sep"></span>
           <button type="button" onclick="rteCmdSin('introduccion','removeFormat')" title="Quitar formato">✕</button>
           <span class="rte-sep"></span><button type="button" onclick="rteInsertarImagen('introduccion')" title="Insertar imagen del expediente" style="font-size:13px;">📷</button>
+          <span class="rte-sep"></span>
+          <span class="rte-fields-wrap">
+            <button type="button" class="rte-fields-btn" onclick="rteToggleFields(this,'introduccion')" title="Insertar dato del expediente">{}</button>
+            <div class="rte-fields-drop" id="rte-fields-introduccion"></div>
+          </span>
           
         </div>
         <div id="s-introduccion-rte" class="rte-editor" contenteditable="true"
@@ -1003,6 +1034,11 @@ body.modo-lectura .readonly-hidden { display:none !important; }
           <span class="rte-sep"></span>
           <button type="button" onclick="rteCmdSin('desc','removeFormat')" title="Quitar formato">✕</button>
           <span class="rte-sep"></span><button type="button" onclick="rteInsertarImagen('desc')" title="Insertar imagen del expediente" style="font-size:13px;">📷</button>
+          <span class="rte-sep"></span>
+          <span class="rte-fields-wrap">
+            <button type="button" class="rte-fields-btn" onclick="rteToggleFields(this,'desc')" title="Insertar dato del expediente">{}</button>
+            <div class="rte-fields-drop" id="rte-fields-desc"></div>
+          </span>
           
         </div>
         <div id="s-desc-rte" class="rte-editor" contenteditable="true"
@@ -1042,6 +1078,11 @@ body.modo-lectura .readonly-hidden { display:none !important; }
           <span class="rte-sep"></span>
           <button type="button" onclick="rteCmdSin('localizacion','removeFormat')"       title="Quitar formato">✕</button>
           <span class="rte-sep"></span><button type="button" onclick="rteInsertarImagen('localizacion')" title="Insertar imagen" style="font-size:13px;">📷</button>
+          <span class="rte-sep"></span>
+          <span class="rte-fields-wrap">
+            <button type="button" class="rte-fields-btn" onclick="rteToggleFields(this,'localizacion')" title="Insertar dato del expediente">{}</button>
+            <div class="rte-fields-drop" id="rte-fields-localizacion"></div>
+          </span>
         </div>
         <div id="s-localizacion-rte" class="rte-editor" contenteditable="true"
           data-placeholder="Agregar datos de localización, vista satelital, detalles relevantes de localización del domicilio asegurado."
@@ -1069,6 +1110,11 @@ body.modo-lectura .readonly-hidden { display:none !important; }
           <button type="button" onclick="rteCmdSin('narracion','insertOrderedList')" title="Lista numerada">≡1</button>
           <button type="button" onclick="rteCmdSin('narracion','removeFormat')" title="Quitar formato">✕</button>
           <span class="rte-sep"></span><button type="button" onclick="rteInsertarImagen('narracion')" title="Insertar imagen del expediente" style="font-size:13px;">📷</button>
+          <span class="rte-sep"></span>
+          <span class="rte-fields-wrap">
+            <button type="button" class="rte-fields-btn" onclick="rteToggleFields(this,'narracion')" title="Insertar dato del expediente">{}</button>
+            <div class="rte-fields-drop" id="rte-fields-narracion"></div>
+          </span>
           
         </div>
         <div id="s-narracion-rte" class="rte-editor" contenteditable="true"
@@ -1104,6 +1150,11 @@ body.modo-lectura .readonly-hidden { display:none !important; }
           <span class="rte-sep"></span>
           <button type="button" onclick="rteCmdSin('inspeccion-narrativa','removeFormat')" title="Quitar formato">✕</button>
           <span class="rte-sep"></span><button type="button" onclick="rteInsertarImagen('inspeccion-narrativa')" title="Insertar imagen del expediente" style="font-size:13px;">📷</button>
+          <span class="rte-sep"></span>
+          <span class="rte-fields-wrap">
+            <button type="button" class="rte-fields-btn" onclick="rteToggleFields(this,'inspeccion-narrativa')" title="Insertar dato del expediente">{}</button>
+            <div class="rte-fields-drop" id="rte-fields-inspeccion-narrativa"></div>
+          </span>
           <span class="rte-sep"></span><button type="button" class="btn btn-sm" onclick="generarTextoInspeccion()" title="Genera el texto usando fecha, domicilio y persona entrevistada" style="font-size:11px;">✦ Generar texto</button>
         </div>
         <div id="s-inspeccion-narrativa-rte" class="rte-editor" contenteditable="true"
@@ -1132,6 +1183,11 @@ body.modo-lectura .readonly-hidden { display:none !important; }
           <span class="rte-sep"></span>
           <button type="button" onclick="rteCmdSin('bienes-amparados','removeFormat')" title="Quitar formato">✕</button>
           <span class="rte-sep"></span><button type="button" onclick="rteInsertarImagen('bienes-amparados')" title="Insertar imagen del expediente" style="font-size:13px;">📷</button>
+          <span class="rte-sep"></span>
+          <span class="rte-fields-wrap">
+            <button type="button" class="rte-fields-btn" onclick="rteToggleFields(this,'bienes-amparados')" title="Insertar dato del expediente">{}</button>
+            <div class="rte-fields-drop" id="rte-fields-bienes-amparados"></div>
+          </span>
         </div>
         <div id="s-bienes-amparados-rte" class="rte-editor" contenteditable="true"
           data-placeholder="Descripción de los bienes que ampara la póliza para este siniestro específico..."
@@ -1164,6 +1220,11 @@ body.modo-lectura .readonly-hidden { display:none !important; }
           <span class="rte-sep"></span>
           <button type="button" onclick="rteCmdSin('riesgos-cubiertos','removeFormat')"       title="Quitar formato">✕</button>
           <span class="rte-sep"></span><button type="button" onclick="rteInsertarImagen('riesgos-cubiertos')" title="Insertar imagen" style="font-size:13px;">📷</button>
+          <span class="rte-sep"></span>
+          <span class="rte-fields-wrap">
+            <button type="button" class="rte-fields-btn" onclick="rteToggleFields(this,'riesgos-cubiertos')" title="Insertar dato del expediente">{}</button>
+            <div class="rte-fields-drop" id="rte-fields-riesgos-cubiertos"></div>
+          </span>
         </div>
         <div id="s-riesgos-cubiertos-rte" class="rte-editor" contenteditable="true"
           data-placeholder="Lista de riesgos cubiertos por la póliza que aplican a este siniestro (ej. a) Incendio, b) Rayo, c) Explosión, d) Cobertura Adicional...)..."
@@ -1216,6 +1277,11 @@ body.modo-lectura .readonly-hidden { display:none !important; }
           <span class="rte-sep"></span>
           <button type="button" onclick="rteCmdSin('naturaleza-alcance','removeFormat')"       title="Quitar formato">✕</button>
           <span class="rte-sep"></span><button type="button" onclick="rteInsertarImagen('naturaleza-alcance')" title="Insertar imagen" style="font-size:13px;">📷</button>
+          <span class="rte-sep"></span>
+          <span class="rte-fields-wrap">
+            <button type="button" class="rte-fields-btn" onclick="rteToggleFields(this,'naturaleza-alcance')" title="Insertar dato del expediente">{}</button>
+            <div class="rte-fields-drop" id="rte-fields-naturaleza-alcance"></div>
+          </span>
         </div>
         <div id="s-naturaleza-alcance-rte" class="rte-editor" contenteditable="true"
           data-placeholder="Describir: 1) Naturaleza del daño — tipo de daño ocurrido (mecánico, eléctrico, por agua, por fuego, por impacto, corrosión, etc.). 2) Alcance del daño — extensión de la afectación (daño total o parcial, porcentaje estimado afectado, número de equipos o áreas involucradas, si el daño es reparable o implica sustitución). Ejemplo: Daño eléctrico por sobretensión en tablero principal, con afectación parcial estimada en 40% de la instalación eléctrica del piso 2. Los equipos de cómputo presentan daño total no reparable."
@@ -1260,6 +1326,11 @@ body.modo-lectura .readonly-hidden { display:none !important; }
           <span class="rte-sep"></span>
           <button type="button" onclick="rteCmdSin('reclamacion','removeFormat')" title="Quitar formato">✕</button>
           <span class="rte-sep"></span><button type="button" onclick="rteInsertarImagen('reclamacion')" title="Insertar imagen" style="font-size:13px;">📷</button>
+          <span class="rte-sep"></span>
+          <span class="rte-fields-wrap">
+            <button type="button" class="rte-fields-btn" onclick="rteToggleFields(this,'reclamacion')" title="Insertar dato del expediente">{}</button>
+            <div class="rte-fields-drop" id="rte-fields-reclamacion"></div>
+          </span>
         </div>
         <div id="s-reclamacion-rte" class="rte-editor" contenteditable="true"
           data-placeholder="Por el momento el Asegurado no ha presentado su formal reclamación a la compañía de Seguros, sin embargo, estamos en proceso de recepción de documentos, mismos que están siendo analizados."
@@ -1282,6 +1353,11 @@ body.modo-lectura .readonly-hidden { display:none !important; }
           <span class="rte-sep"></span>
           <button type="button" onclick="rteCmdSin('considerandos','removeFormat')" title="Quitar formato">✕</button>
           <span class="rte-sep"></span><button type="button" onclick="rteInsertarImagen('considerandos')" title="Insertar imagen" style="font-size:13px;">📷</button>
+          <span class="rte-sep"></span>
+          <span class="rte-fields-wrap">
+            <button type="button" class="rte-fields-btn" onclick="rteToggleFields(this,'considerandos')" title="Insertar dato del expediente">{}</button>
+            <div class="rte-fields-drop" id="rte-fields-considerandos"></div>
+          </span>
         </div>
         <div id="s-considerandos-rte" class="rte-editor" contenteditable="true"
           data-placeholder="Señalar las consideraciones necesarias para la reserva o ajuste final: bases de valuación de los daños, Valor a Riesgo, Bajo Seguro, Deducibles, Coaseguros y cualquier situación relevante para la reserva o ajuste final."
@@ -1327,6 +1403,11 @@ body.modo-lectura .readonly-hidden { display:none !important; }
           <span class="rte-sep"></span>
           <button type="button" onclick="rteCmdSin('salv-det','removeFormat')" title="Quitar formato">✕</button>
           <span class="rte-sep"></span><button type="button" onclick="rteInsertarImagen('salv-det')" title="Insertar imagen" style="font-size:13px;">📷</button>
+          <span class="rte-sep"></span>
+          <span class="rte-fields-wrap">
+            <button type="button" class="rte-fields-btn" onclick="rteToggleFields(this,'salv-det')" title="Insertar dato del expediente">{}</button>
+            <div class="rte-fields-drop" id="rte-fields-salv-det"></div>
+          </span>
         </div>
         <div id="s-salv-det-rte" class="rte-editor" contenteditable="true"
           data-placeholder="Describir los bienes susceptibles de salvamento: tipo de bien, estado actual, ubicación física donde se encuentran, quién los custodia, valor estimado de recuperación y acciones tomadas o programadas para su disposición."
@@ -1356,6 +1437,11 @@ body.modo-lectura .readonly-hidden { display:none !important; }
           <span class="rte-sep"></span>
           <button type="button" onclick="rteCmdSin('actividades','removeFormat')" title="Quitar formato">✕</button>
           <span class="rte-sep"></span><button type="button" onclick="rteInsertarImagen('actividades')" title="Insertar imagen del expediente" style="font-size:13px;">📷</button>
+          <span class="rte-sep"></span>
+          <span class="rte-fields-wrap">
+            <button type="button" class="rte-fields-btn" onclick="rteToggleFields(this,'actividades')" title="Insertar dato del expediente">{}</button>
+            <div class="rte-fields-drop" id="rte-fields-actividades"></div>
+          </span>
         </div>
         <div id="s-actividades-rte" class="rte-editor" contenteditable="true"
           data-placeholder="Tareas pendientes concretas, visitas programadas, gestiones en proceso..."
@@ -1385,6 +1471,11 @@ body.modo-lectura .readonly-hidden { display:none !important; }
           <span class="rte-sep"></span>
           <button type="button" onclick="rteCmdSin('observaciones','removeFormat')" title="Quitar formato">✕</button>
           <span class="rte-sep"></span><button type="button" onclick="rteInsertarImagen('observaciones')" title="Insertar imagen del expediente" style="font-size:13px;">📷</button>
+          <span class="rte-sep"></span>
+          <span class="rte-fields-wrap">
+            <button type="button" class="rte-fields-btn" onclick="rteToggleFields(this,'observaciones')" title="Insertar dato del expediente">{}</button>
+            <div class="rte-fields-drop" id="rte-fields-observaciones"></div>
+          </span>
         </div>
         <div id="s-observaciones-rte" class="rte-editor" contenteditable="true"
           data-placeholder="Comentarios técnicos, notas al informe, aspectos a destacar, reservas técnicas..."
@@ -7912,6 +8003,206 @@ loadAll = async function(...args){
   if(mobIsMobile() && data.sin) mobInit();
   return result;
 };
+
+
+// ════════════════════════════════════════════════════════════
+// RTE INSERT FIELD — Inserta datos del expediente en cursor
+// ════════════════════════════════════════════════════════════
+
+function rteGetFields(){
+  // Build field list from current expediente data
+  const s   = currentSin || {};
+  const pol = (data.pol||[]).find(p=>p.id===s.id_poliza)||{};
+  const asdo= (data.asdo||[]).find(a=>a.id===pol.id_asegurado)||{};
+  const aseg= (data.aseg||[]).find(a=>a.id===pol.id_aseguradora)||{};
+  const ajusts = (data.sinajust||[])
+    .filter(a=>a.id_siniestro===s.id)
+    .map(a=>(data.ajus||[]).find(aj=>aj.id===a.id_ajustador))
+    .filter(Boolean);
+
+  const fDL = (d)=>{ if(!d)return ''; const[y,m,dy]=d.split('-');
+    const M=['enero','febrero','marzo','abril','mayo','junio','julio','agosto',
+             'septiembre','octubre','noviembre','diciembre'];
+    return dy+' de '+M[parseInt(m)-1]+' de '+y; };
+
+  return [
+    {
+      group: 'Asegurado',
+      fields: [
+        { label:'Nombre del asegurado',     value: asdo.nombre||'' },
+        { label:'RFC del asegurado',         value: asdo.rfc||'' },
+        { label:'Domicilio legal',            value: asdo.direccion||pol.domicilio_asegurado||'' },
+        { label:'Giro del asegurado',         value: pol.giro||s.giro||'' },
+      ]
+    },
+    {
+      group: 'Póliza y Aseguradora',
+      fields: [
+        { label:'Aseguradora',               value: aseg.nombre||'' },
+        { label:'Número de póliza',           value: pol.numero||'' },
+        { label:'Vigencia',                   value: pol.vigencia_inicio&&pol.vigencia_fin ? fDL(pol.vigencia_inicio)+' al '+fDL(pol.vigencia_fin) : '' },
+        { label:'Moneda',                     value: pol.moneda||'' },
+      ]
+    },
+    {
+      group: 'Siniestro',
+      fields: [
+        { label:'Fecha del siniestro',        value: s.fecha_siniestro ? fDL(s.fecha_siniestro) : '' },
+        { label:'Causa del siniestro',        value: s.causa||'' },
+        { label:'Tipo de siniestro',          value: s.tipo_siniestro||'' },
+        { label:'Número de siniestro',        value: s.numero_siniestro||'' },
+        { label:'No. expediente (Ref. AASA)', value: s.numero_exp||'' },
+      ]
+    },
+    {
+      group: 'Domicilio del riesgo',
+      fields: [
+        { label:'Lugar del siniestro',        value: s.lugar_siniestro||'' },
+        { label:'Ubicación afectada',         value: s.inspeccion_domicilio||s.lugar_siniestro||'' },
+      ]
+    },
+    {
+      group: 'Asignación',
+      fields: [
+        { label:'Fecha de asignación',        value: s.fecha_asignacion ? fDL(s.fecha_asignacion) : '' },
+        { label:'Funcionario asignador',      value: s.dest_nombre||'' },
+        { label:'Cargo funcionario',          value: s.dest_cargo||'' },
+        { label:'Ajustador responsable',      value: ajusts.length ? ajusts[0].nombre : (data.ajus||[]).find(a=>a.id===s.id_ajustador)?.nombre||'' },
+      ]
+    },
+  ];
+}
+
+function rteToggleFields(btn, suffix){
+  // Close any other open dropdowns first
+  document.querySelectorAll('.rte-fields-drop.open').forEach(d=>{
+    if(d.id !== 'rte-fields-'+suffix) d.classList.remove('open');
+  });
+
+  const drop = document.getElementById('rte-fields-'+suffix);
+  if(!drop) return;
+
+  if(drop.classList.contains('open')){
+    drop.classList.remove('open');
+    return;
+  }
+
+  // Save cursor position before dropdown opens
+  const rte = document.getElementById('s-'+suffix+'-rte');
+  if(rte) rte.dataset.savedSel = JSON.stringify(rteSaveSel(rte));
+
+  // Build dropdown content
+  const groups = rteGetFields();
+  drop.innerHTML = groups.map(g=>`
+    <div class="rte-fields-group">${g.group}</div>
+    ${g.fields.filter(f=>f.value).map(f=>`
+      <button type="button" class="rte-field-item"
+        data-suffix="${suffix}" data-val="${btoa(unescape(encodeURIComponent(f.value)))}"
+        onclick="rteInsertFieldBtn(this)"
+        title="${f.value}">${f.label}: <span style="color:var(--accent-lt);font-style:italic;">${f.value.length>30?f.value.slice(0,30)+'…':f.value}</span>
+      </button>`).join('')}
+  `).join('');
+
+  drop.classList.add('open');
+
+  // Close on outside click
+  setTimeout(()=>{
+    const handler = (e)=>{
+      if(!drop.contains(e.target) && !btn.contains(e.target)){
+        drop.classList.remove('open');
+        document.removeEventListener('mousedown', handler);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+  }, 10);
+}
+
+function rteInsertFieldBtn(btn){
+  const suffix = btn.dataset.suffix;
+  const value = decodeURIComponent(atob(btn.dataset.val));
+  rteInsertField(suffix, value);
+}
+
+function rteInsertField(suffix, value){
+  const drop = document.getElementById('rte-fields-'+suffix);
+  if(drop) drop.classList.remove('open');
+
+  const rte = document.getElementById('s-'+suffix+'-rte');
+  if(!rte) return;
+
+  rte.focus();
+
+  // Restore saved selection
+  try {
+    const saved = rte.dataset.savedSel ? JSON.parse(rte.dataset.savedSel) : null;
+    if(saved) rteRestoreSel(rte, saved);
+  } catch(e) {}
+
+  // Insert text at cursor
+  const sel = window.getSelection();
+  if(sel && sel.rangeCount > 0){
+    const range = sel.getRangeAt(0);
+    // Check if selection is inside our RTE
+    if(rte.contains(range.commonAncestorContainer)){
+      range.deleteContents();
+      range.insertNode(document.createTextNode(value));
+      range.collapse(false);
+      sel.removeAllRanges();
+      sel.addRange(range);
+    } else {
+      // Insert at end
+      rte.focus();
+      document.execCommand('insertText', false, value);
+    }
+  } else {
+    rte.focus();
+    document.execCommand('insertText', false, value);
+  }
+
+  syncRteSin(suffix);
+}
+
+function rteSaveSel(rte){
+  const sel = window.getSelection();
+  if(!sel || sel.rangeCount === 0) return null;
+  const range = sel.getRangeAt(0);
+  if(!rte.contains(range.commonAncestorContainer)) return null;
+  // Save as text offsets
+  const pre = range.cloneRange();
+  pre.selectNodeContents(rte);
+  pre.setEnd(range.startContainer, range.startOffset);
+  return { start: pre.toString().length, end: pre.toString().length + range.toString().length };
+}
+
+function rteRestoreSel(rte, saved){
+  if(!saved) return;
+  const sel = window.getSelection();
+  const range = document.createRange();
+  let charCount = 0, started = false, ended = false;
+  function traverse(node){
+    if(ended) return;
+    if(node.nodeType === 3){
+      const next = charCount + node.length;
+      if(!started && saved.start <= next){
+        range.setStart(node, saved.start - charCount);
+        started = true;
+      }
+      if(started && saved.end <= next){
+        range.setEnd(node, saved.end - charCount);
+        ended = true;
+      }
+      charCount = next;
+    } else {
+      for(const child of node.childNodes) traverse(child);
+    }
+  }
+  traverse(rte);
+  if(started){
+    if(!ended) range.setEnd(rte, rte.childNodes.length);
+    sel.removeAllRanges();
+    sel.addRange(range);
+  }
+}
 
 </script>
 </body>
