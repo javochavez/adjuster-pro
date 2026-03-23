@@ -4010,11 +4010,15 @@ function editarSiniestro(id){
     if(g('s-atlas-sin-gnp'))  {let _e=g('s-atlas-sin-gnp');if(_e)_e.value=s.atlas_sinies_coaseg||'';}
   }
   g('modal-sin').classList.add('open');
-  setTimeout(()=>{
+  g('modal-sin').scrollTop=0;
+  requestAnimationFrame(()=>{
     g('modal-sin').scrollTop=0;
-    if(document.activeElement && document.activeElement!==document.body)
-      document.activeElement.blur();
-  }, 30);
+    setTimeout(()=>{
+      g('modal-sin').scrollTop=0;
+      if(document.activeElement && document.activeElement!==document.body)
+        document.activeElement.blur();
+    }, 100);
+  });
 }
 
 // ── GRID COBERTURAS PÓLIZA ─────────────────────────────────────────
