@@ -237,22 +237,22 @@ body.modo-lectura .readonly-hidden { display:none !important; }
   width: 100vw; height: 100vh;
   background: rgba(0,0,0,0.6);
   z-index: 9999;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 4vh 12px;
+  box-sizing: border-box;
 }
-.overlay.open { display: block; }
+.overlay.open { display: flex; }
 .overlay > .modal {
-  position: relative;
-  top: 4vh;
-  margin: 0 auto 4vh;
   width: 640px;
-  max-width: calc(100vw - 24px);
-  max-height: 92vh;
-  overflow-y: auto;
+  max-width: 100%;
   background: var(--surface);
   border: 1px solid var(--border-md);
   border-radius: var(--rl);
   padding: 1.5rem;
+  flex-shrink: 0;
 }
-#modal-sin .modal { display:flex; flex-direction:column; overflow:hidden; padding:0; }
+#modal-sin .modal { display:flex; flex-direction:column; overflow:hidden; padding:0; height:92vh; flex-shrink:0; }
 #modal-sin .modal-title {
   padding: 1.25rem 1.5rem 0.75rem;
   font-size: 15px;
@@ -3773,6 +3773,11 @@ function abrirModal(id){
     }
   }
   g(id).classList.add('open');
+  // Reset scroll position
+  const _sc = document.querySelector('#'+id+' .modal-scroll');
+  if(_sc) _sc.scrollTop = 0;
+  const _mo = document.querySelector('#'+id+' .modal');
+  if(_mo) _mo.scrollTop = 0;
 }
 function cerrarModal(id){ g(id).classList.remove('open'); }
 
