@@ -7872,7 +7872,7 @@ async function mobGuardarFoto(){
 
 // ── NOTA RÁPIDA ───────────────────────────────────────────────
 function mobRenderNota(body){
-  const notas_raw = mobCurrentSin?.notas_internas||'';
+  const notas_raw = mobCurrentSin?.notas||'';
   body.innerHTML = `
     <div class="mob-section-title">Notas internas del expediente</div>
     <div class="mob-form">
@@ -7892,11 +7892,11 @@ async function mobGuardarNota(){
   const nueva = g('mnota-nueva')?.value?.trim();
   if(!nueva){ toast('Escribe una nota primero'); return; }
   const now = new Date().toLocaleString('es-MX');
-  const anterior = mobCurrentSin.notas_internas||'';
+  const anterior = mobCurrentSin.notas||'';
   const actualizada = `[${now}] ${nueva}\n${anterior}`;
-  const {error} = await db.from('siniestros').update({notas_internas:actualizada}).eq('id',mobCurrentSin.id);
+  const {error} = await db.from('siniestros').update({notas:actualizada}).eq('id',mobCurrentSin.id);
   if(error){ toast('Error: '+error.message); return; }
-  mobCurrentSin.notas_internas = actualizada;
+  mobCurrentSin.notas = actualizada;
   toast('✓ Nota guardada');
   mobTab('nota');
 }
