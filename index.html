@@ -3327,6 +3327,7 @@ function renderDetalle(){
     <button class="tab-btn" onclick="switchTab2('t-coas',this)">Coaseguro</button>
     <button class="tab-btn" onclick="switchTab2('t-ajust-sin',this)">Ajustadores</button>
     <button class="tab-btn" onclick="switchTab2('t-doc',this)">Documentos</button>
+    <button class="tab-btn" onclick="switchTab2('t-notas',this)">📝 Notas</button>
     <button class="tab-btn" onclick="switchTab2('t-graf',this)">📷 Gráficos</button>
   </div>
 
@@ -3427,6 +3428,17 @@ function renderDetalle(){
       <th>Ajustador</th><th>Iniciales</th><th>Rol</th><th>Oficina</th><th>Correo</th><th>Teléfono</th><th>Fecha asignación</th><th></th>
     </tr></thead>
     <tbody>${renderSinAjustRows(data.sinajust.filter(a=>a.id_siniestro===s.id))}</tbody></table></div>
+  </div>
+  <div id="t-notas" class="tab-pane" style="overflow-y:auto;max-height:calc(100vh - 420px);">
+    <div style="padding:12px 0;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <div style="font-size:11px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;">Notas internas</div>
+        <button class="btn btn-sm" onclick="editarSiniestro(${s.id})" style="font-size:11px;">✏️ Editar</button>
+      </div>
+      ${s.notas
+        ? `<pre style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:12px;font-size:12px;color:var(--text-sec);white-space:pre-wrap;line-height:1.6;font-family:inherit;margin:0;">${s.notas}</pre>`
+        : `<div style="color:var(--text-ter);font-size:12px;padding:20px 0;">Sin notas internas.</div>`}
+    </div>
   </div>`;
   // Render the coberturas grid after DOM is set
   renderReservaGrid(data.res.filter(r=>r.id_siniestro===s.id));
