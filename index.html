@@ -7,7 +7,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<style>
+<style><style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
   --bg:        #0b1929;
@@ -117,12 +117,6 @@ td { padding:9px 10px; vertical-align:middle; }
 .b-pagado   { background:rgba(20,90,40,.25); color:#a5d6a7; }
 
 /* ── MODALS ── */
-.overlay { display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,.55); z-index:9999; }
-.overlay.open { display:flex !important; justify-content:center; padding:4vh 12px; box-sizing:border-box; }
-#modal-sin .modal { padding:0; max-height:92vh; width:760px !important; max-width:100%; display:flex; flex-direction:column; overflow:hidden; flex-shrink:0; }
-#modal-sin .modal-title { padding:1.25rem 1.5rem 0.75rem; flex-shrink:0; border-bottom:1px solid var(--border); margin-bottom:0; }
-#modal-sin .modal-scroll { flex:1; overflow-y:auto; padding:1rem 1.5rem; min-height:0; }
-#modal-sin .modal-footer { flex-shrink:0; margin-top:0; }
 .modal-sm { width:460px; }
 .modal-lg { width:780px; }
 .modal-title { font-size:15px; font-weight:700; margin-bottom:1.1rem; }
@@ -233,6 +227,48 @@ body.modo-lectura .readonly-hidden { display:none !important; }
   .form-grid{ grid-template-columns:1fr; }
   .modal{ width:96vw; }
   .topbar{ flex-wrap:wrap; height:auto; padding:8px; }
+}
+
+/* ── OVERLAY & MODAL ── */
+.overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  background: rgba(0,0,0,0.6);
+  z-index: 9999;
+}
+.overlay.open { display: block; }
+.overlay > .modal {
+  position: relative;
+  top: 4vh;
+  margin: 0 auto 4vh;
+  max-width: calc(100vw - 24px);
+  max-height: 92vh;
+  overflow-y: auto;
+}
+#modal-sin .modal { display:flex; flex-direction:column; overflow:hidden; padding:0; }
+#modal-sin .modal-title {
+  padding: 1.25rem 1.5rem 0.75rem;
+  font-size: 15px;
+  font-weight: 700;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+#modal-sin .modal-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem 1.5rem;
+  min-height: 0;
+}
+#modal-sin .modal-footer {
+  flex-shrink: 0;
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  padding: 0.9rem 1.5rem;
+  border-top: 1px solid var(--border);
+  margin-top: 0;
 }
 </style>
 </head>
