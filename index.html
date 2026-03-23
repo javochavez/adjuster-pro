@@ -117,9 +117,9 @@ td { padding:9px 10px; vertical-align:middle; }
 .b-pagado   { background:rgba(20,90,40,.25); color:#a5d6a7; }
 
 /* ── MODALS ── */
-.overlay { display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,.55); z-index:9999; overflow-y:auto; }
-.overlay.open { display:flex !important; align-items:flex-start; justify-content:center; }
-#modal-sin .modal { padding:0; max-height:92vh; width:min(760px,96vw) !important; display:flex; flex-direction:column; overflow:hidden; margin:4vh auto; }
+.overlay { display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,.55); z-index:9999; }
+.overlay.open { display:flex !important; justify-content:center; padding:4vh 12px; box-sizing:border-box; }
+#modal-sin .modal { padding:0; max-height:92vh; width:760px !important; max-width:100%; display:flex; flex-direction:column; overflow:hidden; flex-shrink:0; }
 #modal-sin .modal-title { padding:1.25rem 1.5rem 0.75rem; flex-shrink:0; border-bottom:1px solid var(--border); margin-bottom:0; }
 #modal-sin .modal-scroll { flex:1; overflow-y:auto; padding:1rem 1.5rem; min-height:0; }
 #modal-sin .modal-footer { flex-shrink:0; margin-top:0; }
