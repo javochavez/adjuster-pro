@@ -7858,7 +7858,12 @@ async function mobGuardarFoto(){
   const { data: urlData } = db.storage.from('graficos-expediente').getPublicUrl(path);
   const url = urlData?.publicUrl;
   const {error: dbErr} = await db.from('graficos_expediente').insert({
-    id_siniestro: mobCurrentSin.id, url, tipo, etiqueta
+    id_siniestro:   mobCurrentSin.id,
+    tipo,
+    etiqueta:       etiqueta||null,
+    storage_path:   path,
+    url,
+    nombre_archivo: file.name
   });
   if(dbErr){ toast('Error guardando: '+dbErr.message); return; }
   toast('✓ Foto subida');
