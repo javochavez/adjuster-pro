@@ -812,6 +812,7 @@ body.modo-lectura .readonly-hidden { display:none !important; }
   <input type="hidden" id="s-gnp-jefe">
   <input type="hidden" id="s-gnp-oficina">
   <input type="hidden" id="s-gnp-clave-ajust">
+  <input type="hidden" id="s-clave-evento">
   <input type="hidden" id="s-gnp-salv-persona">
   <input type="hidden" id="s-gnp-salv-tel">
   <input type="hidden" id="s-gnp-salv-email">
@@ -953,7 +954,47 @@ body.modo-lectura .readonly-hidden { display:none !important; }
   <select id="s-poliza" style="display:none;"></select>
 
   <!-- SECCIÓN GNP — visible solo cuando aseguradora.codigo_sistema = 'GNP' -->
-  <div id="seccion-gnp" style="display:none;"></div>
+  <div id="seccion-gnp" style="display:none;">
+    <div style="font-size:10px;color:#ffcc80;text-transform:uppercase;letter-spacing:.07em;margin:18px 0 8px;border-top:1px solid rgba(255,204,128,.18);padding-top:14px;">Datos GNP</div>
+    <div class="form-grid">
+      <div class="fg"><label>No. Trámite GNP</label><input type="text" id="s-tramite-gnp-vis" placeholder="ej. SD00115817" oninput="g('s-tramite-gnp').value=this.value"></div>
+      <div class="fg"><label>No. Siniestro GNP</label><input type="text" id="s-numsin-gnp" placeholder="ej. 0180203622" oninput="g('s-numsin').value=this.value"></div>
+      <div class="fg"><label>Clave ajustador GNP</label><input type="text" id="s-gnp-clave-ajust-vis" placeholder="ej. GNPJCA010970226" oninput="g('s-gnp-clave-ajust').value=this.value;g('s-clave-ajust').value=this.value"></div>
+      <div class="fg"><label>Jefe de Depto. (GNP)</label><input type="text" id="s-gnp-jefe-vis" placeholder="ej. Rocío Rodríguez Nava" oninput="g('s-gnp-jefe').value=this.value"></div>
+      <div class="fg"><label>Oficina GNP</label><input type="text" id="s-gnp-oficina-vis" placeholder="ej. Veracruz" oninput="g('s-gnp-oficina').value=this.value"></div>
+      <div class="fg"><label>Giro del asegurado</label><input type="text" id="s-giro-vis" placeholder="ej. Fabricación de estructuras metálicas" oninput="g('s-giro').value=this.value"></div>
+      <div class="fg"><label>Clave evento (catastrófico)</label><input type="text" id="s-clave-evento-vis" placeholder="ej. No aplica" oninput="g('s-clave-evento').value=this.value"></div>
+    </div>
+    <div style="font-size:10px;color:#ffcc80;text-transform:uppercase;letter-spacing:.07em;margin:14px 0 8px;">Cronología GNP</div>
+    <div class="form-grid">
+      <div class="fg"><label>Hora ocurrencia</label><input type="time" id="s-hora-ocurr-vis" oninput="g('s-hora-ocurr').value=this.value"></div>
+      <div class="fg"><label>Hora asignación</label><input type="time" id="s-hora-asig-vis" oninput="g('s-hora-asig').value=this.value"></div>
+      <div class="fg"><label>Fecha primer contacto</label><input type="date" id="s-f1cont-vis" oninput="g('s-f1cont').value=this.value"></div>
+      <div class="fg"><label>Hora primer contacto</label><input type="time" id="s-h1cont-vis" oninput="g('s-h1cont').value=this.value"></div>
+      <div class="fg"><label>Hora primera visita</label><input type="time" id="s-h1vis-vis" oninput="g('s-h1vis').value=this.value"></div>
+    </div>
+    <div style="font-size:10px;color:#ffcc80;text-transform:uppercase;letter-spacing:.07em;margin:14px 0 8px;">Coaseguro / Reaseguro / Recuperación</div>
+    <div class="form-grid">
+      <div class="fg"><label>Coaseguro</label>
+        <select id="s-coaseguro-vis" onchange="g('s-coaseguro').value=this.value==='1'?'1':'0'">
+          <option value="0">No</option><option value="1">Sí</option>
+        </select></div>
+      <div class="fg"><label>Reaseguro (cláusula control)</label>
+        <select id="s-reaseguro-vis" onchange="g('s-reaseguro').value=this.value==='1'?'1':'0'">
+          <option value="0">No</option><option value="1">Sí</option>
+        </select></div>
+      <div class="fg"><label>Corredor de reaseguro</label><input type="text" id="s-reas-corredor-vis" placeholder="Nombre del corredor" oninput="g('s-reas-corredor').value=this.value"></div>
+      <div class="fg"><label>Recuperación</label>
+        <select id="s-recuperacion-vis" onchange="g('s-recuperacion').value=this.value">
+          <option value="0">No</option><option value="1">Sí</option>
+        </select></div>
+      <div class="fg"><label>Terceros responsables</label><input type="text" id="s-rec-terceros-vis" placeholder="N/A si no aplica" oninput="g('s-rec-terceros').value=this.value"></div>
+      <div class="fg"><label>Intervención de autoridades</label>
+        <select id="s-autoridades-vis" onchange="g('s-autoridades').value=this.value">
+          <option value="0">No</option><option value="1">Sí</option>
+        </select></div>
+    </div>
+  </div>
   </div>
 
   <!-- ═══════ SINIESTRO ═══════ -->
@@ -3937,12 +3978,20 @@ function abrirModal(id){
      's-gnp-salv-persona','s-gnp-salv-tel','s-gnp-salv-email','s-gnp-salv-movil','s-gnp-salv-comprador',
      's-gnp-rec-recuperador','s-gnp-rec-carta-porte','s-gnp-rec-prescripcion',
      's-gnp-trans-tipo','s-gnp-trans-frontera','s-gnp-trans-placa','s-gnp-trans-destino','s-gnp-trans-compania',
-     's-gnp-docs-faltantes'].forEach(f=>{if(g(f))g(f).value='';});
+     's-gnp-docs-faltantes','s-clave-evento',
+     's-tramite-gnp-vis','s-numsin-gnp','s-gnp-clave-ajust-vis','s-gnp-jefe-vis','s-gnp-oficina-vis',
+     's-giro-vis','s-clave-evento-vis','s-hora-ocurr-vis','s-hora-asig-vis',
+     's-f1cont-vis','s-h1cont-vis','s-h1vis-vis','s-reas-corredor-vis','s-rec-terceros-vis'
+     ].forEach(f=>{if(g(f))g(f).value='';});
     g('s-fasig').value=today;
     g('s-est').value='asignado';
     g('s-procedencia').value='procedente';
     g('s-autoridades').value='0'; g('s-salvamento').value='por_determinar';
     g('s-recuperacion').value='0'; g('s-coaseguro').value='0'; g('s-reaseguro').value='0';
+    if(g('s-coaseguro-vis'))   g('s-coaseguro-vis').value='0';
+    if(g('s-reaseguro-vis'))   g('s-reaseguro-vis').value='0';
+    if(g('s-recuperacion-vis'))g('s-recuperacion-vis').value='0';
+    if(g('s-autoridades-vis')) g('s-autoridades-vis').value='0';
     if(g('s-inspeccion-narrativa')) delete g('s-inspeccion-narrativa').dataset.editado;
     // Default text for Introducción (only for new expediente)
     loadBienesRte('');
@@ -4135,6 +4184,7 @@ async function guardarSiniestro(){
     gnp_jefe_depto:v('s-gnp-jefe')||null,
     gnp_oficina:v('s-gnp-oficina')||null,
     gnp_clave_ajustador:v('s-gnp-clave-ajust')||null,
+    clave_evento_catastrofico:v('s-clave-evento')||null,
     salvamento_persona_contacto:v('s-gnp-salv-persona')||null,
     salvamento_telefono:v('s-gnp-salv-tel')||null,
     salvamento_email:v('s-gnp-salv-email')||null,
@@ -4231,6 +4281,26 @@ function editarSiniestro(id){
   if(g('s-gnp-jefe'))       {let _e=g('s-gnp-jefe');if(_e)_e.value=s.gnp_jefe_depto||'';}
   if(g('s-gnp-oficina'))    {let _e=g('s-gnp-oficina');if(_e)_e.value=s.gnp_oficina||'';}
   if(g('s-gnp-clave-ajust')){let _e=g('s-gnp-clave-ajust');if(_e)_e.value=s.gnp_clave_ajustador||'';}
+  // Sync visible GNP fields
+  if(g('s-tramite-gnp-vis'))   g('s-tramite-gnp-vis').value   = s.tramite_gnp||'';
+  if(g('s-numsin-gnp'))        g('s-numsin-gnp').value        = s.numero_siniestro||'';
+  if(g('s-gnp-clave-ajust-vis'))g('s-gnp-clave-ajust-vis').value= s.gnp_clave_ajustador||'';
+  if(g('s-gnp-jefe-vis'))      g('s-gnp-jefe-vis').value      = s.gnp_jefe_depto||'';
+  if(g('s-gnp-oficina-vis'))   g('s-gnp-oficina-vis').value   = s.gnp_oficina||'';
+  if(g('s-giro-vis'))          g('s-giro-vis').value          = s.giro_asegurado||'';
+  if(g('s-clave-evento-vis'))  g('s-clave-evento-vis').value  = s.clave_evento_catastrofico||'';
+  if(g('s-clave-evento'))      g('s-clave-evento').value      = s.clave_evento_catastrofico||'';
+  if(g('s-hora-ocurr-vis'))    g('s-hora-ocurr-vis').value    = s.hora_ocurrencia||'';
+  if(g('s-hora-asig-vis'))     g('s-hora-asig-vis').value     = s.hora_asignacion||'';
+  if(g('s-f1cont-vis'))        g('s-f1cont-vis').value        = s.fecha_primer_contacto||'';
+  if(g('s-h1cont-vis'))        g('s-h1cont-vis').value        = s.hora_primer_contacto||'';
+  if(g('s-h1vis-vis'))         g('s-h1vis-vis').value         = s.hora_primera_visita||'';
+  if(g('s-coaseguro-vis'))     g('s-coaseguro-vis').value     = s.coaseguro?'1':'0';
+  if(g('s-reaseguro-vis'))     g('s-reaseguro-vis').value     = s.reaseguro_clausula_control?'1':'0';
+  if(g('s-reas-corredor-vis')) g('s-reas-corredor-vis').value = s.reaseguro_corredor||'';
+  if(g('s-recuperacion-vis'))  g('s-recuperacion-vis').value  = s.recuperacion?'1':'0';
+  if(g('s-rec-terceros-vis'))  g('s-rec-terceros-vis').value  = s.recuperacion_terceros||'';
+  if(g('s-autoridades-vis'))   g('s-autoridades-vis').value   = s.intervencion_autoridades?'1':'0';
   if(g('s-gnp-salv-persona'))   {let _e=g('s-gnp-salv-persona');if(_e)_e.value=s.salvamento_persona_contacto||'';}
   if(g('s-gnp-salv-tel'))       {let _e=g('s-gnp-salv-tel');if(_e)_e.value=s.salvamento_telefono||'';}
   if(g('s-gnp-salv-email'))     {let _e=g('s-gnp-salv-email');if(_e)_e.value=s.salvamento_email||'';}
