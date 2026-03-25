@@ -37,6 +37,19 @@
 html, body { height:100%; overflow:hidden; margin:0; padding:0; }
 body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); font-size: 13px; }
 
+
+/* ── FIELD HINTS ─────────────────────────────────────────────────────── */
+.field-hint {
+  display: block;
+  font-size: 10px;
+  color: var(--accent-lt);
+  opacity: 0.7;
+  margin-top: 2px;
+  line-height: 1.3;
+  font-style: italic;
+  pointer-events: none;
+}
+
 /* ── LOGIN ── */
 .login-wrap { min-height:100vh; display:flex; align-items:center; justify-content:center; background:var(--bg); }
 .login-card { background:var(--surface); border:1px solid var(--border-md); border-radius:var(--rl); padding:2.5rem 2rem; width:360px; }
@@ -840,18 +853,18 @@ body.modo-lectura .readonly-hidden { display:none !important; }
   <!-- ═══════ IDENTIFICACIÓN ═══════ -->
   <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin:18px 0 8px;margin-bottom:8px;">Identificación</div>
   <div class="form-grid">
-    <div class="fg"><label>Ref. AASA</label><input type="text" id="s-exp" placeholder="ej. GNPEML010870925, ATLJCA010740624"></div>
-    <div class="fg"><label>No. de siniestro</label><input type="text" id="s-numsin" placeholder="Llenar cuando se tenga"></div>
-    <div class="fg"><label>Clave ajustador (compañía)</label><input type="text" id="s-clave-ajust"></div>
+    <div class="fg"><label>Ref. AASA</label><input type="text" id="s-exp" placeholder="ej. GNPEML010870925, ATLJCA010740624"><span class="field-hint">Portada → Ref. ajustadora</span></div>
+    <div class="fg"><label>No. de siniestro</label><input type="text" id="s-numsin" placeholder="Llenar cuando se tenga"><span class="field-hint">Portada → No. Siniestro</span></div>
+    <div class="fg"><label>Clave ajustador (compañía)</label><input type="text" id="s-clave-ajust"><span class="field-hint">Portada → Clave ajustador (compañía)</span></div>
     <div class="fg"><label>Funcionario asignador <span style="font-size:10px;color:var(--text-ter);font-weight:400;">(de la compañía)</span></label>
       <select id="s-funcionario-dest" onchange="actualizarFuncionarioDest()">
         <option value="">— Seleccionar del directorio —</option>
-      </select></div>
-    <div class="fg"><label>Nombre del funcionario</label><input type="text" id="s-dest-nombre" placeholder="Se llena al seleccionar del directorio"></div>
-    <div class="fg"><label>Cargo del funcionario</label><input type="text" id="s-dest-cargo" placeholder="ej. Jefe de Siniestros Daños"></div>
-    <div class="fg"><label>Fecha del siniestro</label><input type="date" id="s-fsin"></div>
-    <div class="fg"><label>Fecha de asignación</label><input type="date" id="s-fasig"></div>
-    <div class="fg"><label>Fecha primera visita</label><input type="date" id="s-f1vis" onchange="if(g('s-inspeccion-narrativa')&&!g('s-inspeccion-narrativa').dataset.editado)generarTextoInspeccion()"></div>
+      </select><span class="field-hint">Portada → AT´N: nombre y cargo</span></div>
+    <div class="fg"><label>Nombre del funcionario</label><input type="text" id="s-dest-nombre" placeholder="Se llena al seleccionar del directorio"><span class="field-hint">Portada → AT´N: nombre</span></div>
+    <div class="fg"><label>Cargo del funcionario</label><input type="text" id="s-dest-cargo" placeholder="ej. Jefe de Siniestros Daños"><span class="field-hint">Portada → AT´N: cargo</span></div>
+    <div class="fg"><label>Fecha del siniestro</label><input type="date" id="s-fsin"><span class="field-hint">Portada → Fecha de siniestro · §11 Cronología</span></div>
+    <div class="fg"><label>Fecha de asignación</label><input type="date" id="s-fasig"><span class="field-hint">§11 Cronología → Fecha asignación</span></div>
+    <div class="fg"><label>Fecha primera visita</label><input type="date" id="s-f1vis" onchange="if(g('s-inspeccion-narrativa')&&!g('s-inspeccion-narrativa').dataset.editado)generarTextoInspeccion()"><span class="field-hint">§4 Inspección → Fecha y hora de inspección · §11 Cronología</span></div>
   </div>
 
   <!-- ═══════ ASEGURADO / PÓLIZA ═══════ -->
@@ -957,40 +970,40 @@ body.modo-lectura .readonly-hidden { display:none !important; }
   <div id="seccion-gnp" style="display:none;">
     <div style="font-size:10px;color:#ffcc80;text-transform:uppercase;letter-spacing:.07em;margin:18px 0 8px;border-top:1px solid rgba(255,204,128,.18);padding-top:14px;">Datos GNP</div>
     <div class="form-grid">
-      <div class="fg"><label>No. Trámite GNP</label><input type="text" id="s-tramite-gnp-vis" placeholder="ej. SD00115817" oninput="g('s-tramite-gnp').value=this.value"></div>
-      <div class="fg"><label>No. Siniestro GNP</label><input type="text" id="s-numsin-gnp" placeholder="ej. 0180203622" oninput="g('s-numsin').value=this.value"></div>
-      <div class="fg"><label>Clave ajustador GNP</label><input type="text" id="s-gnp-clave-ajust-vis" placeholder="ej. GNPJCA010970226" oninput="g('s-gnp-clave-ajust').value=this.value;g('s-clave-ajust').value=this.value"></div>
-      <div class="fg"><label>Jefe de Depto. (GNP)</label><input type="text" id="s-gnp-jefe-vis" placeholder="ej. Rocío Rodríguez Nava" oninput="g('s-gnp-jefe').value=this.value"></div>
-      <div class="fg"><label>Oficina GNP</label><input type="text" id="s-gnp-oficina-vis" placeholder="ej. Veracruz" oninput="g('s-gnp-oficina').value=this.value"></div>
-      <div class="fg"><label>Giro del asegurado</label><input type="text" id="s-giro-vis" placeholder="ej. Fabricación de estructuras metálicas" oninput="g('s-giro').value=this.value"></div>
-      <div class="fg"><label>Clave evento (catastrófico)</label><input type="text" id="s-clave-evento-vis" placeholder="ej. No aplica" oninput="g('s-clave-evento').value=this.value"></div>
+      <div class="fg"><label>No. Trámite GNP</label><input type="text" id="s-tramite-gnp-vis" placeholder="ej. SD00115817" oninput="g('s-tramite-gnp').value=this.value"><span class="field-hint">Portada → No. Trámite</span></div>
+      <div class="fg"><label>No. Siniestro GNP</label><input type="text" id="s-numsin-gnp" placeholder="ej. 0180203622" oninput="g('s-numsin').value=this.value"><span class="field-hint">Portada → No. Siniestro</span></div>
+      <div class="fg"><label>Clave ajustador GNP</label><input type="text" id="s-gnp-clave-ajust-vis" placeholder="ej. GNPJCA010970226" oninput="g('s-gnp-clave-ajust').value=this.value;g('s-clave-ajust').value=this.value"><span class="field-hint">Portada → Clave ajustador GNP · Referencia ajustadora</span></div>
+      <div class="fg"><label>Jefe de Depto. (GNP)</label><input type="text" id="s-gnp-jefe-vis" placeholder="ej. Rocío Rodríguez Nava" oninput="g('s-gnp-jefe').value=this.value"><span class="field-hint">Portada → Jefe Depto.</span></div>
+      <div class="fg"><label>Oficina GNP</label><input type="text" id="s-gnp-oficina-vis" placeholder="ej. Veracruz" oninput="g('s-gnp-oficina').value=this.value"><span class="field-hint">Portada → Oficina</span></div>
+      <div class="fg"><label>Giro del asegurado</label><input type="text" id="s-giro-vis" placeholder="ej. Fabricación de estructuras metálicas" oninput="g('s-giro').value=this.value"><span class="field-hint">Portada → Giro del asegurado</span></div>
+      <div class="fg"><label>Clave evento (catastrófico)</label><input type="text" id="s-clave-evento-vis" placeholder="ej. No aplica" oninput="g('s-clave-evento').value=this.value"><span class="field-hint">Portada → Clave evento (catastrófico)</span></div>
     </div>
     <div style="font-size:10px;color:#ffcc80;text-transform:uppercase;letter-spacing:.07em;margin:14px 0 8px;">Cronología GNP</div>
     <div class="form-grid">
-      <div class="fg"><label>Hora ocurrencia</label><input type="time" id="s-hora-ocurr-vis" oninput="g('s-hora-ocurr').value=this.value"></div>
-      <div class="fg"><label>Hora asignación</label><input type="time" id="s-hora-asig-vis" oninput="g('s-hora-asig').value=this.value"></div>
-      <div class="fg"><label>Fecha primer contacto</label><input type="date" id="s-f1cont-vis" oninput="g('s-f1cont').value=this.value"></div>
-      <div class="fg"><label>Hora primer contacto</label><input type="time" id="s-h1cont-vis" oninput="g('s-h1cont').value=this.value"></div>
-      <div class="fg"><label>Hora primera visita</label><input type="time" id="s-h1vis-vis" oninput="g('s-h1vis').value=this.value"></div>
+      <div class="fg"><label>Hora ocurrencia</label><input type="time" id="s-hora-ocurr-vis" oninput="g('s-hora-ocurr').value=this.value"><span class="field-hint">§11 Cronología → Hora ocurrencia</span></div>
+      <div class="fg"><label>Hora asignación</label><input type="time" id="s-hora-asig-vis" oninput="g('s-hora-asig').value=this.value"><span class="field-hint">§11 Cronología → Hora asignación</span></div>
+      <div class="fg"><label>Fecha primer contacto</label><input type="date" id="s-f1cont-vis" oninput="g('s-f1cont').value=this.value"><span class="field-hint">§11 Cronología → Fecha 1er. contacto</span></div>
+      <div class="fg"><label>Hora primer contacto</label><input type="time" id="s-h1cont-vis" oninput="g('s-h1cont').value=this.value"><span class="field-hint">§11 Cronología → Hora 1er. contacto</span></div>
+      <div class="fg"><label>Hora primera visita</label><input type="time" id="s-h1vis-vis" oninput="g('s-h1vis').value=this.value"><span class="field-hint">§11 Cronología → Hora 1a. visita</span></div>
     </div>
     <div style="font-size:10px;color:#ffcc80;text-transform:uppercase;letter-spacing:.07em;margin:14px 0 8px;">Coaseguro / Reaseguro / Recuperación</div>
     <div class="form-grid">
       <div class="fg"><label>Coaseguro</label>
-        <select id="s-coaseguro-vis" onchange="g('s-coaseguro').value=this.value==='1'?'1':'0'">
+        <select id="s-coaseguro-vis" onchange="g('s-coaseguro').value=this.value==='1'?'1':'0'"><span class="field-hint">§2 Coaseguro → SI / NO</span>
           <option value="0">No</option><option value="1">Sí</option>
         </select></div>
       <div class="fg"><label>Reaseguro (cláusula control)</label>
-        <select id="s-reaseguro-vis" onchange="g('s-reaseguro').value=this.value==='1'?'1':'0'">
+        <select id="s-reaseguro-vis" onchange="g('s-reaseguro').value=this.value==='1'?'1':'0'"><span class="field-hint">§3 Reaseguro → Cláusula control</span>
           <option value="0">No</option><option value="1">Sí</option>
         </select></div>
-      <div class="fg"><label>Corredor de reaseguro</label><input type="text" id="s-reas-corredor-vis" placeholder="Nombre del corredor" oninput="g('s-reas-corredor').value=this.value"></div>
+      <div class="fg"><label>Corredor de reaseguro</label><input type="text" id="s-reas-corredor-vis" placeholder="Nombre del corredor" oninput="g('s-reas-corredor').value=this.value"><span class="field-hint">§3 Reaseguro → Corredor de reaseguro</span></div>
       <div class="fg"><label>Recuperación</label>
-        <select id="s-recuperacion-vis" onchange="g('s-recuperacion').value=this.value">
+        <select id="s-recuperacion-vis" onchange="g('s-recuperacion').value=this.value"><span class="field-hint">§7 Recuperación → SI / NO</span>
           <option value="0">No</option><option value="1">Sí</option>
         </select></div>
-      <div class="fg"><label>Terceros responsables</label><input type="text" id="s-rec-terceros-vis" placeholder="N/A si no aplica" oninput="g('s-rec-terceros').value=this.value"></div>
+      <div class="fg"><label>Terceros responsables</label><input type="text" id="s-rec-terceros-vis" placeholder="N/A si no aplica" oninput="g('s-rec-terceros').value=this.value"><span class="field-hint">§7 Recuperación → Terceros responsables</span></div>
       <div class="fg"><label>Intervención de autoridades</label>
-        <select id="s-autoridades-vis" onchange="g('s-autoridades').value=this.value">
+        <select id="s-autoridades-vis" onchange="g('s-autoridades').value=this.value"><span class="field-hint">§4 Inspección → Intervención de autoridades</span>
           <option value="0">No</option><option value="1">Sí</option>
         </select></div>
     </div>
@@ -1002,11 +1015,11 @@ body.modo-lectura .readonly-hidden { display:none !important; }
   <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin:18px 0 8px;">Siniestro</div>
   <div class="form-grid">
 
-    <div class="fg"><label>Tipo de siniestro</label><input type="text" id="s-tipo" placeholder="Incendio, robo, etc."></div>
-    <div class="fg"><label>Cobertura <span style="font-size:10px;color:var(--text-ter);font-weight:400;">(cobertura que aplica al siniestro)</span></label><input type="text" id="s-subramo" placeholder="ej. Rotura de Maquinaria, Incendio, Robo con violencia"></div>
-    <div class="fg"><label>Causa</label><input type="text" id="s-causa"></div>
-    <div class="fg"><label>Comentario de causa</label><input type="text" id="s-causa-com" placeholder="ej. En análisis de causa"></div>
-    <div class="fg"><label>Riesgo afectado</label><input type="text" id="s-riesgo" placeholder="ej. b) Corto Circuito"></div>
+    <div class="fg"><label>Tipo de siniestro</label><input type="text" id="s-tipo" placeholder="Incendio, robo, etc."><span class="field-hint">Lista expedientes · Informes genéricos</span></div>
+    <div class="fg"><label>Cobertura <span style="font-size:10px;color:var(--text-ter);font-weight:400;">(cobertura que aplica al siniestro)</span></label><input type="text" id="s-subramo" placeholder="ej. Rotura de Maquinaria, Incendio, Robo con violencia"><span class="field-hint">Portada → Subramo · §1 Estimación → Cobertura 1</span></div>
+    <div class="fg"><label>Causa</label><input type="text" id="s-causa"><span class="field-hint">Portada → Causa del siniestro</span></div>
+    <div class="fg"><label>Comentario de causa</label><input type="text" id="s-causa-com" placeholder="ej. En análisis de causa"><span class="field-hint">Portada → Comentario de la causa</span></div>
+    <div class="fg"><label>Riesgo afectado</label><input type="text" id="s-riesgo" placeholder="ej. b) Corto Circuito"><span class="field-hint">Portada → Riesgo afectado</span></div>
     <div class="fg"><label>Estatus</label>
       <select id="s-est">
         <option value="asignado">Asignado</option>
@@ -1015,8 +1028,8 @@ body.modo-lectura .readonly-hidden { display:none !important; }
         <option value="documentando">Documentando</option>
         <option value="cerrado">Cerrado</option>
       </select></div>
-    <div class="fg full"><label>Lugar del siniestro</label><input type="text" id="s-lugar-sin" placeholder="Zona específica dentro del inmueble asegurado"></div>
-    <div class="fg full"><label>Ubicación Afectada</label><input type="text" id="s-insp-dom" placeholder="Domicilio afectado"></div>
+    <div class="fg full"><label>Lugar del siniestro</label><input type="text" id="s-lugar-sin" placeholder="Zona específica dentro del inmueble asegurado"><span class="field-hint">§4 Inspección → Lugar del siniestro</span></div>
+    <div class="fg full"><label>Ubicación Afectada</label><input type="text" id="s-insp-dom" placeholder="Domicilio afectado"><span class="field-hint">§4 Inspección → Domicilio asegurado · Lugar de inspección</span></div>
   </div>
 
   <!-- ═══════ I. INTRODUCCIÓN ═══════ -->
@@ -1171,9 +1184,9 @@ body.modo-lectura .readonly-hidden { display:none !important; }
   <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin:18px 0 8px;">V. Inspección</div>
   <div class="form-grid">
 
-    <div class="fg"><label>Persona entrevistada</label><input type="text" id="s-insp-persona"></div>
-    <div class="fg"><label>Cargo</label><input type="text" id="s-insp-cargo"></div>
-    <div class="fg"><label>Teléfono</label><input type="text" id="s-insp-tel"></div>
+    <div class="fg"><label>Persona entrevistada</label><input type="text" id="s-insp-persona"><span class="field-hint">§4 Inspección → Persona entrevistada</span></div>
+    <div class="fg"><label>Cargo</label><input type="text" id="s-insp-cargo"><span class="field-hint">§4 Inspección → Puesto y/o cargo</span></div>
+    <div class="fg"><label>Teléfono</label><input type="text" id="s-insp-tel"><span class="field-hint">§4 Inspección → Teléfono</span></div>
   </div>
 
   <div class="fg full">
@@ -1425,8 +1438,8 @@ body.modo-lectura .readonly-hidden { display:none !important; }
   <div class="form-grid">
 
     <div class="fg"><label>Salvamento</label>
-      <select id="s-salvamento"><option value="por_determinar">Por determinar</option><option value="si">Sí</option><option value="no">No</option></select></div>
-    <div class="fg"><label>Valor estimado salvamento</label><input type="number" id="s-salv-valor" placeholder="0.00"></div>
+      <select id="s-salvamento"><option value="por_determinar">Por determinar</option><option value="si">Sí</option><option value="no">No</option></select><span class="field-hint">§6 Salvamento → SI / NO / Por determinar</span></div>
+    <div class="fg"><label>Valor estimado salvamento</label><input type="number" id="s-salv-valor" placeholder="0.00"><span class="field-hint">§6 Salvamento → Valor estimado de los bienes</span></div>
   </div>
 
   <div class="fg full">
@@ -4138,7 +4151,9 @@ async function guardarSiniestro(){
     numero_exp:v('s-exp'), numero_siniestro:v('s-numsin')||null,
     id_poliza:parseInt(v('s-poliza'))||null,
     subramo:v('s-subramo')||null,
+    tipo_siniestro:v('s-tipo')||null,
     causa:v('s-causa')||null,
+    causa_comentario:v('s-causa-com')||null,
     riesgo_afectado:v('s-riesgo')||null,
     riesgos_cubiertos:v('s-riesgos-cubiertos')||null,
     localizacion_html:v('s-localizacion')||null,
@@ -4231,10 +4246,11 @@ function editarSiniestro(id){
   g('sin-modal-title').textContent='Editar expediente'; {let _e=g('s-id');if(_e)_e.value=s.id;}
   {let _e=g('s-exp');if(_e)_e.value=s.numero_exp||'';} {let _e=g('s-numsin');if(_e)_e.value=s.numero_siniestro||'';}
   {let _e=g('s-subramo');if(_e)_e.value=s.subramo||'';}
+  {let _e=g('s-tipo');if(_e)_e.value=s.tipo_siniestro||'';}
   loadRteSin('reclamacion', s.reclamacion_asegurado||'');
   setTimeout(renderEstimacionSinGrid, 100);
   loadRteSin('considerandos', s.considerandos||'');
-  loadRteSin('salv-det', s.salvamento_detalle_html||s.salvamento_detalle||''); {let _e=g('s-causa');if(_e)_e.value=s.causa||'';} {let _e=g('s-riesgo');if(_e)_e.value=s.riesgo_afectado||'';}
+  loadRteSin('salv-det', s.salvamento_detalle_html||s.salvamento_detalle||''); {let _e=g('s-causa');if(_e)_e.value=s.causa||'';} {let _e=g('s-causa-com');if(_e)_e.value=s.causa_comentario||'';} {let _e=g('s-riesgo');if(_e)_e.value=s.riesgo_afectado||'';}
   loadRteSin('riesgos-cubiertos', s.riesgos_cubiertos||'');
   loadRteSin('localizacion', s.localizacion_html||'');
   loadRteSin('narracion', s.narracion_html||'');
