@@ -37,6 +37,105 @@
 html, body { height:100%; overflow:hidden; margin:0; padding:0; }
 body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); font-size: 13px; }
 
+
+/* ── FIELD HINTS ─────────────────────────────────────────────────────── */
+.field-hint {
+  display: block;
+  font-size: 10px;
+  color: var(--accent-lt);
+  opacity: 0.7;
+  margin-top: 2px;
+  line-height: 1.3;
+  font-style: italic;
+  pointer-events: none;
+}
+
+
+/* ── IA ASSIST ───────────────────────────────────────────────────────── */
+.btn-ia {
+  background: linear-gradient(135deg, #10a37f, #1a6fda);
+  color: #fff !important;
+  border: none !important;
+  border-radius: 4px;
+  padding: 3px 8px;
+  font-size: 11px;
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 600;
+  letter-spacing: .02em;
+  line-height: 1;
+  white-space: nowrap;
+  transition: opacity .15s;
+}
+.btn-ia:hover { opacity: .85; }
+.btn-ia:disabled { opacity: .45; cursor: not-allowed; }
+.btn-ia-simple {
+  background: linear-gradient(135deg, #10a37f, #1a6fda);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 2px 7px;
+  font-size: 10px;
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 600;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+.btn-ia-simple:hover { opacity: .85; }
+/* Modal configuración IA */
+#modal-ia-config .modal { max-width: 480px; }
+#modal-ia-config input[type=password] {
+  width: 100%; padding: 8px 10px; font-size: 13px;
+  border: 1px solid var(--border-md); border-radius: var(--r);
+  background: var(--bg2); color: var(--text); font-family: inherit;
+  margin-top: 4px;
+}
+/* Panel de resultado IA */
+#ia-result-panel {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: var(--surface); border-top: 2px solid #10a37f;
+  z-index: 3000; padding: 0;
+  display: none; flex-direction: column;
+  max-height: 55vh; box-shadow: 0 -4px 24px rgba(0,0,0,.4);
+}
+#ia-result-panel.open { display: flex; }
+.ia-panel-head {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 14px; background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; color: #10a37f;
+}
+.ia-panel-head span { flex: 1; }
+.ia-panel-body {
+  flex: 1; overflow-y: auto; padding: 12px 14px;
+  font-size: 12px; line-height: 1.6; color: var(--text);
+  white-space: pre-wrap; font-family: inherit;
+}
+.ia-panel-foot {
+  display: flex; gap: 8px; padding: 8px 14px;
+  border-top: 1px solid var(--border); background: var(--surface2);
+}
+.ia-spinner {
+  display: inline-block; width: 14px; height: 14px;
+  border: 2px solid rgba(16,163,127,.3);
+  border-top-color: #10a37f;
+  border-radius: 50%; animation: ia-spin .7s linear infinite;
+}
+@keyframes ia-spin { to { transform: rotate(360deg); } }
+/* Sugerencia inline campos simples */
+.ia-sugg-wrap { position: relative; }
+.ia-sugg-box {
+  position: absolute; top: 100%; left: 0; right: 0; z-index: 200;
+  background: var(--surface); border: 1px solid #10a37f;
+  border-radius: var(--r); padding: 8px 10px;
+  font-size: 12px; color: var(--text); line-height: 1.5;
+  box-shadow: 0 4px 16px rgba(0,0,0,.35);
+  display: none;
+}
+.ia-sugg-box.open { display: block; }
+.ia-sugg-actions { display: flex; gap: 6px; margin-top: 6px; }
+
 /* ── LOGIN ── */
 .login-wrap { min-height:100vh; display:flex; align-items:center; justify-content:center; background:var(--bg); }
 .login-card { background:var(--surface); border:1px solid var(--border-md); border-radius:var(--rl); padding:2.5rem 2rem; width:360px; }
@@ -524,6 +623,7 @@ body.modo-lectura .readonly-hidden { display:none !important; }
       <div class="tc-row">USD/MXN <input type="number" id="tc-usd" value="17.50" step="0.01" oninput="recalcDash()"></div>
       <div class="tc-row">EUR/MXN <input type="number" id="tc-eur" value="19.20" step="0.01" oninput="recalcDash()"></div>
       <span class="user-lbl" id="user-lbl"></span>
+      <button class="btn-ia" onclick="abrirModal('modal-ia-config')" style="font-size:10px;padding:3px 9px;margin-right:2px;" title="Configurar API key de OpenAI">✦ IA</button>
       <button class="logout-btn" onclick="doLogout()">Salir</button>
     </div>
   </div>
@@ -782,6 +882,45 @@ body.modo-lectura .readonly-hidden { display:none !important; }
 
 <!-- ── MODALS ── -->
 
+<!-- ── MODAL CONFIG IA ──────────────────────────────────────────────── -->
+<div class="overlay" id="modal-ia-config">
+<div class="modal" style="max-width:460px;">
+  <div class="modal-title">⚙ Configuración IA</div>
+  <div style="padding:1.2rem 1.5rem;">
+    <p style="font-size:12px;color:var(--text-sec);margin-bottom:12px;line-height:1.5;">
+      Ingresa tu API Key de OpenAI. Se guarda únicamente en el almacenamiento local
+      de este navegador y nunca se envía a ningún servidor externo.
+    </p>
+    <label style="font-size:11px;color:var(--text-sec);text-transform:uppercase;letter-spacing:.05em;">API Key de OpenAI</label>
+    <input type="password" id="ia-apikey-input" placeholder="sk-...">
+    <p style="font-size:10px;color:var(--text-ter);margin-top:6px;">
+      Obtén tu key en <strong>platform.openai.com/api-keys</strong>
+    </p>
+  </div>
+  <div class="modal-footer">
+    <button class="btn" onclick="cerrarModal('modal-ia-config')">Cancelar</button>
+    <button class="btn btn-primary" onclick="iaGuardarKey()">Guardar key</button>
+  </div>
+</div>
+</div>
+
+<!-- ── PANEL RESULTADO IA ────────────────────────────────────────────── -->
+<div id="ia-result-panel">
+  <div class="ia-panel-head">
+    <span id="ia-panel-title">✦ Asistente IA</span>
+    <div id="ia-panel-spinner" class="ia-spinner" style="display:none;"></div>
+    <button class="btn btn-sm" onclick="iaCerrarPanel()" style="padding:2px 8px;">✕</button>
+  </div>
+  <div class="ia-panel-body" id="ia-panel-body">Generando…</div>
+  <div class="ia-panel-foot">
+    <button class="btn btn-primary btn-sm" id="ia-btn-aplicar" onclick="iaAplicar()">↑ Aplicar al campo</button>
+    <button class="btn btn-sm" id="ia-btn-regenerar" onclick="iaRegenerarActual()">↻ Regenerar</button>
+    <button class="btn btn-sm" onclick="iaCerrarPanel()">Descartar</button>
+    <button class="btn btn-sm" style="margin-left:auto;font-size:10px;color:var(--text-ter);" onclick="abrirModal('modal-ia-config')">⚙ Key</button>
+  </div>
+</div>
+
+
 <!-- Siniestro -->
 <div class="overlay" id="modal-sin">
 <div class="modal modal-lg">
@@ -812,6 +951,7 @@ body.modo-lectura .readonly-hidden { display:none !important; }
   <input type="hidden" id="s-gnp-jefe">
   <input type="hidden" id="s-gnp-oficina">
   <input type="hidden" id="s-gnp-clave-ajust">
+  <input type="hidden" id="s-clave-evento">
   <input type="hidden" id="s-gnp-salv-persona">
   <input type="hidden" id="s-gnp-salv-tel">
   <input type="hidden" id="s-gnp-salv-email">
@@ -839,18 +979,18 @@ body.modo-lectura .readonly-hidden { display:none !important; }
   <!-- ═══════ IDENTIFICACIÓN ═══════ -->
   <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin:18px 0 8px;margin-bottom:8px;">Identificación</div>
   <div class="form-grid">
-    <div class="fg"><label>Ref. AASA</label><input type="text" id="s-exp" placeholder="ej. GNPEML010870925, ATLJCA010740624"></div>
-    <div class="fg"><label>No. de siniestro</label><input type="text" id="s-numsin" placeholder="Llenar cuando se tenga"></div>
-    <div class="fg"><label>Clave ajustador (compañía)</label><input type="text" id="s-clave-ajust"></div>
+    <div class="fg"><label>Ref. AASA</label><input type="text" id="s-exp" placeholder="ej. GNPEML010870925, ATLJCA010740624"><span class="field-hint">Portada → Ref. ajustadora</span></div>
+    <div class="fg"><label>No. de siniestro</label><input type="text" id="s-numsin" placeholder="Llenar cuando se tenga"><span class="field-hint">Portada → No. Siniestro</span></div>
+    <div class="fg"><label>Clave ajustador (compañía)</label><input type="text" id="s-clave-ajust"><span class="field-hint">Portada → Clave ajustador (compañía)</span></div>
     <div class="fg"><label>Funcionario asignador <span style="font-size:10px;color:var(--text-ter);font-weight:400;">(de la compañía)</span></label>
       <select id="s-funcionario-dest" onchange="actualizarFuncionarioDest()">
         <option value="">— Seleccionar del directorio —</option>
-      </select></div>
-    <div class="fg"><label>Nombre del funcionario</label><input type="text" id="s-dest-nombre" placeholder="Se llena al seleccionar del directorio"></div>
-    <div class="fg"><label>Cargo del funcionario</label><input type="text" id="s-dest-cargo" placeholder="ej. Jefe de Siniestros Daños"></div>
-    <div class="fg"><label>Fecha del siniestro</label><input type="date" id="s-fsin"></div>
-    <div class="fg"><label>Fecha de asignación</label><input type="date" id="s-fasig"></div>
-    <div class="fg"><label>Fecha primera visita</label><input type="date" id="s-f1vis" onchange="if(g('s-inspeccion-narrativa')&&!g('s-inspeccion-narrativa').dataset.editado)generarTextoInspeccion()"></div>
+      </select><span class="field-hint">Portada → AT´N: nombre y cargo</span></div>
+    <div class="fg"><label>Nombre del funcionario</label><input type="text" id="s-dest-nombre" placeholder="Se llena al seleccionar del directorio"><span class="field-hint">Portada → AT´N: nombre</span></div>
+    <div class="fg"><label>Cargo del funcionario</label><input type="text" id="s-dest-cargo" placeholder="ej. Jefe de Siniestros Daños"><span class="field-hint">Portada → AT´N: cargo</span></div>
+    <div class="fg"><label>Fecha del siniestro</label><input type="date" id="s-fsin"><span class="field-hint">Portada → Fecha de siniestro · §11 Cronología</span></div>
+    <div class="fg"><label>Fecha de asignación</label><input type="date" id="s-fasig"><span class="field-hint">§11 Cronología → Fecha asignación</span></div>
+    <div class="fg"><label>Fecha primera visita</label><input type="date" id="s-f1vis" onchange="if(g('s-inspeccion-narrativa')&&!g('s-inspeccion-narrativa').dataset.editado)generarTextoInspeccion()"><span class="field-hint">§4 Inspección → Fecha y hora de inspección · §11 Cronología</span></div>
   </div>
 
   <!-- ═══════ ASEGURADO / PÓLIZA ═══════ -->
@@ -953,7 +1093,47 @@ body.modo-lectura .readonly-hidden { display:none !important; }
   <select id="s-poliza" style="display:none;"></select>
 
   <!-- SECCIÓN GNP — visible solo cuando aseguradora.codigo_sistema = 'GNP' -->
-  <div id="seccion-gnp" style="display:none;"></div>
+  <div id="seccion-gnp" style="display:none;">
+    <div style="font-size:10px;color:#ffcc80;text-transform:uppercase;letter-spacing:.07em;margin:18px 0 8px;border-top:1px solid rgba(255,204,128,.18);padding-top:14px;">Datos GNP</div>
+    <div class="form-grid">
+      <div class="fg"><label>No. Trámite GNP</label><input type="text" id="s-tramite-gnp-vis" placeholder="ej. SD00115817" oninput="g('s-tramite-gnp').value=this.value"><span class="field-hint">Portada → No. Trámite</span></div>
+      <div class="fg"><label>No. Siniestro GNP</label><input type="text" id="s-numsin-gnp" placeholder="ej. 0180203622" oninput="g('s-numsin').value=this.value"><span class="field-hint">Portada → No. Siniestro</span></div>
+      <div class="fg"><label>Clave ajustador GNP</label><input type="text" id="s-gnp-clave-ajust-vis" placeholder="ej. GNPJCA010970226" oninput="g('s-gnp-clave-ajust').value=this.value;g('s-clave-ajust').value=this.value"><span class="field-hint">Portada → Clave ajustador GNP · Referencia ajustadora</span></div>
+      <div class="fg"><label>Jefe de Depto. (GNP)</label><input type="text" id="s-gnp-jefe-vis" placeholder="ej. Rocío Rodríguez Nava" oninput="g('s-gnp-jefe').value=this.value"><span class="field-hint">Portada → Jefe Depto.</span></div>
+      <div class="fg"><label>Oficina GNP</label><input type="text" id="s-gnp-oficina-vis" placeholder="ej. Veracruz" oninput="g('s-gnp-oficina').value=this.value"><span class="field-hint">Portada → Oficina</span></div>
+      <div class="fg"><label>Giro del asegurado</label><input type="text" id="s-giro-vis" placeholder="ej. Fabricación de estructuras metálicas" oninput="g('s-giro').value=this.value"><span class="field-hint">Portada → Giro del asegurado</span></div>
+      <div class="fg"><label>Clave evento (catastrófico)</label><input type="text" id="s-clave-evento-vis" placeholder="ej. No aplica" oninput="g('s-clave-evento').value=this.value"><span class="field-hint">Portada → Clave evento (catastrófico)</span></div>
+    </div>
+    <div style="font-size:10px;color:#ffcc80;text-transform:uppercase;letter-spacing:.07em;margin:14px 0 8px;">Cronología GNP</div>
+    <div class="form-grid">
+      <div class="fg"><label>Hora ocurrencia</label><input type="time" id="s-hora-ocurr-vis" oninput="g('s-hora-ocurr').value=this.value"><span class="field-hint">§11 Cronología → Hora ocurrencia</span></div>
+      <div class="fg"><label>Hora asignación</label><input type="time" id="s-hora-asig-vis" oninput="g('s-hora-asig').value=this.value"><span class="field-hint">§11 Cronología → Hora asignación</span></div>
+      <div class="fg"><label>Fecha primer contacto</label><input type="date" id="s-f1cont-vis" oninput="g('s-f1cont').value=this.value"><span class="field-hint">§11 Cronología → Fecha 1er. contacto</span></div>
+      <div class="fg"><label>Hora primer contacto</label><input type="time" id="s-h1cont-vis" oninput="g('s-h1cont').value=this.value"><span class="field-hint">§11 Cronología → Hora 1er. contacto</span></div>
+      <div class="fg"><label>Hora primera visita</label><input type="time" id="s-h1vis-vis" oninput="g('s-h1vis').value=this.value"><span class="field-hint">§11 Cronología → Hora 1a. visita</span></div>
+    </div>
+    <div style="font-size:10px;color:#ffcc80;text-transform:uppercase;letter-spacing:.07em;margin:14px 0 8px;">Coaseguro / Reaseguro / Recuperación</div>
+    <div class="form-grid">
+      <div class="fg"><label>Coaseguro</label>
+        <select id="s-coaseguro-vis" onchange="g('s-coaseguro').value=this.value==='1'?'1':'0'"><span class="field-hint">§2 Coaseguro → SI / NO</span>
+          <option value="0">No</option><option value="1">Sí</option>
+        </select></div>
+      <div class="fg"><label>Reaseguro (cláusula control)</label>
+        <select id="s-reaseguro-vis" onchange="g('s-reaseguro').value=this.value==='1'?'1':'0'"><span class="field-hint">§3 Reaseguro → Cláusula control</span>
+          <option value="0">No</option><option value="1">Sí</option>
+        </select></div>
+      <div class="fg"><label>Corredor de reaseguro</label><input type="text" id="s-reas-corredor-vis" placeholder="Nombre del corredor" oninput="g('s-reas-corredor').value=this.value"><span class="field-hint">§3 Reaseguro → Corredor de reaseguro</span></div>
+      <div class="fg"><label>Recuperación</label>
+        <select id="s-recuperacion-vis" onchange="g('s-recuperacion').value=this.value"><span class="field-hint">§7 Recuperación → SI / NO</span>
+          <option value="0">No</option><option value="1">Sí</option>
+        </select></div>
+      <div class="fg"><label>Terceros responsables</label><input type="text" id="s-rec-terceros-vis" placeholder="N/A si no aplica" oninput="g('s-rec-terceros').value=this.value"><span class="field-hint">§7 Recuperación → Terceros responsables</span></div>
+      <div class="fg"><label>Intervención de autoridades</label>
+        <select id="s-autoridades-vis" onchange="g('s-autoridades').value=this.value"><span class="field-hint">§4 Inspección → Intervención de autoridades</span>
+          <option value="0">No</option><option value="1">Sí</option>
+        </select></div>
+    </div>
+  </div>
   </div>
 
   <!-- ═══════ SINIESTRO ═══════ -->
@@ -961,11 +1141,47 @@ body.modo-lectura .readonly-hidden { display:none !important; }
   <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin:18px 0 8px;">Siniestro</div>
   <div class="form-grid">
 
-    <div class="fg"><label>Tipo de siniestro</label><input type="text" id="s-tipo" placeholder="Incendio, robo, etc."></div>
-    <div class="fg"><label>Cobertura <span style="font-size:10px;color:var(--text-ter);font-weight:400;">(cobertura que aplica al siniestro)</span></label><input type="text" id="s-subramo" placeholder="ej. Rotura de Maquinaria, Incendio, Robo con violencia"></div>
-    <div class="fg"><label>Causa</label><input type="text" id="s-causa"></div>
-    <div class="fg"><label>Comentario de causa</label><input type="text" id="s-causa-com" placeholder="ej. En análisis de causa"></div>
-    <div class="fg"><label>Riesgo afectado</label><input type="text" id="s-riesgo" placeholder="ej. b) Corto Circuito"></div>
+    <div class="fg"><label>Tipo de siniestro</label><input type="text" id="s-tipo" placeholder="Incendio, robo, etc."><span class="field-hint">Lista expedientes · Informes genéricos</span></div>
+    <div class="fg"><label>Cobertura <span style="font-size:10px;color:var(--text-ter);font-weight:400;">(cobertura que aplica al siniestro)</span></label><input type="text" id="s-subramo" placeholder="ej. Rotura de Maquinaria, Incendio, Robo con violencia"><span class="field-hint">Portada → Subramo · §1 Estimación → Cobertura 1</span></div>
+    <div class="fg"><label>Causa</label>
+    <div class="ia-sugg-wrap">
+      <div style="display:flex;gap:4px;align-items:center;">
+        <input type="text" id="s-causa" style="flex:1;">
+        <button class="btn-ia-simple" onclick="iaSugerirCampo('causa')" title="Sugerir causa con IA">✦ IA</button>
+      </div>
+      <div class="ia-sugg-box" id="ia-sugg-causa">
+        <div id="ia-sugg-causa-text" style="color:var(--text-sec);">Cargando…</div>
+        <div class="ia-sugg-actions">
+          <button class="btn btn-primary btn-sm" onclick="iaAplicarCampo('causa')">Aplicar</button>
+          <button class="btn btn-sm" onclick="iaCerrarSugg('causa')">Descartar</button>
+        </div>
+      </div>
+    </div>
+    <span class="field-hint">Portada → Causa del siniestro</span></div>
+    <div class="fg"><label>Comentario de causa</label><div style="display:flex;gap:4px;align-items:center;">
+        <input type="text" id="s-causa-com" placeholder="ej. En análisis de causa" style="flex:1;">
+        <button class="btn-ia-simple" onclick="iaSugerirCampo('causa-com')" title="Sugerir comentario con IA">✦ IA</button>
+      </div>
+      <div class="ia-sugg-box" id="ia-sugg-causa-com">
+        <div id="ia-sugg-causa-com-text" style="color:var(--text-sec);">Cargando…</div>
+        <div class="ia-sugg-actions">
+          <button class="btn btn-primary btn-sm" onclick="iaAplicarCampo('causa-com')">Aplicar</button>
+          <button class="btn btn-sm" onclick="iaCerrarSugg('causa-com')">Descartar</button>
+        </div>
+      </div>
+      <span class="field-hint">Portada → Comentario de la causa</span></div>
+    <div class="fg"><label>Riesgo afectado</label><div style="display:flex;gap:4px;align-items:center;">
+        <input type="text" id="s-riesgo" placeholder="ej. b) Corto Circuito" style="flex:1;">
+        <button class="btn-ia-simple" onclick="iaSugerirCampo('riesgo')" title="Clasificar riesgo con IA">✦ IA</button>
+      </div>
+      <div class="ia-sugg-box" id="ia-sugg-riesgo">
+        <div id="ia-sugg-riesgo-text" style="color:var(--text-sec);">Cargando…</div>
+        <div class="ia-sugg-actions">
+          <button class="btn btn-primary btn-sm" onclick="iaAplicarCampo('riesgo')">Aplicar</button>
+          <button class="btn btn-sm" onclick="iaCerrarSugg('riesgo')">Descartar</button>
+        </div>
+      </div>
+      <span class="field-hint">Portada → Riesgo afectado</span></div>
     <div class="fg"><label>Estatus</label>
       <select id="s-est">
         <option value="asignado">Asignado</option>
@@ -974,8 +1190,8 @@ body.modo-lectura .readonly-hidden { display:none !important; }
         <option value="documentando">Documentando</option>
         <option value="cerrado">Cerrado</option>
       </select></div>
-    <div class="fg full"><label>Lugar del siniestro</label><input type="text" id="s-lugar-sin" placeholder="Zona específica dentro del inmueble asegurado"></div>
-    <div class="fg full"><label>Ubicación Afectada</label><input type="text" id="s-insp-dom" placeholder="Domicilio afectado"></div>
+    <div class="fg full"><label>Lugar del siniestro</label><input type="text" id="s-lugar-sin" placeholder="Zona específica dentro del inmueble asegurado"><span class="field-hint">§4 Inspección → Lugar del siniestro</span></div>
+    <div class="fg full"><label>Ubicación Afectada</label><input type="text" id="s-insp-dom" placeholder="Domicilio afectado"><span class="field-hint">§4 Inspección → Domicilio asegurado · Lugar de inspección</span></div>
   </div>
 
   <!-- ═══════ I. INTRODUCCIÓN ═══════ -->
@@ -1002,6 +1218,8 @@ body.modo-lectura .readonly-hidden { display:none !important; }
           <span class="rte-sep"></span>
           <span class="rte-fields-wrap">
             <button type="button" class="rte-fields-btn" onclick="rteToggleFields(this,'introduccion')" title="Insertar dato del expediente">{}</button>
+          <span class="rte-sep"></span>
+          <button type="button" class="btn-ia" onclick="iaGenerarRte('introduccion','introduccion')" title="Generar con IA">✦ IA</button>
             <div class="rte-fields-drop" id="rte-fields-introduccion"></div>
           </span>
           
@@ -1037,6 +1255,8 @@ body.modo-lectura .readonly-hidden { display:none !important; }
           <span class="rte-sep"></span>
           <span class="rte-fields-wrap">
             <button type="button" class="rte-fields-btn" onclick="rteToggleFields(this,'desc')" title="Insertar dato del expediente">{}</button>
+          <span class="rte-sep"></span>
+          <button type="button" class="btn-ia" onclick="iaGenerarRte('desc','desc')" title="Generar con IA">✦ IA</button>
             <div class="rte-fields-drop" id="rte-fields-desc"></div>
           </span>
           
@@ -1113,6 +1333,8 @@ body.modo-lectura .readonly-hidden { display:none !important; }
           <span class="rte-sep"></span>
           <span class="rte-fields-wrap">
             <button type="button" class="rte-fields-btn" onclick="rteToggleFields(this,'narracion')" title="Insertar dato del expediente">{}</button>
+          <span class="rte-sep"></span>
+          <button type="button" class="btn-ia" onclick="iaGenerarRte('narracion','narracion')" title="Generar con IA">✦ IA</button>
             <div class="rte-fields-drop" id="rte-fields-narracion"></div>
           </span>
           
@@ -1130,9 +1352,9 @@ body.modo-lectura .readonly-hidden { display:none !important; }
   <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin:18px 0 8px;">V. Inspección</div>
   <div class="form-grid">
 
-    <div class="fg"><label>Persona entrevistada</label><input type="text" id="s-insp-persona"></div>
-    <div class="fg"><label>Cargo</label><input type="text" id="s-insp-cargo"></div>
-    <div class="fg"><label>Teléfono</label><input type="text" id="s-insp-tel"></div>
+    <div class="fg"><label>Persona entrevistada</label><input type="text" id="s-insp-persona"><span class="field-hint">§4 Inspección → Persona entrevistada</span></div>
+    <div class="fg"><label>Cargo</label><input type="text" id="s-insp-cargo"><span class="field-hint">§4 Inspección → Puesto y/o cargo</span></div>
+    <div class="fg"><label>Teléfono</label><input type="text" id="s-insp-tel"><span class="field-hint">§4 Inspección → Teléfono</span></div>
   </div>
 
   <div class="fg full">
@@ -1153,6 +1375,8 @@ body.modo-lectura .readonly-hidden { display:none !important; }
           <span class="rte-sep"></span>
           <span class="rte-fields-wrap">
             <button type="button" class="rte-fields-btn" onclick="rteToggleFields(this,'inspeccion-narrativa')" title="Insertar dato del expediente">{}</button>
+          <span class="rte-sep"></span>
+          <button type="button" class="btn-ia" onclick="iaGenerarRte('inspeccion-narrativa','inspeccion')" title="Generar con IA">✦ IA</button>
             <div class="rte-fields-drop" id="rte-fields-inspeccion-narrativa"></div>
           </span>
           <span class="rte-sep"></span><button type="button" class="btn btn-sm" onclick="generarTextoInspeccion()" title="Genera el texto usando fecha, domicilio y persona entrevistada" style="font-size:11px;">✦ Generar texto</button>
@@ -1280,6 +1504,8 @@ body.modo-lectura .readonly-hidden { display:none !important; }
           <span class="rte-sep"></span>
           <span class="rte-fields-wrap">
             <button type="button" class="rte-fields-btn" onclick="rteToggleFields(this,'naturaleza-alcance')" title="Insertar dato del expediente">{}</button>
+          <span class="rte-sep"></span>
+          <button type="button" class="btn-ia" onclick="iaGenerarRte('naturaleza-alcance','naturaleza')" title="Generar con IA">✦ IA</button>
             <div class="rte-fields-drop" id="rte-fields-naturaleza-alcance"></div>
           </span>
         </div>
@@ -1356,6 +1582,8 @@ body.modo-lectura .readonly-hidden { display:none !important; }
           <span class="rte-sep"></span>
           <span class="rte-fields-wrap">
             <button type="button" class="rte-fields-btn" onclick="rteToggleFields(this,'considerandos')" title="Insertar dato del expediente">{}</button>
+          <span class="rte-sep"></span>
+          <button type="button" class="btn-ia" onclick="iaGenerarRte('considerandos','considerandos')" title="Generar con IA">✦ IA</button>
             <div class="rte-fields-drop" id="rte-fields-considerandos"></div>
           </span>
         </div>
@@ -1384,8 +1612,8 @@ body.modo-lectura .readonly-hidden { display:none !important; }
   <div class="form-grid">
 
     <div class="fg"><label>Salvamento</label>
-      <select id="s-salvamento"><option value="por_determinar">Por determinar</option><option value="si">Sí</option><option value="no">No</option></select></div>
-    <div class="fg"><label>Valor estimado salvamento</label><input type="number" id="s-salv-valor" placeholder="0.00"></div>
+      <select id="s-salvamento"><option value="por_determinar">Por determinar</option><option value="si">Sí</option><option value="no">No</option></select><span class="field-hint">§6 Salvamento → SI / NO / Por determinar</span></div>
+    <div class="fg"><label>Valor estimado salvamento</label><input type="number" id="s-salv-valor" placeholder="0.00"><span class="field-hint">§6 Salvamento → Valor estimado de los bienes</span></div>
   </div>
 
   <div class="fg full">
@@ -1406,6 +1634,8 @@ body.modo-lectura .readonly-hidden { display:none !important; }
           <span class="rte-sep"></span>
           <span class="rte-fields-wrap">
             <button type="button" class="rte-fields-btn" onclick="rteToggleFields(this,'salv-det')" title="Insertar dato del expediente">{}</button>
+          <span class="rte-sep"></span>
+          <button type="button" class="btn-ia" onclick="iaGenerarRte('salv-det','salvamento')" title="Generar con IA">✦ IA</button>
             <div class="rte-fields-drop" id="rte-fields-salv-det"></div>
           </span>
         </div>
@@ -1440,6 +1670,8 @@ body.modo-lectura .readonly-hidden { display:none !important; }
           <span class="rte-sep"></span>
           <span class="rte-fields-wrap">
             <button type="button" class="rte-fields-btn" onclick="rteToggleFields(this,'actividades')" title="Insertar dato del expediente">{}</button>
+          <span class="rte-sep"></span>
+          <button type="button" class="btn-ia" onclick="iaGenerarRte('actividades','actividades')" title="Generar con IA">✦ IA</button>
             <div class="rte-fields-drop" id="rte-fields-actividades"></div>
           </span>
         </div>
@@ -1474,6 +1706,8 @@ body.modo-lectura .readonly-hidden { display:none !important; }
           <span class="rte-sep"></span>
           <span class="rte-fields-wrap">
             <button type="button" class="rte-fields-btn" onclick="rteToggleFields(this,'observaciones')" title="Insertar dato del expediente">{}</button>
+          <span class="rte-sep"></span>
+          <button type="button" class="btn-ia" onclick="iaGenerarRte('observaciones','observaciones')" title="Generar con IA">✦ IA</button>
             <div class="rte-fields-drop" id="rte-fields-observaciones"></div>
           </span>
         </div>
@@ -2123,8 +2357,8 @@ body.modo-lectura .readonly-hidden { display:none !important; }
     <div class="fg"><label>Jefe de Depto. (compañía)</label><input type="text" id="inf-jefe" placeholder="ej. Rocío Rodríguez Nava"></div>
     <div class="fg"><label>Oficina (compañía)</label><input type="text" id="inf-oficina" placeholder="ej. Veracruz"></div>
     <div class="fg full"><label>Asunto</label><input type="text" id="inf-asunto" placeholder="Asunto del correo o documento"></div>
-    <div class="fg full"><label>Narración del siniestro / Desarrollo</label><textarea id="inf-desarrollo" style="min-height:80px;" placeholder="Narrativa detallada del evento según inspección..."></textarea></div>
-    <div class="fg full"><label>Estrategias</label><textarea id="inf-estrategias" style="min-height:60px;" placeholder="Plan de ajuste, documentos solicitados..."></textarea></div>
+    <div class="fg full"><label>Narración del siniestro / Desarrollo</label><textarea id="inf-desarrollo" style="min-height:80px;" placeholder="Narrativa detallada del evento según inspección..."></textarea><button class="btn-ia-simple" style="margin-top:4px;" onclick="iaGenerarInfCampo('inf-desarrollo','narracion')">✦ IA — Generar desarrollo</button></div>
+    <div class="fg full"><label>Estrategias</label><textarea id="inf-estrategias" style="min-height:60px;" placeholder="Plan de ajuste, documentos solicitados..."></textarea><button class="btn-ia-simple" style="margin-top:4px;" onclick="iaGenerarInfCampo('inf-estrategias','estrategias')">✦ IA — Generar estrategias</button></div>
     <div class="fg full"><label>Observaciones</label><textarea id="inf-observaciones" style="min-height:60px;" placeholder="Comentarios técnicos, reservas, notas al informe..."></textarea></div>
     <div class="fg full"><label>Actividades a realizar</label><textarea id="inf-actividades" style="min-height:50px;" placeholder="Tareas pendientes, gestiones en proceso..."></textarea></div>
     <div class="fg full"><label>Notas internas</label><textarea id="inf-notas" style="min-height:40px;"></textarea></div>
@@ -3937,12 +4171,20 @@ function abrirModal(id){
      's-gnp-salv-persona','s-gnp-salv-tel','s-gnp-salv-email','s-gnp-salv-movil','s-gnp-salv-comprador',
      's-gnp-rec-recuperador','s-gnp-rec-carta-porte','s-gnp-rec-prescripcion',
      's-gnp-trans-tipo','s-gnp-trans-frontera','s-gnp-trans-placa','s-gnp-trans-destino','s-gnp-trans-compania',
-     's-gnp-docs-faltantes'].forEach(f=>{if(g(f))g(f).value='';});
+     's-gnp-docs-faltantes','s-clave-evento',
+     's-tramite-gnp-vis','s-numsin-gnp','s-gnp-clave-ajust-vis','s-gnp-jefe-vis','s-gnp-oficina-vis',
+     's-giro-vis','s-clave-evento-vis','s-hora-ocurr-vis','s-hora-asig-vis',
+     's-f1cont-vis','s-h1cont-vis','s-h1vis-vis','s-reas-corredor-vis','s-rec-terceros-vis'
+     ].forEach(f=>{if(g(f))g(f).value='';});
     g('s-fasig').value=today;
     g('s-est').value='asignado';
     g('s-procedencia').value='procedente';
     g('s-autoridades').value='0'; g('s-salvamento').value='por_determinar';
     g('s-recuperacion').value='0'; g('s-coaseguro').value='0'; g('s-reaseguro').value='0';
+    if(g('s-coaseguro-vis'))   g('s-coaseguro-vis').value='0';
+    if(g('s-reaseguro-vis'))   g('s-reaseguro-vis').value='0';
+    if(g('s-recuperacion-vis'))g('s-recuperacion-vis').value='0';
+    if(g('s-autoridades-vis')) g('s-autoridades-vis').value='0';
     if(g('s-inspeccion-narrativa')) delete g('s-inspeccion-narrativa').dataset.editado;
     // Default text for Introducción (only for new expediente)
     loadBienesRte('');
@@ -4089,7 +4331,9 @@ async function guardarSiniestro(){
     numero_exp:v('s-exp'), numero_siniestro:v('s-numsin')||null,
     id_poliza:parseInt(v('s-poliza'))||null,
     subramo:v('s-subramo')||null,
+    tipo_siniestro:v('s-tipo')||null,
     causa:v('s-causa')||null,
+    causa_comentario:v('s-causa-com')||null,
     riesgo_afectado:v('s-riesgo')||null,
     riesgos_cubiertos:v('s-riesgos-cubiertos')||null,
     localizacion_html:v('s-localizacion')||null,
@@ -4135,6 +4379,7 @@ async function guardarSiniestro(){
     gnp_jefe_depto:v('s-gnp-jefe')||null,
     gnp_oficina:v('s-gnp-oficina')||null,
     gnp_clave_ajustador:v('s-gnp-clave-ajust')||null,
+    clave_evento_catastrofico:v('s-clave-evento')||null,
     salvamento_persona_contacto:v('s-gnp-salv-persona')||null,
     salvamento_telefono:v('s-gnp-salv-tel')||null,
     salvamento_email:v('s-gnp-salv-email')||null,
@@ -4181,10 +4426,11 @@ function editarSiniestro(id){
   g('sin-modal-title').textContent='Editar expediente'; {let _e=g('s-id');if(_e)_e.value=s.id;}
   {let _e=g('s-exp');if(_e)_e.value=s.numero_exp||'';} {let _e=g('s-numsin');if(_e)_e.value=s.numero_siniestro||'';}
   {let _e=g('s-subramo');if(_e)_e.value=s.subramo||'';}
+  {let _e=g('s-tipo');if(_e)_e.value=s.tipo_siniestro||'';}
   loadRteSin('reclamacion', s.reclamacion_asegurado||'');
   setTimeout(renderEstimacionSinGrid, 100);
   loadRteSin('considerandos', s.considerandos||'');
-  loadRteSin('salv-det', s.salvamento_detalle_html||s.salvamento_detalle||''); {let _e=g('s-causa');if(_e)_e.value=s.causa||'';} {let _e=g('s-riesgo');if(_e)_e.value=s.riesgo_afectado||'';}
+  loadRteSin('salv-det', s.salvamento_detalle_html||s.salvamento_detalle||''); {let _e=g('s-causa');if(_e)_e.value=s.causa||'';} {let _e=g('s-causa-com');if(_e)_e.value=s.causa_comentario||'';} {let _e=g('s-riesgo');if(_e)_e.value=s.riesgo_afectado||'';}
   loadRteSin('riesgos-cubiertos', s.riesgos_cubiertos||'');
   loadRteSin('localizacion', s.localizacion_html||'');
   loadRteSin('narracion', s.narracion_html||'');
@@ -4231,6 +4477,26 @@ function editarSiniestro(id){
   if(g('s-gnp-jefe'))       {let _e=g('s-gnp-jefe');if(_e)_e.value=s.gnp_jefe_depto||'';}
   if(g('s-gnp-oficina'))    {let _e=g('s-gnp-oficina');if(_e)_e.value=s.gnp_oficina||'';}
   if(g('s-gnp-clave-ajust')){let _e=g('s-gnp-clave-ajust');if(_e)_e.value=s.gnp_clave_ajustador||'';}
+  // Sync visible GNP fields
+  if(g('s-tramite-gnp-vis'))   g('s-tramite-gnp-vis').value   = s.tramite_gnp||'';
+  if(g('s-numsin-gnp'))        g('s-numsin-gnp').value        = s.numero_siniestro||'';
+  if(g('s-gnp-clave-ajust-vis'))g('s-gnp-clave-ajust-vis').value= s.gnp_clave_ajustador||'';
+  if(g('s-gnp-jefe-vis'))      g('s-gnp-jefe-vis').value      = s.gnp_jefe_depto||'';
+  if(g('s-gnp-oficina-vis'))   g('s-gnp-oficina-vis').value   = s.gnp_oficina||'';
+  if(g('s-giro-vis'))          g('s-giro-vis').value          = s.giro_asegurado||'';
+  if(g('s-clave-evento-vis'))  g('s-clave-evento-vis').value  = s.clave_evento_catastrofico||'';
+  if(g('s-clave-evento'))      g('s-clave-evento').value      = s.clave_evento_catastrofico||'';
+  if(g('s-hora-ocurr-vis'))    g('s-hora-ocurr-vis').value    = s.hora_ocurrencia||'';
+  if(g('s-hora-asig-vis'))     g('s-hora-asig-vis').value     = s.hora_asignacion||'';
+  if(g('s-f1cont-vis'))        g('s-f1cont-vis').value        = s.fecha_primer_contacto||'';
+  if(g('s-h1cont-vis'))        g('s-h1cont-vis').value        = s.hora_primer_contacto||'';
+  if(g('s-h1vis-vis'))         g('s-h1vis-vis').value         = s.hora_primera_visita||'';
+  if(g('s-coaseguro-vis'))     g('s-coaseguro-vis').value     = s.coaseguro?'1':'0';
+  if(g('s-reaseguro-vis'))     g('s-reaseguro-vis').value     = s.reaseguro_clausula_control?'1':'0';
+  if(g('s-reas-corredor-vis')) g('s-reas-corredor-vis').value = s.reaseguro_corredor||'';
+  if(g('s-recuperacion-vis'))  g('s-recuperacion-vis').value  = s.recuperacion?'1':'0';
+  if(g('s-rec-terceros-vis'))  g('s-rec-terceros-vis').value  = s.recuperacion_terceros||'';
+  if(g('s-autoridades-vis'))   g('s-autoridades-vis').value   = s.intervencion_autoridades?'1':'0';
   if(g('s-gnp-salv-persona'))   {let _e=g('s-gnp-salv-persona');if(_e)_e.value=s.salvamento_persona_contacto||'';}
   if(g('s-gnp-salv-tel'))       {let _e=g('s-gnp-salv-tel');if(_e)_e.value=s.salvamento_telefono||'';}
   if(g('s-gnp-salv-email'))     {let _e=g('s-gnp-salv-email');if(_e)_e.value=s.salvamento_email||'';}
@@ -8203,6 +8469,261 @@ function rteRestoreSel(rte, saved){
     sel.addRange(range);
   }
 }
+
+
+// ── Generar texto para textarea del modal de informe ─────────────────────
+function iaGenerarInfCampo(fieldId, promptKey){
+  if(!iaCheckKey()) return;
+  const ctx = iaContextoSin();
+  const prompt = iaPrompt(promptKey, ctx);
+  const titulos = {
+    'narracion':'Desarrollo del siniestro',
+    'estrategias':'Estrategias y documentos requeridos'
+  };
+  const el = g(fieldId);
+  if(!el) return;
+  el.value = '⏳ Generando…';
+  el.disabled = true;
+  let acum = '';
+  iaCall(
+    prompt,
+    (chunk)=>{ acum += chunk; el.value = acum; },
+    ()=>{ el.disabled = false; toast('✦ IA: texto generado'); },
+    (err)=>{ el.value = ''; el.disabled = false; toast('⚠ Error IA: ' + err); }
+  );
+}
+
+// ── Guard: editingMod puede no existir en todos los contextos ────────────
+if(typeof editingMod === 'undefined') var editingMod = null;
+
+
+const IA_MODEL = 'gpt-4o';
+
+function iaGetKey(){
+  return localStorage.getItem('aasa_openai_key')||'';
+}
+function iaGuardarKey(){
+  const k = (g('ia-apikey-input').value||'').trim();
+  if(!k){ toast('Ingresa una API key válida'); return; }
+  localStorage.setItem('aasa_openai_key', k);
+  cerrarModal('modal-ia-config');
+  toast('API key guardada');
+}
+function iaCheckKey(){
+  if(!iaGetKey()){ abrirModal('modal-ia-config'); return false; }
+  return true;
+}
+
+// ── Contexto del siniestro en texto plano ─────────────────────────────────
+function iaContextoSin(){
+  const s = editingMod || {};
+  const pol = data?.pol?.find(p=>p.id===parseInt(v('s-poliza')))||{};
+  const aseg = data?.aseg?.find(a=>a.id===pol.id_aseguradora)||{};
+  const asdo = data?.asdo?.find(a=>a.id===parseInt(g('sin-asdo-sel-id')?.value))||{};
+  return [
+    `Asegurado: ${asdo.nombre||v('s-dest-nombre')||'N/D'}`,
+    `Aseguradora: ${aseg.nombre||'N/D'}`,
+    `Póliza: ${pol.numero||'N/D'} | Ramo: ${pol.ramo||'N/D'} | Subramo/Cobertura: ${v('s-subramo')||'N/D'}`,
+    `No. Siniestro: ${v('s-numsin')||'N/D'} | Ref. AASA: ${v('s-exp')||'N/D'}`,
+    `Fecha siniestro: ${v('s-fsin')||'N/D'} | Hora: ${v('s-hora-ocurr')||v('s-hora-ocurr-vis')||'N/D'}`,
+    `Fecha asignación: ${v('s-fasig')||'N/D'} | Fecha primera visita: ${v('s-f1vis')||'N/D'}`,
+    `Causa: ${v('s-causa')||'N/D'} | Comentario: ${v('s-causa-com')||'N/D'}`,
+    `Riesgo afectado: ${v('s-riesgo')||'N/D'}`,
+    `Tipo de siniestro: ${v('s-tipo')||'N/D'}`,
+    `Lugar del siniestro: ${v('s-lugar-sin')||'N/D'}`,
+    `Ubicación afectada: ${v('s-insp-dom')||'N/D'}`,
+    `Persona entrevistada: ${v('s-insp-persona')||'N/D'} | Cargo: ${v('s-insp-cargo')||'N/D'}`,
+    `Giro del asegurado: ${v('s-giro')||v('s-giro-vis')||'N/D'}`,
+    `Salvamento: ${v('s-salvamento')||'N/D'}`,
+    `Coaseguro: ${v('s-coaseguro')==='1'?'Sí':'No'} | Reaseguro: ${v('s-reaseguro')==='1'?'Sí':'No'}`,
+    `Autoridades: ${v('s-autoridades')==='1'?'Sí':'No'}`,
+    `Descripción/Bienes dañados: ${v('s-desc')||v('s-bienes')||'N/D'}`,
+    `Narración existente: ${v('s-narracion')||'(vacía)'}`,
+  ].join('\n');
+}
+
+// ── Prompts especializados por campo ─────────────────────────────────────
+function iaPrompt(key, contexto){
+  const base = `Eres un experto ajustador de seguros de daños con 44 años de experiencia, especializado en México. Trabajas para Almaraz Ajustadores (AASA). Redacta en español técnico-forense, en tercera persona, sin adornos literarios. Sé conciso, preciso y directo.\n\nDatos del expediente:\n${contexto}\n\n`;
+  const prompts = {
+    'desc':        base + 'Redacta la descripción de los bienes afectados y cómo ocurrió el siniestro. Máximo 3 párrafos. Solo el texto, sin títulos.',
+    'narracion':   base + 'Redacta la narración cronológica detallada de los hechos del siniestro para el informe preliminar. Incluye fecha, hora, secuencia de eventos, causa probable y consecuencias inmediatas. Máximo 4 párrafos. Solo el texto.',
+    'inspeccion':  base + 'Redacta el texto del resultado de la inspección (§4 del informe GNP) incluyendo fecha y hora de visita, persona entrevistada, cargo, domicilio, lugar del siniestro y descripción de los bienes dañados observados. Solo el texto.',
+    'naturaleza':  base + 'Redacta la naturaleza y alcance de los daños observados durante la inspección. Sé técnico y preciso. Máximo 2 párrafos.',
+    'estrategias': base + 'Genera la sección de Estrategias y Observaciones (§9) del informe preliminar GNP. Incluye: (1) lista de documentos requeridos al asegurado, específica para este tipo de siniestro y cobertura; (2) observaciones técnicas relevantes; (3) estrategia de ajuste propuesta. Usa formato de lista para documentos.',
+    'observaciones': base + 'Redacta las observaciones técnicas del ajustador sobre este siniestro. Incluye aspectos que requieren seguimiento, puntos de atención y recomendaciones. Máximo 2 párrafos.',
+    'considerandos': base + 'Redacta los considerandos del ajuste: fundamentos técnicos y de póliza que sustentan la procedencia del siniestro. Máximo 3 párrafos.',
+    'actividades': base + 'Genera la lista de actividades por realizar para este expediente, ordenadas por prioridad. Formato de lista numerada.',
+    'salvamento':  base + 'Redacta el detalle de salvamento: descripción de bienes que podrían recuperarse, su valor estimado, ubicación y acciones requeridas. Si no aplica, indícalo brevemente.',
+    'introduccion': base + 'Redacta la introducción del informe preliminar de ajuste. Contexto general, alcance del trabajo del ajustador y propósito del documento. Máximo 2 párrafos.',
+    // Campos simples
+    'causa_simple':    base + 'Sugiere en una frase corta (máximo 10 palabras) la causa técnica del siniestro. Solo la causa, sin explicación.',
+    'causa_com_simple': base + 'Sugiere un comentario breve sobre el estado de investigación de la causa (ej: "En análisis de causa", "Causa confirmada por perito", etc.). Solo el comentario, sin explicación.',
+    'riesgo_simple':   base + 'Clasifica el riesgo afectado según el catálogo GNP: a) Incendio, b) Corto Circuito, c) Explosión, d) Rotura de Maquinaria, e) Robo, f) Responsabilidad Civil, u otro según corresponda. Responde solo con la clave y descripción, ej: "b) Corto Circuito".',
+  };
+  return prompts[key] || base + `Redacta el campo "${key}" para el informe de ajuste de seguros.`;
+}
+
+// ── Llamada a la API OpenAI ───────────────────────────────────────────────
+async function iaCall(prompt, onChunk, onDone, onError){
+  const key = iaGetKey();
+  if(!key){ abrirModal('modal-ia-config'); return; }
+  try {
+    const res = await fetch('https://api.openai.com/v1/chat/completions',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+      body: JSON.stringify({
+        model: IA_MODEL,
+        stream: true,
+        max_tokens: 1200,
+        temperature: 0.4,
+        messages:[
+          {role:'system', content:'Eres un experto ajustador de seguros de daños en México con 44 años de experiencia. Redactas informes técnicos precisos en español formal.'},
+          {role:'user', content: prompt}
+        ]
+      })
+    });
+    if(!res.ok){
+      const err = await res.json();
+      onError(err.error?.message||'Error en la API');
+      return;
+    }
+    const reader = res.body.getReader();
+    const dec = new TextDecoder();
+    let buf = '';
+    while(true){
+      const {done, value} = await reader.read();
+      if(done) break;
+      buf += dec.decode(value, {stream:true});
+      const lines = buf.split('\n');
+      buf = lines.pop();
+      for(const line of lines){
+        if(!line.startsWith('data: ')) continue;
+        const data = line.slice(6).trim();
+        if(data==='[DONE]'){ onDone(); return; }
+        try{
+          const j = JSON.parse(data);
+          const delta = j.choices?.[0]?.delta?.content;
+          if(delta) onChunk(delta);
+        }catch(e){}
+      }
+    }
+    onDone();
+  } catch(e){
+    onError(e.message);
+  }
+}
+
+// ── Panel de resultado ────────────────────────────────────────────────────
+let _iaCurrentSuffix = null;
+let _iaCurrentText   = '';
+let _iaCurrentPrompt = null;
+
+function iaAbrirPanel(titulo){
+  g('ia-panel-title').textContent = '✦ ' + titulo;
+  g('ia-panel-body').textContent  = '';
+  g('ia-panel-spinner').style.display = 'inline-block';
+  g('ia-btn-aplicar').disabled  = true;
+  g('ia-btn-regenerar').disabled = true;
+  g('ia-result-panel').classList.add('open');
+  _iaCurrentText = '';
+}
+function iaCerrarPanel(){
+  g('ia-result-panel').classList.remove('open');
+  _iaCurrentSuffix = null;
+}
+function iaAplicar(){
+  if(!_iaCurrentSuffix || !_iaCurrentText) return;
+  loadRteSin(_iaCurrentSuffix, _iaCurrentText.replace(/\n/g,'<br>'));
+  syncRteSin(_iaCurrentSuffix);
+  iaCerrarPanel();
+  toast('Texto aplicado al campo');
+}
+function iaRegenerarActual(){
+  if(_iaCurrentPrompt) iaLlamarPanel(_iaCurrentPrompt, g('ia-panel-title').textContent.replace('✦ ',''), _iaCurrentSuffix);
+}
+
+function iaLlamarPanel(prompt, titulo, suffix){
+  _iaCurrentSuffix = suffix;
+  _iaCurrentPrompt = prompt;
+  iaAbrirPanel(titulo);
+  iaCall(
+    prompt,
+    (chunk)=>{
+      _iaCurrentText += chunk;
+      g('ia-panel-body').textContent = _iaCurrentText;
+    },
+    ()=>{
+      g('ia-panel-spinner').style.display='none';
+      g('ia-btn-aplicar').disabled = false;
+      g('ia-btn-regenerar').disabled = false;
+    },
+    (err)=>{
+      g('ia-panel-spinner').style.display='none';
+      g('ia-panel-body').textContent = '⚠ Error: ' + err;
+      g('ia-btn-regenerar').disabled = false;
+    }
+  );
+}
+
+// ── Generar texto para campo RTE ──────────────────────────────────────────
+function iaGenerarRte(suffix, key){
+  if(!iaCheckKey()) return;
+  const ctx = iaContextoSin();
+  const prompt = iaPrompt(key, ctx);
+  const titulos = {
+    'desc':'Descripción de bienes afectados','narracion':'Narración de los hechos',
+    'inspeccion':'Resultado de la inspección','naturaleza':'Naturaleza y alcance de daños',
+    'estrategias':'Estrategias y documentos','observaciones':'Observaciones técnicas',
+    'considerandos':'Considerandos del ajuste','actividades':'Actividades por realizar',
+    'salvamento':'Detalle de salvamento','introduccion':'Introducción del informe'
+  };
+  iaLlamarPanel(prompt, titulos[key]||key, suffix);
+}
+
+// ── Sugerencias para campos simples ──────────────────────────────────────
+function iaSugerirCampo(campo){
+  if(!iaCheckKey()) return;
+  const ctx = iaContextoSin();
+  const promptKeys = {
+    'causa':'causa_simple','causa-com':'causa_com_simple','riesgo':'riesgo_simple'
+  };
+  const prompt = iaPrompt(promptKeys[campo]||campo, ctx);
+  const box = g('ia-sugg-' + campo);
+  const txt = g('ia-sugg-' + campo + '-text');
+  if(!box||!txt) return;
+  box.classList.add('open');
+  txt.textContent = '⏳ Generando…';
+  txt.dataset.valor = '';
+  let acum = '';
+  iaCall(
+    prompt,
+    (chunk)=>{ acum+=chunk; txt.textContent=acum; txt.dataset.valor=acum; },
+    ()=>{ txt.dataset.valor=acum; },
+    (err)=>{ txt.textContent='⚠ '+err; }
+  );
+}
+function iaAplicarCampo(campo){
+  const txt = g('ia-sugg-' + campo + '-text');
+  const input = g('s-' + campo);
+  if(txt && input){
+    input.value = (txt.dataset.valor||txt.textContent).trim();
+  }
+  iaCerrarSugg(campo);
+}
+function iaCerrarSugg(campo){
+  const box = g('ia-sugg-' + campo);
+  if(box) box.classList.remove('open');
+}
+// Cerrar sugerencias al click fuera
+document.addEventListener('click', e=>{
+  ['causa','causa-com','riesgo'].forEach(c=>{
+    const box = g('ia-sugg-'+c);
+    if(box && !box.contains(e.target) && !e.target.classList.contains('btn-ia-simple')){
+      box.classList.remove('open');
+    }
+  });
+});
 
 </script>
 </body>
