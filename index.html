@@ -8328,23 +8328,49 @@ function mobRenderFoto(body){
         <label>Etiqueta / Descripción</label>
         <input type="text" id="mfoto-etiqueta" placeholder="Ej: Fachada principal, interior sala...">
       </div>
+
       <div class="mob-field">
-        <label>Foto</label>
-        <input type="file" id="mfoto-file" accept="image/*"
-          style="background:var(--surface);border:1px solid var(--border-md);border-radius:var(--r);
-                 color:var(--text);font-size:14px;padding:10px;width:100%;box-sizing:border-box;"
-          onchange="mobFotoPreview(this)">
+        <label>Capturar o seleccionar foto</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+          <button type="button" class="mob-btn-primary" style="font-size:13px;padding:12px 8px;"
+            onclick="document.getElementById('mfoto-cam-back').click()">
+            📷 Cámara trasera
+          </button>
+          <button type="button" class="mob-btn-primary" style="font-size:13px;padding:12px 8px;background:var(--surface2);border:1px solid var(--border-md);color:var(--text);"
+            onclick="document.getElementById('mfoto-cam-front').click()">
+            🤳 Cámara frontal
+          </button>
+        </div>
+        <button type="button" class="mob-btn-primary" style="width:100%;font-size:13px;padding:11px;background:var(--surface2);border:1px solid var(--border-md);color:var(--text);"
+          onclick="document.getElementById('mfoto-file').click()">
+          🖼 Seleccionar de galería
+        </button>
+        <!-- Inputs ocultos -->
+        <input type="file" id="mfoto-cam-back"  accept="image/*" capture="environment" style="display:none;" onchange="mobFotoPreview(this)">
+        <input type="file" id="mfoto-cam-front" accept="image/*" capture="user"        style="display:none;" onchange="mobFotoPreview(this)">
+        <input type="file" id="mfoto-file"       accept="image/*"                      style="display:none;" onchange="mobFotoPreview(this)">
       </div>
+
       <div id="mfoto-preview" style="display:none;margin-top:4px;">
-        <img id="mfoto-img" style="width:100%;border-radius:var(--r);max-height:200px;object-fit:cover;">
-        <button id="mob-ia-vision-btn" class="mob-btn-primary" style="margin-top:8px;background:linear-gradient(135deg,#10a37f,#1558b0);" onclick="mobIaVisionAnalizar()">✦ IA — Analizar imagen</button>
-        <div id="mob-ia-vision-panel" class="mob-ia-vision">
-          <div class="mob-ia-vision-title">✦ Análisis IA</div>
-          <div id="mob-ia-vision-text" style="color:var(--text-sec);font-size:12px;"></div>
-          <button id="mob-ia-apply-btn" class="mob-btn-primary" style="margin-top:8px;display:none;font-size:13px;" onclick="mobIaVisionAplicar()">↓ Aplicar como descripción</button>
+        <img id="mfoto-img" style="width:100%;border-radius:var(--r);max-height:220px;object-fit:cover;">
+        <button type="button" id="mob-ia-vision-btn"
+          style="margin-top:10px;width:100%;padding:12px;border:none;border-radius:var(--r);
+                 background:linear-gradient(135deg,#10a37f,#1558b0);color:#fff;
+                 font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;"
+          onclick="mobIaVisionAnalizar()">✦ IA — Analizar imagen</button>
+        <div id="mob-ia-vision-panel" style="display:none;margin-top:8px;background:rgba(16,163,127,.08);
+             border:1px solid rgba(16,163,127,.3);border-radius:var(--r);padding:12px;">
+          <div style="font-size:11px;font-weight:700;color:#10a37f;margin-bottom:6px;">✦ Análisis IA</div>
+          <div id="mob-ia-vision-text" style="color:var(--text);font-size:13px;line-height:1.5;white-space:pre-wrap;"></div>
+          <button id="mob-ia-apply-btn" type="button"
+            style="display:none;margin-top:10px;width:100%;padding:10px;border:none;border-radius:var(--r);
+                   background:var(--accent);color:#fff;font-size:13px;font-weight:700;
+                   font-family:inherit;cursor:pointer;"
+            onclick="mobIaVisionAplicar()">↓ Aplicar como descripción</button>
         </div>
       </div>
-      <button class="mob-btn-primary" onclick="mobGuardarFoto()">📤 Subir foto</button>
+
+      <button class="mob-btn-primary" style="margin-top:12px;" onclick="mobGuardarFoto()">📤 Subir foto</button>
     </div>
 
     <div class="mob-section-title">Fotos recientes</div>
@@ -8358,21 +8384,32 @@ function mobRenderFoto(body){
 }
 
 function mobFotoPreview(input){
-  const file = input.files[0];
+  const file = input.files?.[0];
   if(!file) return;
+  // Copiar el archivo al input principal para que mobGuardarFoto lo encuentre
+  // Guardar referencia global al archivo activo
+  window._mobFotoActivo = file;
   const preview = g('mfoto-preview');
-  const img = g('mfoto-img');
+  const img     = g('mfoto-img');
   if(preview && img){
     img.src = URL.createObjectURL(file);
     preview.style.display = 'block';
   }
+  // Reset panel IA
+  const panel  = g('mob-ia-vision-panel');
+  const textEl = g('mob-ia-vision-text');
+  const applyB = g('mob-ia-apply-btn');
+  const vBtn   = g('mob-ia-vision-btn');
+  if(panel)  panel.style.display  = 'none';
+  if(textEl) textEl.textContent   = '';
+  if(applyB) applyB.style.display = 'none';
+  if(vBtn)   vBtn.textContent     = '✦ IA — Analizar imagen';
 }
 
 async function mobGuardarFoto(){
   if(!mobCurrentSin){ toast('Selecciona un expediente primero'); return; }
-  const input = g('mfoto-file');
-  if(!input?.files?.length){ toast('Selecciona una foto'); return; }
-  const file = input.files[0];
+  const file = window._mobFotoActivo;
+  if(!file){ toast('Captura o selecciona una foto primero'); return; }
   const tipo = g('mfoto-tipo')?.value||'general';
   const etiqueta = g('mfoto-etiqueta')?.value?.trim()||'';
 
@@ -9391,14 +9428,14 @@ function iaVisionQueueAplicar(idx, panelEl, inputEl){
 // ── MOBILE: analizar foto seleccionada ───────────────────────────────────
 async function mobIaVisionAnalizar(){
   if(!iaCheckKey()) return;
-  const input = g('mfoto-file');
-  if(!input?.files?.length){ toast('Selecciona una foto primero'); return; }
-  const file = input.files[0];
-  const panel = g('mob-ia-vision-panel');
+  const file = window._mobFotoActivo;
+  if(!file){ toast('Captura o selecciona una foto primero'); return; }
+  const panel  = g('mob-ia-vision-panel');
   const textEl = g('mob-ia-vision-text');
   const btn    = g('mob-ia-vision-btn');
+  const applyB = g('mob-ia-apply-btn');
   if(!panel || !textEl) return;
-  panel.classList.add('open');
+  panel.style.display = 'block';
   if(btn){ btn.disabled = true; btn.textContent = '⏳ Analizando…'; }
   textEl.textContent = 'Analizando imagen…';
   try {
@@ -9406,15 +9443,15 @@ async function mobIaVisionAnalizar(){
     const result = await iaVisionAnalizar(b64, file.type||'image/jpeg');
     textEl.textContent = result;
     if(btn){ btn.disabled = false; btn.textContent = '↻ Re-analizar'; }
+    if(applyB) applyB.style.display = 'block';
     // Auto-fill etiqueta si está vacía
     const etq = g('mfoto-etiqueta');
     if(etq && !etq.value.trim()){
       etq.value = result.replace(/\n/g,' ').slice(0,150);
     }
-    g('mob-ia-apply-btn').style.display = 'inline-block';
   } catch(e){
     textEl.textContent = '⚠ ' + e.message;
-    if(btn){ btn.disabled = false; btn.textContent = '✦ IA Analizar'; }
+    if(btn){ btn.disabled = false; btn.textContent = '✦ IA — Analizar imagen'; }
   }
 }
 
