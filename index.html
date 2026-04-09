@@ -95,7 +95,7 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); co
 #ia-result-panel {
   position: fixed; bottom: 0; left: 0; right: 0;
   background: var(--surface); border-top: 2px solid #10a37f;
-  z-index: 3000; padding: 0;
+  z-index: 10100; padding: 0;
   display: none; flex-direction: column;
   max-height: 55vh; box-shadow: 0 -4px 24px rgba(0,0,0,.4);
 }
@@ -8618,6 +8618,7 @@ async function iaCall(prompt, onChunk, onDone, onError){
 let _iaCurrentSuffix = null;
 let _iaCurrentText   = '';
 let _iaCurrentPrompt = null;
+let _iaPendingApply  = false;  // texto pendiente de aplicar tras reabrir modal
 
 function iaAbrirPanel(titulo){
   g('ia-panel-title').textContent = '✦ ' + titulo;
@@ -8630,14 +8631,45 @@ function iaAbrirPanel(titulo){
 }
 function iaCerrarPanel(){
   g('ia-result-panel').classList.remove('open');
-  _iaCurrentSuffix = null;
+  // NO limpiamos _iaCurrentSuffix ni _iaCurrentText aquí
+  // para que "Aplicar" siga funcionando si el panel se cerró manualmente
 }
 function iaAplicar(){
   if(!_iaCurrentSuffix || !_iaCurrentText) return;
-  loadRteSin(_iaCurrentSuffix, _iaCurrentText.replace(/\n/g,'<br>'));
-  syncRteSin(_iaCurrentSuffix);
-  iaCerrarPanel();
-  toast('Texto aplicado al campo');
+  const rteEl = g('s-' + _iaCurrentSuffix + '-rte');
+  if(rteEl){
+    // Modal abierto: aplicar directo
+    loadRteSin(_iaCurrentSuffix, _iaCurrentText.replace(/\n/g,'<br>'));
+    syncRteSin(_iaCurrentSuffix);
+    g('ia-result-panel').classList.remove('open');
+    _iaCurrentSuffix = null;
+    _iaCurrentText   = '';
+    toast('Texto aplicado al campo');
+  } else {
+    // Modal cerrado: reabrir el expediente activo y aplicar tras carga
+    const sinId = currentSin?.id || parseInt(g('s-id')?.value);
+    if(!sinId){
+      toast('Abre el expediente primero y vuelve a intentarlo.');
+      return;
+    }
+    _iaPendingApply = true;
+    editarSiniestro(sinId);
+    g('modal-sin').classList.add('open');
+    setTimeout(()=>{
+      const rte2 = g('s-' + _iaCurrentSuffix + '-rte');
+      if(rte2){
+        loadRteSin(_iaCurrentSuffix, _iaCurrentText.replace(/\n/g,'<br>'));
+        syncRteSin(_iaCurrentSuffix);
+        // Scroll al campo dentro del modal
+        rte2.scrollIntoView({behavior:'smooth', block:'center'});
+      }
+      g('ia-result-panel').classList.remove('open');
+      _iaCurrentSuffix = null;
+      _iaCurrentText   = '';
+      _iaPendingApply  = false;
+      toast('Texto aplicado — guarda el expediente para conservarlo');
+    }, 450);
+  }
 }
 function iaRegenerarActual(){
   if(_iaCurrentPrompt) iaLlamarPanel(_iaCurrentPrompt, g('ia-panel-title').textContent.replace('✦ ',''), _iaCurrentSuffix);
