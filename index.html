@@ -2158,9 +2158,15 @@ body.modo-lectura .readonly-hidden { display:none !important; }
 
     <div style="grid-column:1/-1;border-top:1px solid var(--border);padding-top:10px;margin-top:4px;font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.06em;">Importe de la reserva</div>
 
-    <div class="fg"><label>Reserva bruta</label><input type="number" id="res-monto" placeholder="0.00"></div>
-    <div class="fg"><label>Depreciación %</label><input type="number" id="res-dep-pct" value="0" step="0.01" placeholder="0.00"></div>
-    <div class="fg"><label>Monto pérdida estimada</label><input type="number" id="res-perdida" placeholder="0.00" oninput="calcBajoSeguro();calcResNeta()"></div>
+    <div class="fg"><label>Reserva bruta</label><input type="number" id="res-monto" placeholder="0.00" oninput="calcResNeta()"></div>
+    <div class="fg"><label>Ajuste <span style="font-size:10px;color:var(--text-ter);">(monto determinado por el ajustador)</span></label>
+      <input type="number" id="res-ajuste" value="0" step="0.01" placeholder="0.00" oninput="calcResNeta()"></div>
+    <div class="fg full"><label>Comentario del ajuste</label>
+      <input type="text" id="res-ajuste-comentario" placeholder="Fundamento o descripción del ajuste aplicado" style="font-size:12px;"></div>
+    <div class="fg"><label>Base Ajustada <span style="font-size:10px;color:var(--text-ter);">Reserva Bruta − Ajuste</span></label>
+      <input type="number" id="res-base-ajustada" placeholder="0.00" readonly style="background:var(--surface2);color:var(--text-sec);"></div>
+    <div class="fg"><label>Monto pérdida estimada <span style="font-size:10px;color:var(--text-ter);">(referencia / reclamado)</span></label>
+      <input type="number" id="res-perdida" placeholder="0.00" oninput="calcBajoSeguro();calcResNeta()"></div>
 
     <div style="grid-column:1/-1;font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.06em;margin-top:6px;">Deducible</div>
     <div class="fg"><label>Descripción del deducible</label>
@@ -2188,7 +2194,7 @@ body.modo-lectura .readonly-hidden { display:none !important; }
 
     <!-- Reserva Neta calculada -->
     <div style="grid-column:1/-1;background:var(--surface2);border:1px solid var(--border-hi);border-radius:var(--r);padding:10px 14px;display:flex;justify-content:space-between;align-items:center;margin-top:6px;">
-      <span style="font-size:13px;font-weight:600;color:var(--text);">Reserva Neta = Pérdida − Bajo Seguro − Deducible − Coaseguro</span>
+      <span style="font-size:13px;font-weight:600;color:var(--text);">Reserva Neta = Base Ajustada − Bajo Seguro − Deducible − Coaseguro</span>
       <span id="res-neta-display" style="font-size:16px;font-weight:700;color:var(--accent-lt);">—</span>
     </div>
 
@@ -3913,18 +3919,21 @@ function renderReservaGrid(allRows){
   }
 
   const fN = n=>fmtMXN(n||0);
-  let totBruta=0, totPerdida=0, totDed=0, totCoas=0, totBajo=0, totNeta=0;
+  let totBruta=0, totAjuste=0, totBaseAj=0, totMPA=0, totDed=0, totPerdIndemniz=0, totCoas=0, totBajo=0, totNeta=0;
   const calc = rows.map(r=>{
     const bruta   = r.monto||0;
-    const perdida = r.monto_perdida_estimada||r.monto||0;
-    const dep     = r.depreciacion_pct||0;
+    const ajuste  = r.ajuste_monto||0;
+    const baseAj  = bruta - ajuste;                           // Base Ajustada
+    const bajo    = r.monto_bajo_seguro||0;
+    const mpa     = baseAj - bajo;                            // Monto Pérdida Ajustada
     const ded     = r.deducible||0;
     const coasPct = r.coaseguro_pct||0;
-    const coas    = r.monto_coaseguro||((perdida-ded)*(coasPct/100));
-    const bajo    = r.monto_bajo_seguro||0;
-    const neta    = perdida-bajo-ded-coas;
-    totBruta+=bruta; totPerdida+=perdida; totDed+=ded; totCoas+=coas; totBajo+=bajo; totNeta+=neta;
-    return {r, bruta, perdida, dep, ded, coasPct, coas, bajo, neta};
+    const coas    = r.monto_coaseguro||(mpa > 0 ? (mpa-ded)*(coasPct/100) : 0);
+    const perdIndemniz = mpa - ded;                           // Pérdida Indemnizable
+    const neta    = perdIndemniz - coas;                      // Reserva Neta
+    totBruta+=bruta; totAjuste+=ajuste; totBaseAj+=baseAj; totMPA+=mpa;
+    totDed+=ded; totPerdIndemniz+=perdIndemniz; totCoas+=coas; totBajo+=bajo; totNeta+=neta;
+    return {r, bruta, ajuste, baseAj, bajo, mpa, ded, coasPct, coas, perdIndemniz, neta};
   });
 
   const moneda   = rows[0]?.moneda||'MXN';
@@ -3943,14 +3952,15 @@ function renderReservaGrid(allRows){
   html += `</tr></thead><tbody>`;
 
   const ROWS_DEF = [
-    { label:'Reserva bruta',              key:'bruta',    fmt:'money', tot:totBruta                  },
-    { label:'Depreciación %',             key:'dep',      fmt:'pct',   tot:''                        },
-    { label:'Monto Pérdida Ajustada',     key:'perdida',  fmt:'money', tot:totPerdida                },
-    { label:'Deducible',                  key:'ded',      fmt:'money', tot:totDed                    },
-    { label:'Monto Pérdida Indemnizable', key:'indemniz', fmt:'money', tot:totPerdida-totDed         },
-    { label:'Coaseguro a cargo del Asegurado', key:'coas',     fmt:'money', tot:totCoas                   },
-    { label:'Bajo Seguro',                key:'bajo',     fmt:'money', tot:totBajo                   },
-    { label:'Reserva Neta',               key:'neta',     fmt:'money', tot:totNeta, bold:true, accent:true },
+    { label:'Reserva bruta',                          key:'bruta',        fmt:'money', tot:totBruta                    },
+    { label:'Ajuste',                                 key:'ajuste',       fmt:'money', tot:totAjuste                   },
+    { label:'Base Ajustada',                          key:'baseAj',       fmt:'money', tot:totBaseAj                   },
+    { label:'Bajo Seguro',                            key:'bajo',         fmt:'money', tot:totBajo                     },
+    { label:'Monto Pérdida Ajustada',                 key:'mpa',          fmt:'money', tot:totMPA                      },
+    { label:'Deducible',                              key:'ded',          fmt:'money', tot:totDed                      },
+    { label:'Pérdida Indemnizable',                   key:'perdIndemniz', fmt:'money', tot:totPerdIndemniz              },
+    { label:'Coaseguro a cargo del Asegurado',        key:'coas',         fmt:'money', tot:totCoas                     },
+    { label:'Reserva Neta',                           key:'neta',         fmt:'money', tot:totNeta, bold:true, accent:true },
   ];
 
   ROWS_DEF.forEach((rd, ri)=>{
@@ -3961,7 +3971,7 @@ function renderReservaGrid(allRows){
     const valStyle   = `${rowStyle}padding:6px 12px;border-bottom:1px solid var(--border);text-align:right;font-weight:${rd.bold?'700':'400'};color:${rd.accent?'var(--accent-lt)':'var(--text)'};`;
     html += `<tr><td style="${labelStyle}">${rd.label}</td>`;
     calc.forEach(item=>{
-      let val = rd.key==='indemniz' ? item.perdida-item.ded : item[rd.key];
+      let val = item[rd.key];
       const disp = rd.fmt==='pct'
         ? (val===0?'—':val.toFixed(2)+'%')
         : (val===0&&rd.key!=='ded'&&rd.key!=='coas'&&rd.key!=='bajo'?'—':(moneda+' '+fN(val)));
@@ -3998,15 +4008,18 @@ function renderReservaGrid(allRows){
 function renderReservaRows(rows){
   if(!rows.length) return `<tr><td colspan="9" class="empty">Sin coberturas registradas.</td></tr>`;
   return rows.map(r=>{
-    const perdida=r.monto_perdida_estimada||r.monto||0;
-    const ded=r.deducible||0;
-    const coasMonto=r.monto_coaseguro||(((perdida-ded)*(r.coaseguro_pct||0))/100);
-    const bajo=r.monto_bajo_seguro||0;
-    const neta=perdida-bajo-ded-coasMonto;
+    const bruta     = r.monto||0;
+    const ajuste    = r.ajuste_monto||0;
+    const baseAj    = bruta - ajuste;
+    const bajo      = r.monto_bajo_seguro||0;
+    const mpa       = baseAj - bajo;
+    const ded       = r.deducible||0;
+    const coasMonto = r.monto_coaseguro||(mpa > 0 ? (mpa-ded)*(r.coaseguro_pct||0)/100 : 0);
+    const neta      = mpa - ded - coasMonto;
     return `<tr>
       <td>${r.concepto||'—'}</td>
-      <td style="text-align:right;">${fmtMXN(r.monto)}</td>
-      <td style="text-align:right;">${fmtMXN(perdida)}</td>
+      <td style="text-align:right;">${fmtMXN(bruta)}</td>
+      <td style="text-align:right;">${fmtMXN(mpa)}</td>
       <td style="text-align:right;">${fmtMXN(ded)}</td>
       <td style="text-align:center;">${r.coaseguro_pct||0}%</td>
       <td style="text-align:right;font-weight:600;">${fmtMXN(neta)}</td>
@@ -4245,8 +4258,8 @@ function abrirModal(id){
     const fids={'modal-res':'res-fecha','modal-pago':'pg-fecha','modal-viat':'vt-fecha','modal-act':'ac-fecha','modal-doc':'dc-fecha'};
     if(fids[id]) g(fids[id]).value=today;
     if(id==='modal-res'){
-      ['res-concepto','res-monto','res-perdida','res-deducible','res-ded-desc','res-bases','res-notas'].forEach(f=>{if(g(f))g(f).value='';});
-      ['res-dep-pct','res-ded-pct','res-coas-pct','res-bajo-seguro','res-valor-real','res-suma-aseg-cob'].forEach(f=>{if(g(f))g(f).value='0';});
+      ['res-concepto','res-monto','res-perdida','res-deducible','res-ded-desc','res-bases','res-notas','res-ajuste-comentario'].forEach(f=>{if(g(f))g(f).value='';});
+      ['res-ajuste','res-ded-pct','res-coas-pct','res-bajo-seguro','res-valor-real','res-suma-aseg-cob','res-base-ajustada'].forEach(f=>{if(g(f))g(f).value='0';});
       if(g('res-tc'))g('res-tc').value='1';
       if(g('res-mon'))g('res-mon').value='MXN';
       if(g('res-id'))g('res-id').value='';
@@ -5028,30 +5041,38 @@ function buildInfResGrid(){
     <thead><tr>
       <th style="background:#1F3864;color:#fff;padding:5px 8px;text-align:left;border:1px solid #1F3864;">Cobertura</th>
       <th style="background:#1F3864;color:#fff;padding:5px 8px;text-align:center;border:1px solid #1F3864;">Reserva bruta<br><span style="font-size:9px;font-weight:400;opacity:.8;">actual → nuevo</span></th>
-      <th style="background:#1F3864;color:#fff;padding:5px 8px;text-align:center;border:1px solid #1F3864;">Pérd. Estimada<br><span style="font-size:9px;font-weight:400;opacity:.8;">actual → nuevo</span></th>
+      <th style="background:#1F3864;color:#fff;padding:5px 8px;text-align:center;border:1px solid #1F3864;">Ajuste<br><span style="font-size:9px;font-weight:400;opacity:.8;">actual → nuevo</span></th>
+      <th style="background:#1F3864;color:#fff;padding:5px 8px;text-align:center;border:1px solid #1F3864;">Bajo Seguro<br><span style="font-size:9px;font-weight:400;opacity:.8;">actual → nuevo</span></th>
       <th style="background:#1F3864;color:#fff;padding:5px 8px;text-align:center;border:1px solid #1F3864;">Deducible<br><span style="font-size:9px;font-weight:400;opacity:.8;">actual → nuevo</span></th>
       <th style="background:#1F3864;color:#fff;padding:5px 8px;text-align:center;border:1px solid #1F3864;">Coaseg %<br><span style="font-size:9px;font-weight:400;opacity:.8;">actual → nuevo</span></th>
-      <th style="background:#1F3864;color:#fff;padding:5px 8px;text-align:center;border:1px solid #1F3864;">Bajo Seguro<br><span style="font-size:9px;font-weight:400;opacity:.8;">actual → nuevo</span></th>
       <th style="background:#0F2744;color:#fff;padding:5px 8px;text-align:center;border:1px solid #0F2744;">Reserva Neta<br><span style="font-size:9px;font-weight:400;opacity:.8;">calculada</span></th>
     </tr></thead><tbody>`;
 
   vigentes.forEach((r,i)=>{
-    const perdidaAct=r.monto_perdida_estimada||r.monto||0;
-    const dedAct=r.deducible||0;
-    const coasAct=r.monto_coaseguro||((perdidaAct-dedAct)*(r.coaseguro_pct||0)/100);
-    const bajoAct=r.monto_bajo_seguro||0;
-    const netaAct=perdidaAct-bajoAct-dedAct-coasAct;
+    const brutaAct  = r.monto||0;
+    const ajusteAct = r.ajuste_monto||0;
+    const bajoAct   = r.monto_bajo_seguro||0;
+    const dedAct    = r.deducible||0;
+    const baseAjAct = brutaAct - ajusteAct;
+    const mpaAct    = baseAjAct - bajoAct;
+    const coasAct   = r.monto_coaseguro||(mpaAct > 0 ? (mpaAct-dedAct)*(r.coaseguro_pct||0)/100 : 0);
+    const netaAct   = mpaAct - dedAct - coasAct;
     const bg=i%2===0?'#F5F6F8':'#FFFFFF';
     html+=`<tr>
       <td style="background:${bg};padding:5px 8px;border:1px solid #DDE0E5;font-weight:600;">${r.concepto}</td>
       <td style="background:${bg};padding:3px 6px;border:1px solid #DDE0E5;">
-        <div style="font-size:10px;color:var(--text-ter);margin-bottom:2px;">${fN(r.monto||0)}</div>
-        <input type="number" id="inf-res-${i}-monto" value="${r.monto||0}" step="0.01" data-concepto="${r.concepto}" data-idx="${i}"
+        <div style="font-size:10px;color:var(--text-ter);margin-bottom:2px;">${fN(brutaAct)}</div>
+        <input type="number" id="inf-res-${i}-monto" value="${brutaAct}" step="0.01" data-concepto="${r.concepto}" data-idx="${i}"
           style="width:100%;padding:3px 5px;font-size:11px;border:1px solid var(--border-md);border-radius:4px;background:var(--bg2);color:var(--text);font-family:inherit;" oninput="recalcInfNeta(${i})">
       </td>
       <td style="background:${bg};padding:3px 6px;border:1px solid #DDE0E5;">
-        <div style="font-size:10px;color:var(--text-ter);margin-bottom:2px;">${fN(perdidaAct)}</div>
-        <input type="number" id="inf-res-${i}-perdida" value="${perdidaAct}" step="0.01"
+        <div style="font-size:10px;color:var(--text-ter);margin-bottom:2px;">${fN(ajusteAct)}</div>
+        <input type="number" id="inf-res-${i}-ajuste" value="${ajusteAct}" step="0.01"
+          style="width:100%;padding:3px 5px;font-size:11px;border:1px solid var(--border-md);border-radius:4px;background:var(--bg2);color:var(--text);font-family:inherit;" oninput="recalcInfNeta(${i})">
+      </td>
+      <td style="background:${bg};padding:3px 6px;border:1px solid #DDE0E5;">
+        <div style="font-size:10px;color:var(--text-ter);margin-bottom:2px;">${fN(bajoAct)}</div>
+        <input type="number" id="inf-res-${i}-bajo" value="${bajoAct}" step="0.01"
           style="width:100%;padding:3px 5px;font-size:11px;border:1px solid var(--border-md);border-radius:4px;background:var(--bg2);color:var(--text);font-family:inherit;" oninput="recalcInfNeta(${i})">
       </td>
       <td style="background:${bg};padding:3px 6px;border:1px solid #DDE0E5;">
@@ -5064,18 +5085,12 @@ function buildInfResGrid(){
         <input type="number" id="inf-res-${i}-coas" value="${r.coaseguro_pct||0}" step="0.01" min="0" max="100"
           style="width:60px;padding:3px 5px;font-size:11px;border:1px solid var(--border-md);border-radius:4px;background:var(--bg2);color:var(--text);font-family:inherit;" oninput="recalcInfNeta(${i})">
       </td>
-      <td style="background:${bg};padding:3px 6px;border:1px solid #DDE0E5;">
-        <div style="font-size:10px;color:var(--text-ter);margin-bottom:2px;">${fN(bajoAct)}</div>
-        <input type="number" id="inf-res-${i}-bajo" value="${bajoAct}" step="0.01"
-          style="width:100%;padding:3px 5px;font-size:11px;border:1px solid var(--border-md);border-radius:4px;background:var(--bg2);color:var(--text);font-family:inherit;" oninput="recalcInfNeta(${i})">
-      </td>
       <td style="background:#EBF3FF;padding:5px 8px;border:1px solid #DDE0E5;text-align:right;font-weight:700;">
         <span id="inf-res-${i}-neta" style="color:#1F3864;">${fN(netaAct)}</span>
       </td>
     </tr>`;
-    // Store original concepto and dates for insert
+    // Store metadata for insert
     html+=`<input type="hidden" id="inf-res-${i}-concepto" value="${r.concepto}">
-    <input type="hidden" id="inf-res-${i}-dep" value="${r.depreciacion_pct||0}">
     <input type="hidden" id="inf-res-${i}-mon" value="${r.moneda||'MXN'}">
     <input type="hidden" id="inf-res-${i}-tc"  value="${r.tipo_cambio_mxn||1}">
     <input type="hidden" id="inf-res-${i}-bases" value="${(r.bases_determinacion||'').replace(/"/g,'&quot;')}">`;
@@ -5086,12 +5101,15 @@ function buildInfResGrid(){
 }
 
 function recalcInfNeta(i){
-  const perdida=parseFloat(document.getElementById('inf-res-'+i+'-perdida')?.value)||0;
-  const ded    =parseFloat(document.getElementById('inf-res-'+i+'-ded')?.value)||0;
-  const coasPct=parseFloat(document.getElementById('inf-res-'+i+'-coas')?.value)||0;
-  const bajo   =parseFloat(document.getElementById('inf-res-'+i+'-bajo')?.value)||0;
-  const coas   =(perdida-ded)*(coasPct/100);
-  const neta   =perdida-bajo-ded-coas;
+  const bruta  = parseFloat(document.getElementById('inf-res-'+i+'-monto')?.value)||0;
+  const ajuste = parseFloat(document.getElementById('inf-res-'+i+'-ajuste')?.value)||0;
+  const bajo   = parseFloat(document.getElementById('inf-res-'+i+'-bajo')?.value)||0;
+  const ded    = parseFloat(document.getElementById('inf-res-'+i+'-ded')?.value)||0;
+  const coasPct= parseFloat(document.getElementById('inf-res-'+i+'-coas')?.value)||0;
+  const baseAj = bruta - ajuste;
+  const mpa    = baseAj - bajo;
+  const coas   = mpa > 0 ? (mpa - ded) * (coasPct / 100) : 0;
+  const neta   = mpa - ded - coas;
   const el=document.getElementById('inf-res-'+i+'-neta');
   if(el) el.textContent=fmtMXN(neta);
 }
@@ -5130,13 +5148,15 @@ async function guardarInforme(){
     const today=new Date().toISOString().slice(0,10);
     const inserts=[];
     for(let i=0;i<count;i++){
-      const perdida=parseFloat(document.getElementById('inf-res-'+i+'-perdida')?.value)||0;
+      const bruta  =parseFloat(document.getElementById('inf-res-'+i+'-monto')?.value)||0;
+      const ajuste =parseFloat(document.getElementById('inf-res-'+i+'-ajuste')?.value)||0;
+      const bajo   =parseFloat(document.getElementById('inf-res-'+i+'-bajo')?.value)||0;
       const ded    =parseFloat(document.getElementById('inf-res-'+i+'-ded')?.value)||0;
       const coasPct=parseFloat(document.getElementById('inf-res-'+i+'-coas')?.value)||0;
-      const bajo   =parseFloat(document.getElementById('inf-res-'+i+'-bajo')?.value)||0;
-      const coas   =(perdida-ded)*(coasPct/100);
+      const baseAj =bruta - ajuste;
+      const mpa    =baseAj - bajo;
+      const coas   =mpa > 0 ? (mpa-ded)*(coasPct/100) : 0;
       const concepto=document.getElementById('inf-res-'+i+'-concepto')?.value||('Cobertura '+(i+1));
-      const dep    =parseFloat(document.getElementById('inf-res-'+i+'-dep')?.value)||0;
       const mon    =document.getElementById('inf-res-'+i+'-mon')?.value||'MXN';
       const tc     =parseFloat(document.getElementById('inf-res-'+i+'-tc')?.value)||1;
       const bases  =document.getElementById('inf-res-'+i+'-bases')?.value||v('inf-bases-ajuste')||null;
@@ -5145,9 +5165,9 @@ async function guardarInforme(){
         id_informe:infId,
         es_actualizacion:true,
         concepto, fecha:today,
-        monto:parseFloat(document.getElementById('inf-res-'+i+'-monto')?.value)||0,
-        depreciacion_pct:dep,
-        monto_perdida_estimada:perdida,
+        monto:bruta,
+        ajuste_monto:ajuste,
+        monto_perdida_estimada:mpa,
         deducible:ded, coaseguro_pct:coasPct, monto_coaseguro:coas,
         monto_bajo_seguro:bajo,
         moneda:mon, tipo_cambio_mxn:tc,
@@ -5637,32 +5657,49 @@ function seleccionarResCobertura(sl){
 }
 
 function calcResNeta(){
-  const perdida   = parseFloat(v('res-perdida'))||0;
+  // Nueva cadena:
+  // Reserva Bruta − Ajuste           = Base Ajustada
+  // Base Ajustada − Bajo Seguro      = Monto Pérdida Ajustada
+  // Monto Pérdida Ajustada − Ded     = Pérdida Indemnizable (Subtotal 2)
+  // Pérdida Indemnizable − Coaseguro = Reserva Neta
+  const bruta     = parseFloat(v('res-monto'))||0;
+  const ajuste    = parseFloat(v('res-ajuste'))||0;
+  const bajo      = parseFloat(v('res-bajo-seguro'))||0;
   const ded       = parseFloat(v('res-deducible'))||0;
   const coasPct   = parseFloat(v('res-coas-pct'))||0;
-  const bajo      = parseFloat(v('res-bajo-seguro'))||0;
-  const coasMonto = (perdida - ded) * (coasPct / 100);
-  const neta      = perdida - bajo - ded - coasMonto;
   const moneda    = v('res-mon')||'MXN';
-  if(g('res-coas-monto-display')) g('res-coas-monto-display').value = coasMonto.toFixed(2);
+
+  const baseAjustada  = bruta - ajuste;                       // Subtotal 1
+  const mpa           = baseAjustada - bajo;                  // Monto Pérdida Ajustada
+  const coasMonto     = mpa > 0 ? (mpa - ded) * (coasPct / 100) : 0;  // sobre MPA−Ded
+  const neta          = mpa - ded - coasMonto;                // Reserva Neta
+
+  if(g('res-base-ajustada'))       g('res-base-ajustada').value        = baseAjustada.toFixed(2);
+  if(g('res-coas-monto-display'))  g('res-coas-monto-display').value   = coasMonto.toFixed(2);
   const disp = g('res-neta-display');
-  if(disp) disp.textContent = isNaN(neta)||perdida===0 ? '—' : moneda+' '+fmtMXN(neta);
+  if(disp) disp.textContent = bruta===0 ? '—' : moneda+' '+fmtMXN(neta);
 }
 
 async function guardarReserva(){
   if(!currentSin) return;
-  const coasPct=parseFloat(v('res-coas-pct'))||0;
-  const perdida=parseFloat(v('res-perdida'))||0;
-  const ded=parseFloat(v('res-deducible'))||0;
-  const bajoSeguro=parseFloat(v('res-bajo-seguro'))||0;
-  const subtotal=perdida-ded;
-  const coasMonto=subtotal*(coasPct/100);
+  const bruta      = parseFloat(v('res-monto'))||0;
+  const ajuste     = parseFloat(v('res-ajuste'))||0;
+  const coasPct    = parseFloat(v('res-coas-pct'))||0;
+  const perdida    = parseFloat(v('res-perdida'))||0;
+  const ded        = parseFloat(v('res-deducible'))||0;
+  const bajoSeguro = parseFloat(v('res-bajo-seguro'))||0;
+
+  // Nueva cadena
+  const baseAjustada  = bruta - ajuste;
+  const mpa           = baseAjustada - bajoSeguro;
+  const coasMonto     = mpa > 0 ? (mpa - ded) * (coasPct / 100) : 0;
 
   // Base payload — columns that always exist
   const payload={
     id_siniestro:currentSin.id, concepto:v('res-concepto'),
-    monto:parseFloat(v('res-monto'))||0,
-    depreciacion_pct:parseFloat(v('res-dep-pct'))||0,
+    monto:bruta,
+    ajuste_monto:ajuste,
+    ajuste_comentario:v('res-ajuste-comentario')||null,
     monto_perdida_estimada:perdida,
     deducible:ded, deducible_pct:parseFloat(v('res-ded-pct'))||0,
     coaseguro_pct:coasPct, monto_coaseguro:coasMonto,
@@ -5843,12 +5880,15 @@ function buildFormal(s, secs){
   const resRows=data.res.filter(r=>r.id_siniestro===s.id);
   const resVig={};
   resRows.forEach(r=>{if(!resVig[r.concepto]||r.id>resVig[r.concepto].id)resVig[r.concepto]=r;});
-  const reservaBruta=Object.values(resVig).reduce((a,r)=>a+(r.monto||0),0);
-  const perdidaEst=Object.values(resVig).reduce((a,r)=>a+(r.monto_perdida_estimada||r.monto||0),0);
-  const deducible=Object.values(resVig).reduce((a,r)=>a+(r.deducible||0),0);
-  const reservaNeta=perdidaEst-deducible;
-  const deps=Object.values(resVig);
-  const depPct=deps.length?(deps.reduce((a,r)=>a+(r.depreciacion_pct||0),0)/deps.length).toFixed(2):'0.00';
+  const reservaBruta  = Object.values(resVig).reduce((a,r)=>a+(r.monto||0),0);
+  const totalAjuste   = Object.values(resVig).reduce((a,r)=>a+(r.ajuste_monto||0),0);
+  const baseAjustada  = reservaBruta - totalAjuste;
+  const bajoSegTotal  = Object.values(resVig).reduce((a,r)=>a+(r.monto_bajo_seguro||0),0);
+  const perdidaAjust  = baseAjustada - bajoSegTotal;           // Monto Pérdida Ajustada
+  const deducible     = Object.values(resVig).reduce((a,r)=>a+(r.deducible||0),0);
+  const perdIndemniz  = perdidaAjust - deducible;              // Pérdida Indemnizable
+  const coasTotal     = Object.values(resVig).reduce((a,r)=>a+(r.monto_coaseguro||0),0);
+  const reservaNeta   = perdIndemniz - coasTotal;
   const pags=data.pag.filter(p=>p.id_siniestro===s.id);
   const hons=data.hon.filter(h=>h.id_siniestro===s.id);
   const honAjust=hons.reduce((a,h)=>a+(h.monto||0),0);
@@ -5874,7 +5914,7 @@ function buildFormal(s, secs){
       <tr><td class="lbl">Ramo</td><td class="val">${RAMOS[pol.ramo]||pol.ramo||''}</td><td class="lbl">Cobertura</td><td class="val">${s.subramo||pol.subramo||''}</td><td class="lbl">Vigencia</td><td class="val">Del ${fmtD(pol.vigencia_ini)} Al ${fmtD(pol.vigencia_fin)}</td></tr>
       <tr><td class="lbl">Fecha de siniestro</td><td class="val">${fmtD(s.fecha_siniestro)}</td><td class="lbl">Agente</td><td colspan="3" class="val">${pol.agente||''}</td></tr>
       <tr><td class="lbl">Asegurado</td><td colspan="3" class="val">${asdo.nombre||''}</td><td class="lbl">Referencia Asegurado</td><td class="val">${s.referencia_asegurado||''}</td></tr>
-      <tr><td class="lbl">Importe reclamado</td><td class="val">${perdidaEst?fmtMXN(perdidaEst):'Pendiente'}</td><td class="lbl">Moneda</td><td class="val">${moneda}</td><td class="lbl">Clave ajustador</td><td class="val">${s.clave_ajustador_cia||''}</td></tr>
+      <tr><td class="lbl">Importe reclamado</td><td class="val">${perdidaAjust?fmtMXN(perdidaAjust):'Pendiente'}</td><td class="lbl">Moneda</td><td class="val">${moneda}</td><td class="lbl">Clave ajustador</td><td class="val">${s.clave_ajustador_cia||''}</td></tr>
       <tr><td class="lbl">Ref. AASA</td><td class="val">${s.numero_exp||''}</td><td class="lbl">Giro del asegurado</td><td colspan="3" class="val">${s.giro_asegurado||''}</td></tr>
       <tr><td class="lbl">Causa del siniestro</td><td colspan="2" class="val">${s.causa||''}</td><td class="lbl">Comentario de la causa</td><td colspan="2" class="val">${s.causa_comentario||''}</td></tr>
       <tr><td class="lbl">Clave evento (catastrófico)</td><td class="val">${s.clave_evento_catastrofico||''}</td><td class="lbl">Riesgo afectado</td><td colspan="3" class="val">${s.riesgo_afectado||''}</td></tr>
@@ -5885,9 +5925,13 @@ function buildFormal(s, secs){
     h+=`<div class="sec"><div class="sec-title">1&nbsp;&nbsp;Estimación por coberturas y secciones</div>`;
     h+=`<table class="cov-table"><thead><tr><th style="text-align:left;">Coberturas o secciones</th><th>${s.subramo||pol.subramo||'Cobertura 1'}</th><th>N/A – ${moneda}</th><th>Estimación total – ${moneda}</th></tr></thead><tbody>`;
     h+=`<tr><td class="lbl">Reserva bruta</td><td>${fmtMXN(reservaBruta)}</td><td></td><td>${fmtMXN(reservaBruta)}</td></tr>`;
-    h+=`<tr><td class="lbl" style="font-style:italic;font-weight:400;">Depreciación ${depPct}% promedio</td><td></td><td></td><td></td></tr>`;
-    h+=`<tr><td class="lbl" style="font-weight:700;">Monto Pérdida Estimada</td><td style="font-weight:700;">${fmtMXN(perdidaEst)}</td><td>–</td><td style="font-weight:700;">${fmtMXN(perdidaEst)}</td></tr>`;
+    h+=`<tr><td class="lbl">Ajuste</td><td>${fmtMXN(totalAjuste)}</td><td></td><td>${fmtMXN(totalAjuste)}</td></tr>`;
+    h+=`<tr><td class="lbl" style="font-weight:700;">Base Ajustada</td><td style="font-weight:700;">${fmtMXN(baseAjustada)}</td><td>–</td><td style="font-weight:700;">${fmtMXN(baseAjustada)}</td></tr>`;
+    h+=`<tr><td class="lbl">Bajo Seguro</td><td>${fmtMXN(bajoSegTotal)}</td><td></td><td>${fmtMXN(bajoSegTotal)}</td></tr>`;
+    h+=`<tr><td class="lbl" style="font-weight:700;">Monto Pérdida Ajustada</td><td style="font-weight:700;">${fmtMXN(perdidaAjust)}</td><td>–</td><td style="font-weight:700;">${fmtMXN(perdidaAjust)}</td></tr>`;
     h+=`<tr><td class="lbl">Deducible</td><td>${fmtMXN(deducible)}</td><td></td><td>${fmtMXN(deducible)}</td></tr>`;
+    h+=`<tr><td class="lbl">Pérdida Indemnizable</td><td>${fmtMXN(perdIndemniz)}</td><td></td><td>${fmtMXN(perdIndemniz)}</td></tr>`;
+    h+=`<tr><td class="lbl">Coaseguro a cargo del Asegurado</td><td>${fmtMXN(coasTotal)}</td><td></td><td>${fmtMXN(coasTotal)}</td></tr>`;
     h+=`<tr class="total"><td class="lbl" style="font-weight:700;">Reserva Neta</td><td style="font-weight:700;">${fmtMXN(reservaNeta)}</td><td style="font-weight:700;">0</td><td style="font-weight:700;">${fmtMXN(reservaNeta)}</td></tr>`;
     h+=`</tbody></table>`;
     if(bases) h+=`<div class="bases-box"><strong>Especificar las bases que se tomaron para determinar la reserva</strong><br>${bases}</div>`;
@@ -6130,17 +6174,18 @@ function buildGNP(s, secs){
   const fM = n=>{ if(!n&&n!==0) return ''; return new Intl.NumberFormat('es-MX',{minimumFractionDigits:2}).format(n); };
 
   // Totales por cobertura (primera reserva vigente como "Cobertura 1")
-  const cob1 = rvList[0]||{};
-  const res_bruta   = rvList.reduce((a,r)=>a+(r.monto||0),0);
-  const dep_pct     = rvList.length?(rvList.reduce((a,r)=>a+(r.depreciacion_pct||0),0)/rvList.length):0;
-  const p_ajustada  = rvList.reduce((a,r)=>a+(r.monto_perdida_estimada||r.monto||0),0);
-  const deducible   = rvList.reduce((a,r)=>a+(r.deducible||0),0);
-  const p_indemniz  = p_ajustada - deducible;
-  const coas_aseg   = rvList.reduce((a,r)=>a+(r.monto_coaseguro||0),0);
-  const bajo_seg    = rvList.reduce((a,r)=>a+(r.monto_bajo_seguro||0),0);
-  const res_neta    = p_indemniz - bajo_seg - coas_aseg;
-  const bases_det   = rvList.map(r=>r.bases_determinacion).filter(Boolean).join(' ');
-  const monedaStr   = (pol.moneda||'MXN');
+  const cob1       = rvList[0]||{};
+  const res_bruta  = rvList.reduce((a,r)=>a+(r.monto||0),0);
+  const tot_ajuste = rvList.reduce((a,r)=>a+(r.ajuste_monto||0),0);
+  const base_aj    = res_bruta - tot_ajuste;                         // Base Ajustada
+  const bajo_seg   = rvList.reduce((a,r)=>a+(r.monto_bajo_seguro||0),0);
+  const p_ajustada = base_aj - bajo_seg;                             // Monto Pérdida Ajustada
+  const deducible  = rvList.reduce((a,r)=>a+(r.deducible||0),0);
+  const p_indemniz = p_ajustada - deducible;                         // Pérdida Indemnizable
+  const coas_aseg  = rvList.reduce((a,r)=>a+(r.monto_coaseguro||0),0);
+  const res_neta   = p_indemniz - coas_aseg;                         // Reserva Neta
+  const bases_det  = rvList.map(r=>r.bases_determinacion).filter(Boolean).join(' ');
+  const monedaStr  = (pol.moneda||'MXN');
 
   const CSS = `
     *{box-sizing:border-box;margin:0;padding:0;}
@@ -6257,6 +6302,14 @@ function buildGNP(s, secs){
 
   // §1 ESTIMACIÓN POR COBERTURAS
   if(secs.includes('estimacion')){
+    // Valores por cobertura 1 con nueva cadena
+    const cob1Ajuste  = cob1.ajuste_monto||0;
+    const cob1BaseAj  = (cob1.monto||0) - cob1Ajuste;
+    const cob1Bajo    = cob1.monto_bajo_seguro||0;
+    const cob1MPA     = cob1BaseAj - cob1Bajo;
+    const cob1Ded     = cob1.deducible||0;
+    const cob1PI      = cob1MPA - cob1Ded;
+    const cob1Neta    = cob1PI - (cob1.monto_coaseguro||0);
     h += `<div class="sec-num">1. Estimación por coberturas y secciones</div>`;
     h += `<table class="cob-tbl">
       <tr>
@@ -6267,25 +6320,29 @@ function buildGNP(s, secs){
       <tr><td class="lbl">Reserva bruta</td>
           <td class="num">${monedaStr} ${fM(cob1.monto||0)}</td>
           <td class="num">${monedaStr} ${fM(res_bruta)}</td></tr>
-      <tr><td class="lbl">Depreciación ${dep_pct.toFixed(2)}% promedio</td>
-          <td></td><td></td></tr>
-      <tr><td class="lbl">Monto Pérdida Ajustada</td>
-          <td class="num">${monedaStr} ${fM(cob1.monto_perdida_estimada||cob1.monto||0)}</td>
-          <td class="num">${monedaStr} ${fM(p_ajustada)}</td></tr>
+      <tr><td class="lbl">Ajuste</td>
+          <td class="num">${monedaStr} ${fM(cob1Ajuste)}</td>
+          <td class="num">${monedaStr} ${fM(tot_ajuste)}</td></tr>
+      <tr><td class="lbl" style="font-weight:700;">Base Ajustada</td>
+          <td class="num" style="font-weight:700;">${monedaStr} ${fM(cob1BaseAj)}</td>
+          <td class="num" style="font-weight:700;">${monedaStr} ${fM(base_aj)}</td></tr>
+      <tr><td class="lbl">Bajo Seguro</td>
+          <td class="num">${cob1Bajo?monedaStr+' '+fM(cob1Bajo):'N/A'}</td>
+          <td class="num">${bajo_seg?monedaStr+' '+fM(bajo_seg):'N/A'}</td></tr>
+      <tr><td class="lbl" style="font-weight:700;">Monto Pérdida Ajustada</td>
+          <td class="num" style="font-weight:700;">${monedaStr} ${fM(cob1MPA)}</td>
+          <td class="num" style="font-weight:700;">${monedaStr} ${fM(p_ajustada)}</td></tr>
       <tr><td class="lbl">Deducible</td>
-          <td class="num">${monedaStr} ${fM(cob1.deducible||0)}</td>
+          <td class="num">${monedaStr} ${fM(cob1Ded)}</td>
           <td class="num">${monedaStr} ${fM(deducible)}</td></tr>
-      <tr><td class="lbl">Monto Pérdida Indemnizable</td>
-          <td class="num">${monedaStr} ${fM((cob1.monto_perdida_estimada||cob1.monto||0)-(cob1.deducible||0))}</td>
+      <tr><td class="lbl">Pérdida Indemnizable</td>
+          <td class="num">${monedaStr} ${fM(cob1PI)}</td>
           <td class="num">${monedaStr} ${fM(p_indemniz)}</td></tr>
-      <tr><td class="lbl">Coaseguro Asegurado</td>
+      <tr><td class="lbl">Coaseguro a cargo del Asegurado</td>
           <td class="num">${cob1.coaseguro_pct?monedaStr+' '+fM(cob1.monto_coaseguro||0):'N/A'}</td>
           <td class="num">${coas_aseg?monedaStr+' '+fM(coas_aseg):'N/A'}</td></tr>
-      <tr><td class="lbl">Bajo Seguro</td>
-          <td class="num">${(cob1.monto_bajo_seguro||0)?monedaStr+' '+fM(cob1.monto_bajo_seguro||0):'N/A'}</td>
-          <td class="num">${bajo_seg?monedaStr+' '+fM(bajo_seg):'N/A'}</td></tr>
       <tr><td class="lbl"><strong>Reserva Neta</strong></td>
-          <td class="num"><strong>${monedaStr} ${fM((cob1.monto_perdida_estimada||cob1.monto||0)-(cob1.deducible||0)-(cob1.monto_coaseguro||0))}</strong></td>
+          <td class="num"><strong>${monedaStr} ${fM(cob1Neta)}</strong></td>
           <td class="num"><strong>${monedaStr} ${fM(res_neta)}</strong></td></tr>
       <tr><td class="bases" colspan="3"><strong>Especificar las bases que se tomaron para determinar la reserva:</strong><br>${bases_det}</td></tr>
       <tr><td class="lbl">Honorarios ajustador</td><td colspan="2"></td></tr>
@@ -6511,9 +6568,11 @@ async function descargarWord(modelOverride=null, forceFinal=false, returnBlob=fa
     ||rvList.map(r=>r.bases_determinacion).filter(Boolean).join('. ')||'';
   const coasTxt=sublims.filter(sl=>sl.coaseguro_pct).map(sl=>sl.concepto+': '+sl.coaseguro_pct+'%').join('; ')||'N/A';
   const totReserva=rvList.reduce((acc,r)=>{
-    const p=r.monto_perdida_estimada||r.monto||0,d2=r.deducible||0;
-    const c=r.monto_coaseguro||((p-d2)*(r.coaseguro_pct||0)/100),b=r.monto_bajo_seguro||0;
-    return acc+(p-b-d2-c);
+    const bruta  = r.monto||0, ajuste = r.ajuste_monto||0;
+    const baseAj = bruta - ajuste, bajo = r.monto_bajo_seguro||0;
+    const mpa    = baseAj - bajo, ded = r.deducible||0;
+    const coas   = r.monto_coaseguro||(mpa > 0 ? (mpa-ded)*(r.coaseguro_pct||0)/100 : 0);
+    return acc+(mpa-ded-coas);
   },0);
   const moneda=pol.moneda||'MXN';
   const ajustadorNombre=ajusts.length?ajusts.map(a=>a.nombre).join(' / '):'Javier Chávez Á.';
@@ -6526,9 +6585,11 @@ async function descargarWord(modelOverride=null, forceFinal=false, returnBlob=fa
     lines.push(pad('COBERTURA',C1)+' '+padR('RESERVA NETA',C2));
     lines.push(SEP);
     for(const r of rvList){
-      const p=r.monto_perdida_estimada||r.monto||0,d2=r.deducible||0;
-      const co=r.monto_coaseguro||((p-d2)*(r.coaseguro_pct||0)/100),b=r.monto_bajo_seguro||0;
-      const neta=p-b-d2-co;
+      const bruta  = r.monto||0, ajuste = r.ajuste_monto||0;
+      const baseAj = bruta - ajuste, bajo = r.monto_bajo_seguro||0;
+      const mpa    = baseAj - bajo, ded = r.deducible||0;
+      const coas   = r.monto_coaseguro||(mpa > 0 ? (mpa-ded)*(r.coaseguro_pct||0)/100 : 0);
+      const neta   = mpa - ded - coas;
       lines.push(pad(r.concepto,C1)+' '+padR(moneda+' '+fM(neta),C2));
     }
     lines.push(SEP);
@@ -6957,13 +7018,14 @@ async function descargarWordGNP(returnBlob=false){
 
   const cob1       = rvList[0]||{};
   const res_bruta  = rvList.reduce((a,r)=>a+(r.monto||0),0);
-  const dep_pct    = rvList.length?(rvList.reduce((a,r)=>a+(r.depreciacion_pct||0),0)/rvList.length):0;
-  const p_ajustada = rvList.reduce((a,r)=>a+(r.monto_perdida_estimada||r.monto||0),0);
-  const deducible  = rvList.reduce((a,r)=>a+(r.deducible||0),0);
-  const p_indemniz = p_ajustada - deducible;
-  const coas_aseg  = rvList.reduce((a,r)=>a+(r.monto_coaseguro||0),0);
+  const tot_ajuste = rvList.reduce((a,r)=>a+(r.ajuste_monto||0),0);
+  const base_aj    = res_bruta - tot_ajuste;                         // Base Ajustada
   const bajo_seg   = rvList.reduce((a,r)=>a+(r.monto_bajo_seguro||0),0);
-  const res_neta   = p_indemniz - bajo_seg - coas_aseg;
+  const p_ajustada = base_aj - bajo_seg;                             // Monto Pérdida Ajustada
+  const deducible  = rvList.reduce((a,r)=>a+(r.deducible||0),0);
+  const p_indemniz = p_ajustada - deducible;                         // Pérdida Indemnizable
+  const coas_aseg  = rvList.reduce((a,r)=>a+(r.monto_coaseguro||0),0);
+  const res_neta   = p_indemniz - coas_aseg;                         // Reserva Neta
   const bases_det  = rvList.map(r=>r.bases_determinacion).filter(Boolean).join(' ');
   const monedaStr  = pol.moneda||'MXN';
 
@@ -7118,19 +7180,25 @@ async function descargarWordGNP(returnBlob=false){
   const cobHdr=(t,w)=>mkC(t,{w,bold:true,size:17,bg:'1F3864',color:'FFFFFF',align:AlignmentType.CENTER});
   const cobLbl=(t)=>mkC(t,{w:cobW[0],size:17,bg:'E8EDF5',bold:true});
   const cobVal=(t,idx)=>mkC(t,{w:cobW[idx],size:17,align:AlignmentType.RIGHT});
-  const cob1Bajo=(cob1.monto_bajo_seguro||0);
-  const cob1Perdida=(cob1.monto_perdida_estimada||cob1.monto||0);
-  const cob1MPA=cob1Perdida-(cob1.deducible||0);  // Monto Pérdida Indemnizable = Pérdida − Deducible
+  // Valores cob1 con nueva cadena
+  const cob1Ajuste  = cob1.ajuste_monto||0;
+  const cob1BaseAj  = (cob1.monto||0) - cob1Ajuste;
+  const cob1Bajo    = cob1.monto_bajo_seguro||0;
+  const cob1MPA     = cob1BaseAj - cob1Bajo;
+  const cob1Ded     = cob1.deducible||0;
+  const cob1PI      = cob1MPA - cob1Ded;
+  const cob1Neta    = cob1PI - (cob1.monto_coaseguro||0);
   const cobRows=[
     new TableRow({children:[cobHdr('Coberturas o secciones',cobW[0]),cobHdr('Cobertura 1  '+(cob1.concepto||''),cobW[1]),cobHdr('Estimación Total',cobW[2])]}),
     new TableRow({children:[cobLbl('Reserva bruta'),cobVal(monedaStr+' '+fM(cob1.monto||0),1),cobVal(monedaStr+' '+fM(res_bruta),2)]}),
-    new TableRow({children:[cobLbl('Depreciación '+dep_pct.toFixed(2)+'% promedio'),mkC('',{w:cobW[1]}),mkC('',{w:cobW[2]})]}),
-    new TableRow({children:[cobLbl('Monto Pérdida Ajustada'),cobVal(monedaStr+' '+fM(cob1.monto_perdida_estimada||cob1.monto||0),1),cobVal(monedaStr+' '+fM(p_ajustada),2)]}),
-    new TableRow({children:[cobLbl('Deducible'),cobVal(monedaStr+' '+fM(cob1.deducible||0),1),cobVal(monedaStr+' '+fM(deducible),2)]}),
-    new TableRow({children:[cobLbl('Monto Pérdida Indemnizable'),cobVal(monedaStr+' '+fM(cob1MPA),1),cobVal(monedaStr+' '+fM(p_indemniz),2)]}),
-    new TableRow({children:[cobLbl(cob1.coaseguro_pct?'Coaseguro a cargo del Asegurado ('+cob1.coaseguro_pct.toFixed(2)+'% s/MPA-Ded.)':'Coaseguro a cargo del Asegurado'),cobVal(cob1.coaseguro_pct?monedaStr+' '+fM(cob1.monto_coaseguro||0):'N/A',1),cobVal(coas_aseg?monedaStr+' '+fM(coas_aseg):'N/A',2)]}),
+    new TableRow({children:[cobLbl('Ajuste'),cobVal(monedaStr+' '+fM(cob1Ajuste),1),cobVal(monedaStr+' '+fM(tot_ajuste),2)]}),
+    new TableRow({children:[cobLbl('Base Ajustada'),cobVal(monedaStr+' '+fM(cob1BaseAj),1),cobVal(monedaStr+' '+fM(base_aj),2)]}),
     new TableRow({children:[cobLbl('Bajo Seguro'),cobVal(cob1Bajo?monedaStr+' '+fM(cob1Bajo):'N/A',1),cobVal(bajo_seg?monedaStr+' '+fM(bajo_seg):'N/A',2)]}),
-    new TableRow({children:[cobLbl('Reserva Neta'),cobVal(monedaStr+' '+fM(cob1MPA-cob1Bajo-(cob1.monto_coaseguro||0)),1),cobVal(monedaStr+' '+fM(res_neta),2)]}),
+    new TableRow({children:[cobLbl('Monto Pérdida Ajustada'),cobVal(monedaStr+' '+fM(cob1MPA),1),cobVal(monedaStr+' '+fM(p_ajustada),2)]}),
+    new TableRow({children:[cobLbl('Deducible'),cobVal(monedaStr+' '+fM(cob1Ded),1),cobVal(monedaStr+' '+fM(deducible),2)]}),
+    new TableRow({children:[cobLbl('Pérdida Indemnizable'),cobVal(monedaStr+' '+fM(cob1PI),1),cobVal(monedaStr+' '+fM(p_indemniz),2)]}),
+    new TableRow({children:[cobLbl(cob1.coaseguro_pct?'Coaseguro a cargo del Asegurado ('+cob1.coaseguro_pct.toFixed(2)+'% s/MPA-Ded.)':'Coaseguro a cargo del Asegurado'),cobVal(cob1.coaseguro_pct?monedaStr+' '+fM(cob1.monto_coaseguro||0):'N/A',1),cobVal(coas_aseg?monedaStr+' '+fM(coas_aseg):'N/A',2)]}),
+    new TableRow({children:[cobLbl('Reserva Neta'),cobVal(monedaStr+' '+fM(cob1Neta),1),cobVal(monedaStr+' '+fM(res_neta),2)]}),
     new TableRow({children:[new TableCell({columnSpan:3,borders:allB,width:{size:CONTENT_W,type:WidthType.DXA},shading:{fill:'FAFBFC',type:ShadingType.CLEAR},margins:{top:60,bottom:60,left:100,right:100},children:[pr([tx('Especificar las bases que se tomaron para determinar la reserva:',{bold:true,size:17})],{sb:0,sa:20}),pr([tx(bases_det,{size:17,italics:true})],{sb:0,sa:0})]})]}),
     new TableRow({children:[cobLbl('Honorarios ajustador'),mkC('',{w:cobW[1]}),mkC('',{w:cobW[2]})]}),
     new TableRow({children:[cobLbl('Honorarios perito y/o asesor'),mkC('',{w:cobW[1]}),mkC('',{w:cobW[2]})]}),
@@ -7361,30 +7429,34 @@ function rvGridOoxml(sinId){
     const showTotal=rows.length>1;
 
     // Calculate per row
-    let totBruta=0,totPerdida=0,totDed=0,totCoas=0,totBajo=0,totNeta=0;
+    let totBruta=0,totAjuste=0,totBaseAj=0,totMPA=0,totDed=0,totPI=0,totCoas=0,totBajo=0,totNeta=0;
     const calc=rows.map(r=>{
-      const bruta=r.monto||0;
-      const perdida=r.monto_perdida_estimada||r.monto||0;
-      const dep=r.depreciacion_pct||0;
-      const ded=r.deducible||0;
-      const coasPct=r.coaseguro_pct||0;
-      const coas=r.monto_coaseguro||((perdida-ded)*(coasPct/100));
-      const bajo=r.monto_bajo_seguro||0;
-      const neta=perdida-bajo-ded-coas;
-      totBruta+=bruta;totPerdida+=perdida;totDed+=ded;totCoas+=coas;totBajo+=bajo;totNeta+=neta;
-      return {r,bruta,perdida,dep,ded,coasPct,coas,bajo,neta};
+      const bruta   = r.monto||0;
+      const ajuste  = r.ajuste_monto||0;
+      const baseAj  = bruta - ajuste;
+      const bajo    = r.monto_bajo_seguro||0;
+      const mpa     = baseAj - bajo;
+      const ded     = r.deducible||0;
+      const coasPct = r.coaseguro_pct||0;
+      const coas    = r.monto_coaseguro||(mpa > 0 ? (mpa-ded)*(coasPct/100) : 0);
+      const perdIndemniz = mpa - ded;
+      const neta    = perdIndemniz - coas;
+      totBruta+=bruta;totAjuste+=ajuste;totBaseAj+=baseAj;totMPA+=mpa;
+      totDed+=ded;totPI+=perdIndemniz;totCoas+=coas;totBajo+=bajo;totNeta+=neta;
+      return {r,bruta,ajuste,baseAj,bajo,mpa,ded,coasPct,coas,perdIndemniz,neta};
     });
 
     const ROWS_DEF=[
-      {label:'Reserva bruta',                   key:'bruta',    fmt:'money',tot:totBruta},
-      {label:'Depreciación %',                   key:'dep',      fmt:'pct',  tot:''},
-      {label:'Monto Pérdida Ajustada',           key:'perdida',  fmt:'money',tot:totPerdida},
-      {label:'Deducible',                        key:'ded',      fmt:'money',tot:totDed},
-      {label:'Monto Pérdida Indemnizable',       key:'indemniz', fmt:'money',tot:totPerdida-totDed},
-      {label:'Coaseguro a cargo del Asegurado',  key:'coas',     fmt:'money',tot:totCoas},
-      {label:'Bajo Seguro',                      key:'bajo',     fmt:'money',tot:totBajo},
-      {label:'Reserva Neta',                     key:'neta',     fmt:'money',tot:totNeta,bold:true,accent:true},
-      {label:'Bases de la reserva',              key:'bases',    fmt:'text', tot:''},
+      {label:'Reserva bruta',                   key:'bruta',        fmt:'money',tot:totBruta},
+      {label:'Ajuste',                           key:'ajuste',       fmt:'money',tot:totAjuste},
+      {label:'Base Ajustada',                    key:'baseAj',       fmt:'money',tot:totBaseAj},
+      {label:'Bajo Seguro',                      key:'bajo',         fmt:'money',tot:totBajo},
+      {label:'Monto Pérdida Ajustada',           key:'mpa',          fmt:'money',tot:totMPA},
+      {label:'Deducible',                        key:'ded',          fmt:'money',tot:totDed},
+      {label:'Pérdida Indemnizable',             key:'perdIndemniz', fmt:'money',tot:totPI},
+      {label:'Coaseguro a cargo del Asegurado',  key:'coas',         fmt:'money',tot:totCoas},
+      {label:'Reserva Neta',                     key:'neta',         fmt:'money',tot:totNeta,bold:true,accent:true},
+      {label:'Bases de la reserva',              key:'bases',        fmt:'text', tot:''},
     ];
 
     // OOXML helpers
@@ -7428,8 +7500,7 @@ function rvGridOoxml(sinId){
       row+=cell(rd.label,bg,rd.bold||false,false,isAccent?'002060':null);
       calc.forEach(item=>{
         let val;
-        if(rd.key==='indemniz') val=item.perdida-item.ded;
-        else if(rd.key==='bases') val=item.r.bases_determinacion||'—';
+        if(rd.key==='bases') val=item.r.bases_determinacion||'—';
         else val=item[rd.key];
         let disp;
         if(rd.fmt==='pct') disp=fP(val);
@@ -7528,19 +7599,24 @@ function buildCoberturaTableHTML(rvList, moneda){
   const showTotal=rvList.length>1;
 
   const calc=rvList.map(r=>{
-    const bruta=r.monto||0;
-    const perdida=r.monto_perdida_estimada||r.monto||0;
-    const dep=r.depreciacion_pct||0;
-    const ded=r.deducible||0;
-    const coasPct=r.coaseguro_pct||0;
-    const coas=r.monto_coaseguro||((perdida-ded)*(coasPct/100));
-    const bajo=r.monto_bajo_seguro||0;
-    const neta=perdida-bajo-ded-coas;  // Pérdida − Bajo Seguro − Deducible − Coaseguro
-    return {r,bruta,perdida,dep,ded,coasPct,coas,bajo,neta,indemniz:perdida-ded};
+    const bruta   = r.monto||0;
+    const ajuste  = r.ajuste_monto||0;
+    const baseAj  = bruta - ajuste;
+    const bajo    = r.monto_bajo_seguro||0;
+    const mpa     = baseAj - bajo;
+    const ded     = r.deducible||0;
+    const coasPct = r.coaseguro_pct||0;
+    const coas    = r.monto_coaseguro||(mpa > 0 ? (mpa-ded)*(coasPct/100) : 0);
+    const perdIndemniz = mpa - ded;
+    const neta    = perdIndemniz - coas;
+    return {r,bruta,ajuste,baseAj,bajo,mpa,ded,coasPct,coas,perdIndemniz,neta};
   });
 
-  let totBruta=0,totPerdida=0,totDed=0,totCoas=0,totBajo=0,totNeta=0;
-  calc.forEach(x=>{totBruta+=x.bruta;totPerdida+=x.perdida;totDed+=x.ded;totCoas+=x.coas;totBajo+=x.bajo;totNeta+=x.neta;});
+  let totBruta=0,totAjuste=0,totBaseAj=0,totMPA=0,totDed=0,totPI=0,totCoas=0,totBajo=0,totNeta=0;
+  calc.forEach(x=>{
+    totBruta+=x.bruta;totAjuste+=x.ajuste;totBaseAj+=x.baseAj;totMPA+=x.mpa;
+    totDed+=x.ded;totPI+=x.perdIndemniz;totCoas+=x.coas;totBajo+=x.bajo;totNeta+=x.neta;
+  });
 
   const th=(t,extra='')=>`<th style="background:#1F3864;color:#fff;font-size:9px;font-weight:700;padding:4px 7px;border:1px solid #1F3864;text-align:center;${extra}">${t}</th>`;
   const td=(t,bg='#fff',bold=false,right=false)=>`<td style="border:1px solid #ccc;padding:3px 7px;font-size:9px;background:${bg};font-weight:${bold?'700':'400'};text-align:${right?'right':'left'};">${t}</td>`;
@@ -7554,14 +7630,15 @@ function buildCoberturaTableHTML(rvList, moneda){
   h+=`</tr></thead><tbody>`;
 
   const ROWS=[
-    {label:'Reserva bruta',                           key:'bruta',    tot:totBruta},
-    {label:'Depreciación % promedio',                 key:'dep',      tot:'—',    fmt:'pct'},
-    {label:'Monto Pérdida Ajustada',                 key:'perdida',  tot:totPerdida},
-    {label:'Deducible',                               key:'ded',      tot:totDed},
-    {label:'Monto Pérdida Indemnizable',             key:'indemniz', tot:totPerdida-totDed},
-    {label:'Coaseguro a cargo del Asegurado',        key:'coas',     tot:totCoas, coas:true},
-    {label:'Bajo Seguro',                             key:'bajo',     tot:totBajo, bajo:true},
-    {label:'Reserva Neta',                            key:'neta',     tot:totNeta, bold:true, hl:true},
+    {label:'Reserva bruta',                    key:'bruta',        tot:totBruta},
+    {label:'Ajuste',                            key:'ajuste',       tot:totAjuste},
+    {label:'Base Ajustada',                     key:'baseAj',       tot:totBaseAj},
+    {label:'Bajo Seguro',                       key:'bajo',         tot:totBajo,  bajo:true},
+    {label:'Monto Pérdida Ajustada',            key:'mpa',          tot:totMPA},
+    {label:'Deducible',                         key:'ded',          tot:totDed},
+    {label:'Pérdida Indemnizable',              key:'perdIndemniz', tot:totPI},
+    {label:'Coaseguro a cargo del Asegurado',   key:'coas',         tot:totCoas,  coas:true},
+    {label:'Reserva Neta',                      key:'neta',         tot:totNeta,  bold:true, hl:true},
   ];
   ROWS.forEach((rd,ri)=>{
     const bg=rd.hl?'#EBF3FF':(ri%2===0?'#F5F6F8':'#FFFFFF');
@@ -7612,9 +7689,14 @@ function buildFormalGenerico(s, secs, aseg){
   const ajusts   = sinAjusts.map(sa=>data.ajust.find(a=>a.id===sa.id_ajustador)).filter(Boolean);
 
   const totReserva = rvList.reduce((acc,r)=>{
-    const p=r.monto_perdida_estimada||r.monto||0, d=r.deducible||0;
-    const c=r.monto_coaseguro||((p-d)*(r.coaseguro_pct||0)/100);
-    const b2=r.monto_bajo_seguro||0;return acc+(p-b2-d-c);
+    const bruta  = r.monto||0;
+    const ajuste = r.ajuste_monto||0;
+    const baseAj = bruta - ajuste;
+    const bajo   = r.monto_bajo_seguro||0;
+    const mpa    = baseAj - bajo;
+    const ded    = r.deducible||0;
+    const coas   = r.monto_coaseguro||(mpa > 0 ? (mpa-ded)*(r.coaseguro_pct||0)/100 : 0);
+    return acc + (mpa - ded - coas);
   },0);
 
   const fD = d=>{ if(!d) return '—'; const[y,m,dy]=d.split('-'); return dy+'/'+m+'/'+y; };
