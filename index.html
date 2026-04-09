@@ -169,6 +169,55 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); co
 }
 #conn-badge.show { display: inline-block; }
 
+
+/* ── IA VISION ───────────────────────────────────────────────────────── */
+.ia-vision-panel {
+  margin-top: 6px;
+  background: rgba(16,163,127,.07);
+  border: 1px solid rgba(16,163,127,.25);
+  border-radius: var(--r);
+  padding: 8px 10px;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text);
+  display: none;
+}
+.ia-vision-panel.open { display: block; }
+.ia-vision-panel .ia-v-title {
+  font-size: 10px; font-weight: 700;
+  color: #10a37f; margin-bottom: 4px;
+  display: flex; align-items: center; gap: 5px;
+}
+.ia-vision-panel .ia-v-text {
+  white-space: pre-wrap; color: var(--text);
+}
+.ia-vision-panel .ia-v-actions {
+  display: flex; gap: 6px; margin-top: 7px; flex-wrap: wrap;
+}
+.btn-ia-vision {
+  background: linear-gradient(135deg,#10a37f,#1558b0);
+  color:#fff; border:none; border-radius:4px;
+  padding:3px 9px; font-size:11px; cursor:pointer;
+  font-family:inherit; font-weight:600;
+  white-space:nowrap; transition:opacity .15s;
+}
+.btn-ia-vision:hover { opacity:.85; }
+.btn-ia-vision:disabled { opacity:.4; cursor:not-allowed; }
+/* Mobile */
+.mob-ia-vision {
+  margin-top: 8px;
+  background: rgba(16,163,127,.08);
+  border: 1px solid rgba(16,163,127,.3);
+  border-radius: var(--r); padding: 10px;
+  font-size: 13px; line-height: 1.5;
+  display: none;
+}
+.mob-ia-vision.open { display: block; }
+.mob-ia-vision-title {
+  font-size: 11px; font-weight: 700;
+  color: #10a37f; margin-bottom: 5px;
+}
+
 /* ── LOGIN ── */
 .login-wrap { min-height:100vh; display:flex; align-items:center; justify-content:center; background:var(--bg); }
 .login-card { background:var(--surface); border:1px solid var(--border-md); border-radius:var(--rl); padding:2.5rem 2rem; width:360px; }
@@ -5282,6 +5331,29 @@ function renderGrafGallery(sinId){
     foot.appendChild(fname); foot.appendChild(del);
     info.appendChild(foot);
 
+    // ── Panel IA Visión ──────────────────────────────────────────────
+    if(it.url){
+      const vPanel = document.createElement('div');
+      vPanel.className = 'ia-vision-panel';
+      vPanel.innerHTML = `
+        <div class="ia-v-title"><span>✦</span> Análisis IA</div>
+        <div class="ia-v-text" style="color:var(--text-sec);font-style:italic;">Presiona el botón para analizar.</div>
+        <div class="ia-v-actions" style="display:none;">
+          <button class="btn btn-primary btn-sm" onclick="iaVisionAplicarEtiqueta(this.closest('.ia-vision-panel'), this.closest('.ia-vision-panel').parentElement.querySelector('input[type=text]'))">↓ Aplicar etiqueta</button>
+          <button class="btn btn-sm" onclick="iaVisionInsertarRte(this.closest('.ia-vision-panel'))">→ Insertar en Descripción</button>
+          <button class="btn btn-sm" onclick="iaVisionCopiar(this.closest('.ia-vision-panel'))">⎘ Copiar</button>
+        </div>`;
+      info.appendChild(vPanel);
+
+      const vBtn = document.createElement('button');
+      vBtn.type = 'button';
+      vBtn.className = 'btn-ia-vision';
+      vBtn.style.cssText = 'margin-top:6px;width:100%;';
+      vBtn.textContent = '✦ IA — Analizar imagen';
+      vBtn.addEventListener('click', ()=>iaVisionAnalizarGaleria(it.id, it.url, vPanel, inp));
+      info.appendChild(vBtn);
+    }
+
     card.appendChild(info);
     gallery.appendChild(card);
   });
@@ -5370,6 +5442,28 @@ function grafMostrarQueue(files){
     fn.style.cssText='font-size:10px;color:var(--text-ter);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
     fn.textContent=q.file.name;
     fields.appendChild(fn);
+
+    // ── Panel IA Visión (pre-upload) ─────────────────────────────────
+    const vPanelQ = document.createElement('div');
+    vPanelQ.className = 'ia-vision-panel';
+    vPanelQ.innerHTML = `
+      <div class="ia-v-title"><span>✦</span> Análisis IA</div>
+      <div class="ia-v-text" style="color:var(--text-sec);font-style:italic;">Presiona para analizar antes de subir.</div>
+      <div class="ia-v-actions" style="display:none;">
+        <button class="btn btn-primary btn-sm" onclick="iaVisionQueueAplicar(${i}, this.closest('.ia-vision-panel'), this.closest('.ia-vision-panel').closest('div[style]').querySelector('input[type=text]'))">↓ Aplicar descripción</button>
+        <button class="btn btn-sm" onclick="iaVisionCopiar(this.closest('.ia-vision-panel'))">⎘ Copiar</button>
+      </div>`;
+    fields.appendChild(vPanelQ);
+
+    const vBtnQ = document.createElement('button');
+    vBtnQ.type = 'button';
+    vBtnQ.className = 'btn-ia-vision';
+    vBtnQ.style.marginTop = '4px';
+    vBtnQ.textContent = '✦ IA — Analizar imagen';
+    (function(idx, prevUrl, panel, input){ // closure para capturar índice
+      vBtnQ.addEventListener('click', ()=>iaVisionAnalizarQueue(idx, prevUrl, panel, input));
+    })(i, q.previewUrl, vPanelQ, inp);
+    fields.appendChild(vBtnQ);
 
     row.appendChild(fields);
     qEl.appendChild(row);
@@ -8243,6 +8337,12 @@ function mobRenderFoto(body){
       </div>
       <div id="mfoto-preview" style="display:none;margin-top:4px;">
         <img id="mfoto-img" style="width:100%;border-radius:var(--r);max-height:200px;object-fit:cover;">
+        <button id="mob-ia-vision-btn" class="mob-btn-primary" style="margin-top:8px;background:linear-gradient(135deg,#10a37f,#1558b0);" onclick="mobIaVisionAnalizar()">✦ IA — Analizar imagen</button>
+        <div id="mob-ia-vision-panel" class="mob-ia-vision">
+          <div class="mob-ia-vision-title">✦ Análisis IA</div>
+          <div id="mob-ia-vision-text" style="color:var(--text-sec);font-size:12px;"></div>
+          <button id="mob-ia-apply-btn" class="mob-btn-primary" style="margin-top:8px;display:none;font-size:13px;" onclick="mobIaVisionAplicar()">↓ Aplicar como descripción</button>
+        </div>
       </div>
       <button class="mob-btn-primary" onclick="mobGuardarFoto()">📤 Subir foto</button>
     </div>
@@ -9139,6 +9239,192 @@ setTimeout(()=>{
   offlineSetState(_isOnline ? 'online' : 'offline');
   offlineUpdateBadge();
 }, 500);
+
+
+// ══════════════════════════════════════════════════════════════════════════
+// IA VISION — análisis de imágenes con GPT-4o
+// ══════════════════════════════════════════════════════════════════════════
+
+const IA_VISION_PROMPT = `Eres un perito ajustador de seguros de daños con 44 años de experiencia en México. Analiza esta fotografía del siniestro y proporciona:
+1. Descripción técnica breve (2-3 líneas) de lo que muestra la imagen: tipo de bien, estado visible, daños observables.
+2. Relevancia para el ajuste: qué información aporta esta foto al expediente.
+Sé conciso, técnico y objetivo. Sin adornos ni saludos. Solo el análisis.`;
+
+// Convertir File o URL a base64
+async function iaVisionFileToB64(file){
+  return new Promise((res, rej) => {
+    const reader = new FileReader();
+    reader.onload  = () => res(reader.result.split(',')[1]);
+    reader.onerror = () => rej(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
+
+async function iaVisionUrlToB64(url){
+  const resp = await fetch(url);
+  const blob = await resp.blob();
+  return iaVisionFileToB64(blob);
+}
+
+// Llamada a GPT-4o vision
+async function iaVisionAnalizar(b64, mimeType='image/jpeg'){
+  const key = iaGetKey();
+  if(!key){ abrirModal('modal-ia-config'); return null; }
+  const resp = await fetch('https://api.openai.com/v1/chat/completions',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+    body: JSON.stringify({
+      model: 'gpt-4o',
+      max_tokens: 300,
+      messages:[{
+        role:'user',
+        content:[
+          { type:'text', text: IA_VISION_PROMPT },
+          { type:'image_url', image_url:{ url:`data:${mimeType};base64,${b64}`, detail:'low' } }
+        ]
+      }]
+    })
+  });
+  if(!resp.ok){
+    const err = await resp.json();
+    throw new Error(err.error?.message||'Error en API de visión');
+  }
+  const j = await resp.json();
+  return j.choices?.[0]?.message?.content || '';
+}
+
+// ── GALERÍA: botón IA por tarjeta (post-upload) ───────────────────────────
+// Se llama desde renderGrafGallery para cada tarjeta
+async function iaVisionAnalizarGaleria(itemId, imageUrl, panelEl, inputEl){
+  if(!iaCheckKey()) return;
+  const btn = panelEl.querySelector('.btn-ia-vision');
+  const textEl = panelEl.querySelector('.ia-v-text');
+  panelEl.classList.add('open');
+  if(btn){ btn.disabled = true; btn.textContent = '⏳ Analizando…'; }
+  if(textEl) textEl.textContent = '';
+  try {
+    const b64 = await iaVisionUrlToB64(imageUrl);
+    const result = await iaVisionAnalizar(b64);
+    if(textEl) textEl.textContent = result;
+    if(btn){ btn.disabled = false; btn.textContent = '↻ Re-analizar'; }
+    // Mostrar botones de acción
+    const actions = panelEl.querySelector('.ia-v-actions');
+    if(actions) actions.style.display = 'flex';
+    // Guardar referencia del texto para aplicar
+    panelEl.dataset.iaText = result;
+    panelEl.dataset.itemId = itemId;
+  } catch(e){
+    if(textEl) textEl.textContent = '⚠ ' + e.message;
+    if(btn){ btn.disabled = false; btn.textContent = '✦ IA — Analizar'; }
+  }
+}
+
+// Aplicar descripción IA a la etiqueta de la foto en BD
+async function iaVisionAplicarEtiqueta(panelEl, inputEl){
+  const text = panelEl.dataset.iaText;
+  const id   = parseInt(panelEl.dataset.itemId);
+  if(!text || !id) return;
+  // Tomar solo las primeras ~120 chars para la etiqueta
+  const short = text.replace(/\n/g,' ').slice(0,150);
+  if(inputEl){ inputEl.value = short; }
+  await grafActualizar(id, { etiqueta: short });
+  toast('Descripción IA aplicada a la foto');
+}
+
+// Copiar texto completo al portapapeles
+function iaVisionCopiar(panelEl){
+  const text = panelEl.dataset.iaText;
+  if(!text) return;
+  navigator.clipboard.writeText(text).then(()=>toast('Texto copiado'));
+}
+
+// Insertar en campo RTE de descripción de bienes
+function iaVisionInsertarRte(panelEl){
+  const text = panelEl.dataset.iaText;
+  if(!text) return;
+  const current = g('s-desc')?.value || '';
+  const appended = current ? current + '\n\n' + text : text;
+  loadRteSin('desc', appended.replace(/\n/g,'<br>'));
+  syncRteSin('desc');
+  toast('Descripción IA insertada en Descripción de bienes afectados');
+}
+
+// ── QUEUE (pre-upload): botón IA en cada fila ─────────────────────────────
+async function iaVisionAnalizarQueue(idx, previewUrl, panelEl, inputEl){
+  if(!iaCheckKey()) return;
+  const btn = panelEl.querySelector('.btn-ia-vision');
+  const textEl = panelEl.querySelector('.ia-v-text');
+  panelEl.classList.add('open');
+  if(btn){ btn.disabled = true; btn.textContent = '⏳ Analizando…'; }
+  if(textEl) textEl.textContent = '';
+  try {
+    // Fetch blob from object URL
+    const resp = await fetch(previewUrl);
+    const blob = await resp.blob();
+    const b64  = await iaVisionFileToB64(blob);
+    const result = await iaVisionAnalizar(b64, blob.type||'image/jpeg');
+    if(textEl) textEl.textContent = result;
+    if(btn){ btn.disabled = false; btn.textContent = '↻ Re-analizar'; }
+    panelEl.dataset.iaText = result;
+    const actions = panelEl.querySelector('.ia-v-actions');
+    if(actions) actions.style.display = 'flex';
+    // Auto-fill description input if empty
+    if(inputEl && !inputEl.value.trim()){
+      const short = result.replace(/\n/g,' ').slice(0,150);
+      inputEl.value = short;
+      grafQueue[idx].etiqueta = short;
+    }
+  } catch(e){
+    if(textEl) textEl.textContent = '⚠ ' + e.message;
+    if(btn){ btn.disabled = false; btn.textContent = '✦ IA — Analizar'; }
+  }
+}
+
+function iaVisionQueueAplicar(idx, panelEl, inputEl){
+  const text = (panelEl.dataset.iaText||'').replace(/\n/g,' ').slice(0,150);
+  if(!text) return;
+  if(inputEl){ inputEl.value = text; }
+  if(grafQueue[idx]) grafQueue[idx].etiqueta = text;
+  toast('Descripción aplicada');
+}
+
+// ── MOBILE: analizar foto seleccionada ───────────────────────────────────
+async function mobIaVisionAnalizar(){
+  if(!iaCheckKey()) return;
+  const input = g('mfoto-file');
+  if(!input?.files?.length){ toast('Selecciona una foto primero'); return; }
+  const file = input.files[0];
+  const panel = g('mob-ia-vision-panel');
+  const textEl = g('mob-ia-vision-text');
+  const btn    = g('mob-ia-vision-btn');
+  if(!panel || !textEl) return;
+  panel.classList.add('open');
+  if(btn){ btn.disabled = true; btn.textContent = '⏳ Analizando…'; }
+  textEl.textContent = 'Analizando imagen…';
+  try {
+    const b64 = await iaVisionFileToB64(file);
+    const result = await iaVisionAnalizar(b64, file.type||'image/jpeg');
+    textEl.textContent = result;
+    if(btn){ btn.disabled = false; btn.textContent = '↻ Re-analizar'; }
+    // Auto-fill etiqueta si está vacía
+    const etq = g('mfoto-etiqueta');
+    if(etq && !etq.value.trim()){
+      etq.value = result.replace(/\n/g,' ').slice(0,150);
+    }
+    g('mob-ia-apply-btn').style.display = 'inline-block';
+  } catch(e){
+    textEl.textContent = '⚠ ' + e.message;
+    if(btn){ btn.disabled = false; btn.textContent = '✦ IA Analizar'; }
+  }
+}
+
+function mobIaVisionAplicar(){
+  const text = g('mob-ia-vision-text')?.textContent||'';
+  if(!text) return;
+  const etq = g('mfoto-etiqueta');
+  if(etq) etq.value = text.replace(/\n/g,' ').slice(0,150);
+  toast('Descripción aplicada');
+}
 
 </script>
 </body>
