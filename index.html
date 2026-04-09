@@ -9559,8 +9559,11 @@ const DriveModule = (() => {
   }
 
   async function subirWord(tipo) {
-    if (!currentSin) { toast('Selecciona un expediente primero.'); return; }
-    const nExp = (currentSin.numero_exp || 'SIN_NUMERO').replace(/[\/:\*\?"<>|]/g, '-');
+    // Resolver expediente: desde r-caso (Reportes) o desde currentSin (detalle)
+    const rCasoId = parseInt((document.getElementById('r-caso')||{}).value||'0');
+    const sin = rCasoId ? data.sin.find(x=>x.id===rCasoId) : currentSin;
+    if (!sin) { toast('Selecciona un expediente primero.'); return; }
+    const nExp = (sin.numero_exp || 'SIN_NUMERO').replace(/[\/\\:*?"<>|]/g, '-');
     const ts   = new Date().toISOString().slice(0,10);
 
     ['btn-drive-preliminar','btn-drive-final','btn-drive-gnp'].forEach(id => {
@@ -9574,6 +9577,10 @@ const DriveModule = (() => {
 
       driveStatus('Generando documento...', '#4285f4');
       let blob, filename;
+
+      // Sincronizar r-caso con el expediente seleccionado
+      const selEl = document.getElementById('r-caso');
+      if (selEl && rCasoId) selEl.value = rCasoId;
 
       if (tipo === 'preliminar') {
         blob = await descargarWord(null, false, true);
