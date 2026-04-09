@@ -136,6 +136,39 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); co
 .ia-sugg-box.open { display: block; }
 .ia-sugg-actions { display: flex; gap: 6px; margin-top: 6px; }
 
+
+/* ── OFFLINE INDICATOR ───────────────────────────────────────────────── */
+#conn-indicator {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 10px; color: var(--text-sec);
+  padding: 2px 8px; border-radius: 10px;
+  background: var(--surface2); border: 1px solid var(--border);
+  cursor: default; user-select: none; white-space: nowrap;
+  transition: all .3s;
+}
+#conn-indicator.offline {
+  border-color: rgba(220,60,60,.4);
+  background: rgba(220,60,60,.1);
+  color: #ff6b6b;
+}
+#conn-indicator.syncing {
+  border-color: rgba(255,204,0,.4);
+  background: rgba(255,204,0,.08);
+  color: #ffd700;
+}
+#conn-indicator .conn-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: #2e7d52; flex-shrink: 0; transition: background .3s;
+}
+#conn-indicator.offline .conn-dot  { background: #ff6b6b; }
+#conn-indicator.syncing .conn-dot  { background: #ffd700; animation: ia-spin .8s linear infinite; }
+#conn-badge {
+  display: none; background: #e65c00; color: #fff;
+  border-radius: 8px; padding: 0 5px; font-size: 9px;
+  font-weight: 700; min-width: 16px; text-align: center;
+}
+#conn-badge.show { display: inline-block; }
+
 /* ── LOGIN ── */
 .login-wrap { min-height:100vh; display:flex; align-items:center; justify-content:center; background:var(--bg); }
 .login-card { background:var(--surface); border:1px solid var(--border-md); border-radius:var(--rl); padding:2.5rem 2rem; width:360px; }
@@ -623,6 +656,7 @@ body.modo-lectura .readonly-hidden { display:none !important; }
       <div class="tc-row">USD/MXN <input type="number" id="tc-usd" value="17.50" step="0.01" oninput="recalcDash()"></div>
       <div class="tc-row">EUR/MXN <input type="number" id="tc-eur" value="19.20" step="0.01" oninput="recalcDash()"></div>
       <span class="user-lbl" id="user-lbl"></span>
+      <span id="conn-indicator" title="Estado de conexión"><span class="conn-dot"></span><span id="conn-label">En línea</span><span id="conn-badge"></span></span>
       <button class="btn-ia" onclick="abrirModal('modal-ia-config')" style="font-size:10px;padding:3px 9px;margin-right:2px;" title="Configurar API key de OpenAI">✦ IA</button>
       <button class="logout-btn" onclick="doLogout()">Salir</button>
     </div>
@@ -2719,42 +2753,54 @@ function mostrarApp(email){
 
 /* ── DATA LOAD ── */
 async function loadAll(){
-  const [sin,pol,aseg,asdo,cont,res,pag,hon,viat,act,doc,tc,bit,inf,sublim,coas,ajust,ofic,sinajust,todos,graf] = await Promise.all([
-    db.from('siniestros').select('*').order('id',{ascending:false}),
-    db.from('polizas').select('*').order('id',{ascending:false}),
-    db.from('aseguradoras').select('*').order('nombre'),
-    db.from('asegurados').select('*').order('nombre'),
-    db.from('contactos').select('*').order('nombre'),
-    db.from('reservas').select('*').order('fecha',{ascending:false}),
-    db.from('pagos').select('*').order('fecha',{ascending:false}),
-    db.from('honorarios').select('*').order('id',{ascending:false}),
-    db.from('viaticos').select('*').order('fecha',{ascending:false}),
-    db.from('actividades').select('*').order('fecha',{ascending:false}),
-    db.from('documentos').select('*').order('fecha',{ascending:false}),
-    db.from('tipos_cambio').select('*').order('fecha',{ascending:false}),
-    db.from('bitacora_ajustador').select('*').order('fecha',{ascending:false}),
-    db.from('informes').select('*').order('fecha_envio',{ascending:false}),
-    db.from('sublimites').select('*').order('id'),
-    db.from('coaseguradoras').select('*').order('porcentaje',{ascending:false}),
-    db.from('ajustadores').select('*,id_oficina(nombre,ciudad)').order('nombre'),
-    db.from('oficinas').select('*').order('nombre'),
-    db.from('siniestro_ajustadores').select('*').order('id'),
-    db.from('todos').select('*').order('fecha_limite',{ascending:true}),
-    db.from('graficos_expediente').select('*').order('created_at'),
-  ]);
-  data.sin    = sin.data||[];    data.pol     = pol.data||[];
-  data.aseg   = aseg.data||[];   data.asdo    = asdo.data||[];
-  data.cont   = cont.data||[];   data.res     = res.data||[];
-  data.pag    = pag.data||[];    data.hon     = hon.data||[];
-  data.viat   = viat.data||[];   data.act     = act.data||[];
-  data.doc    = doc.data||[];    data.tc      = tc.data||[];
-  data.bit    = bit.data||[];    data.inf     = inf.data||[];
-  data.sublim = sublim.data||[]; data.coas    = coas.data||[];
-  data.ajust  = ajust.data||[];  data.ofic    = ofic.data||[];
-  data.sinajust= sinajust.data||[];
-  data.todos  = todos.data||[];
-  data.graf   = graf.data||[];
-  renderAll();
+  // Sin red: cargar desde IndexedDB
+  if(!navigator.onLine){
+    await offlineLoadAll();
+    return;
+  }
+  try {
+    const [sin,pol,aseg,asdo,cont,res,pag,hon,viat,act,doc,tc,bit,inf,sublim,coas,ajust,ofic,sinajust,todos,graf] = await Promise.all([
+      db.from('siniestros').select('*').order('id',{ascending:false}),
+      db.from('polizas').select('*').order('id',{ascending:false}),
+      db.from('aseguradoras').select('*').order('nombre'),
+      db.from('asegurados').select('*').order('nombre'),
+      db.from('contactos').select('*').order('nombre'),
+      db.from('reservas').select('*').order('fecha',{ascending:false}),
+      db.from('pagos').select('*').order('fecha',{ascending:false}),
+      db.from('honorarios').select('*').order('id',{ascending:false}),
+      db.from('viaticos').select('*').order('fecha',{ascending:false}),
+      db.from('actividades').select('*').order('fecha',{ascending:false}),
+      db.from('documentos').select('*').order('fecha',{ascending:false}),
+      db.from('tipos_cambio').select('*').order('fecha',{ascending:false}),
+      db.from('bitacora_ajustador').select('*').order('fecha',{ascending:false}),
+      db.from('informes').select('*').order('fecha_envio',{ascending:false}),
+      db.from('sublimites').select('*').order('id'),
+      db.from('coaseguradoras').select('*').order('porcentaje',{ascending:false}),
+      db.from('ajustadores').select('*,id_oficina(nombre,ciudad)').order('nombre'),
+      db.from('oficinas').select('*').order('nombre'),
+      db.from('siniestro_ajustadores').select('*').order('id'),
+      db.from('todos').select('*').order('fecha_limite',{ascending:true}),
+      db.from('graficos_expediente').select('*').order('created_at'),
+    ]);
+    data.sin    = sin.data||[];    data.pol     = pol.data||[];
+    data.aseg   = aseg.data||[];   data.asdo    = asdo.data||[];
+    data.cont   = cont.data||[];   data.res     = res.data||[];
+    data.pag    = pag.data||[];    data.hon     = hon.data||[];
+    data.viat   = viat.data||[];   data.act     = act.data||[];
+    data.doc    = doc.data||[];    data.tc      = tc.data||[];
+    data.bit    = bit.data||[];    data.inf     = inf.data||[];
+    data.sublim = sublim.data||[]; data.coas    = coas.data||[];
+    data.ajust  = ajust.data||[];  data.ofic    = ofic.data||[];
+    data.sinajust= sinajust.data||[];
+    data.todos  = todos.data||[];
+    data.graf   = graf.data||[];
+    renderAll();
+    // Guardar snapshot en IDB en background (silencioso)
+    setTimeout(offlineSaveSnapshot, 1500);
+  } catch(e){
+    console.warn('loadAll error, falling back to IDB:', e);
+    await offlineLoadAll();
+  }
 }
 
 function renderAll(){ renderDash(); renderAlertas(); renderSiniestros(); renderPolizas(); renderAseguradoras(); renderAsegurados(); renderContactos(); renderTC(); renderAjustadores(); poblarSelectores(); }
@@ -4406,6 +4452,8 @@ async function guardarSiniestro(){
     asesores:v('s-asesores')||'No aplican',
     modo_captura:(()=>{ const pol=data.pol.find(p=>p.id===parseInt(v('s-poliza')))||{}; const aseg=data.aseg.find(a=>a.id===pol.id_aseguradora)||{}; const c=(aseg.codigo_sistema||'').toUpperCase(); return c==='GNP'?'gnp':c==='ATLAS'?'atlas':'institucional'; })()
   };
+  // Offline check
+  if(!navigator.onLine){ await guardarSiniestroOffline(id, d2); return; }
   if(id){ await db.from('siniestros').update(d2).eq('id',id); toast('Expediente actualizado.'); }
   else { await db.from('siniestros').insert(d2); toast('Expediente creado.'); }
   // Persist descripcion_asegurado edits back to poliza
@@ -4418,6 +4466,14 @@ async function guardarSiniestro(){
     if(Object.keys(polUpd).length) await db.from('polizas').update(polUpd).eq('id',polIdUpd);
   }
   cerrarModal('modal-sin'); await loadAll(); if(currentSin) renderDetalle();
+}
+
+async function guardarSiniestroOffline(id, d2){
+  await offlineSaveSiniestro(id, d2);
+  cerrarModal('modal-sin');
+  renderAll();
+  if(currentSin){ currentSin = data.sin.find(s=>s.id===currentSin.id)||currentSin; renderDetalle(); }
+  toast('Guardado sin conexión ● — se sincronizará al recuperar red');
 }
 
 function editarSiniestro(id){
@@ -5523,6 +5579,12 @@ async function guardarReserva(){
     suma_aseg_cobertura:parseFloat(v('res-suma-aseg-cob'))||0,
   });
 
+  if(!navigator.onLine){
+    await offlineSaveReserva({...payload, monto_bajo_seguro:bajoSeguro, valor_real_bien:parseFloat(v('res-valor-real'))||0, suma_aseg_cobertura:parseFloat(v('res-suma-aseg-cob'))||0});
+    cerrarModal('modal-res'); renderAll(); renderDetalle();
+    toast('Reserva guardada sin conexión ● — se sincronizará al recuperar red');
+    return;
+  }
   if(e1){
     // Columns may not exist yet (migration v9b pending) — save without them
     const {error:e2}=await db.from('reservas').insert(payload);
@@ -5560,7 +5622,14 @@ async function guardarCoaseguradora(){
 
 async function guardarPago(){
   if(!currentSin) return;
-  await db.from('pagos').insert({id_siniestro:currentSin.id,tipo:v('pg-tipo'),beneficiario:v('pg-benef'),monto:parseFloat(v('pg-monto'))||0,moneda:v('pg-mon'),tipo_cambio_mxn:parseFloat(v('pg-tc'))||1,fecha:v('pg-fecha')||new Date().toISOString().slice(0,10),referencia:v('pg-ref'),notas:v('pg-notas')});
+  const pgPayload = {id_siniestro:currentSin.id,tipo:v('pg-tipo'),beneficiario:v('pg-benef'),monto:parseFloat(v('pg-monto'))||0,moneda:v('pg-mon'),tipo_cambio_mxn:parseFloat(v('pg-tc'))||1,fecha:v('pg-fecha')||new Date().toISOString().slice(0,10),referencia:v('pg-ref'),notas:v('pg-notas')};
+  if(!navigator.onLine){
+    await offlineSavePago(pgPayload);
+    cerrarModal('modal-pago'); renderAll(); renderDetalle();
+    toast('Pago guardado sin conexión ● — se sincronizará al recuperar red');
+    return;
+  }
+  await db.from('pagos').insert(pgPayload);
   toast('Pago registrado.'); cerrarModal('modal-pago'); await loadAll(); renderDetalle();
 }
 
@@ -8756,6 +8825,320 @@ document.addEventListener('click', e=>{
     }
   });
 });
+
+
+// ══════════════════════════════════════════════════════════════════════════
+// OFFLINE-FIRST ENGINE — IndexedDB + Service Worker
+// ══════════════════════════════════════════════════════════════════════════
+
+const IDB_NAME    = 'aasa_offline';
+const IDB_VERSION = 1;
+const IDB_STORES  = ['siniestros','reservas','pagos','honorarios','viaticos',
+                     'polizas','aseguradoras','asegurados','contactos',
+                     'actividades','documentos','tipos_cambio','bitacora_ajustador',
+                     'informes','sublimites','coaseguradoras','ajustadores',
+                     'oficinas','siniestro_ajustadores','todos','graficos_expediente',
+                     'sync_queue','meta'];
+
+let _idb = null;
+let _isOnline = navigator.onLine;
+let _syncRunning = false;
+
+// ── Abrir / crear IDB ─────────────────────────────────────────────────────
+function idbOpen(){
+  return new Promise((res, rej) => {
+    if(_idb){ res(_idb); return; }
+    const req = indexedDB.open(IDB_NAME, IDB_VERSION);
+    req.onupgradeneeded = e => {
+      const db = e.target.result;
+      IDB_STORES.forEach(s => {
+        if(!db.objectStoreNames.contains(s)){
+          if(s === 'sync_queue') db.createObjectStore(s, {keyPath:'_qid', autoIncrement:true});
+          else if(s === 'meta')  db.createObjectStore(s, {keyPath:'key'});
+          else                   db.createObjectStore(s, {keyPath:'id', autoIncrement:true});
+        }
+      });
+    };
+    req.onsuccess = e => { _idb = e.target.result; res(_idb); };
+    req.onerror   = e => rej(e.target.error);
+  });
+}
+
+// ── Helpers IDB ───────────────────────────────────────────────────────────
+async function idbGetAll(store){
+  const db = await idbOpen();
+  return new Promise((res, rej) => {
+    const tx  = db.transaction(store, 'readonly');
+    const req = tx.objectStore(store).getAll();
+    req.onsuccess = () => res(req.result || []);
+    req.onerror   = () => rej(req.error);
+  });
+}
+async function idbPutAll(store, rows){
+  if(!rows?.length) return;
+  const db = await idbOpen();
+  return new Promise((res, rej) => {
+    const tx = db.transaction(store, 'readwrite');
+    const os = tx.objectStore(store);
+    // Clear then put all
+    os.clear();
+    rows.forEach(r => os.put(r));
+    tx.oncomplete = () => res();
+    tx.onerror    = () => rej(tx.error);
+  });
+}
+async function idbPut(store, record){
+  const db = await idbOpen();
+  return new Promise((res, rej) => {
+    const tx  = db.transaction(store, 'readwrite');
+    const req = tx.objectStore(store).put(record);
+    req.onsuccess = () => res(req.result);
+    req.onerror   = () => rej(req.error);
+  });
+}
+async function idbClear(store){
+  const db = await idbOpen();
+  return new Promise((res, rej) => {
+    const tx = db.transaction(store, 'readwrite');
+    tx.objectStore(store).clear();
+    tx.oncomplete = () => res();
+  });
+}
+async function idbSetMeta(key, value){
+  await idbPut('meta', { key, value, ts: Date.now() });
+}
+async function idbGetMeta(key){
+  const db = await idbOpen();
+  return new Promise(res => {
+    const tx  = db.transaction('meta', 'readonly');
+    const req = tx.objectStore('meta').get(key);
+    req.onsuccess = () => res(req.result?.value ?? null);
+    req.onerror   = () => res(null);
+  });
+}
+
+// ── Cola de sincronización ────────────────────────────────────────────────
+async function queueOp(tabla, op, payload, matchId = null){
+  await idbPut('sync_queue', {
+    tabla, op,          // op: 'insert' | 'update'
+    payload,
+    matchId,            // id del registro para update
+    ts: Date.now(),
+    _qid: undefined     // autoIncrement
+  });
+  offlineUpdateBadge();
+}
+async function queueGetAll(){
+  return idbGetAll('sync_queue');
+}
+async function queueDelete(qid){
+  const db = await idbOpen();
+  return new Promise((res, rej) => {
+    const tx  = db.transaction('sync_queue', 'readwrite');
+    const req = tx.objectStore('sync_queue').delete(qid);
+    req.onsuccess = () => res();
+    req.onerror   = () => rej(req.error);
+  });
+}
+
+// ── Indicador visual ──────────────────────────────────────────────────────
+async function offlineUpdateBadge(){
+  const q = await queueGetAll();
+  const n = q.length;
+  const badge = document.getElementById('conn-badge');
+  if(badge){ badge.textContent = n; badge.classList.toggle('show', n > 0); }
+}
+function offlineSetState(state){ // 'online' | 'offline' | 'syncing'
+  const el  = document.getElementById('conn-indicator');
+  const lbl = document.getElementById('conn-label');
+  if(!el || !lbl) return;
+  el.classList.remove('online','offline','syncing');
+  el.classList.add(state);
+  lbl.textContent = state === 'online' ? 'En línea'
+                  : state === 'offline'? 'Sin conexión'
+                  : 'Sincronizando…';
+}
+
+// ── Snapshot: guardar todos los datos en IDB ──────────────────────────────
+async function offlineSaveSnapshot(){
+  const tables = [
+    ['siniestros', data.sin], ['polizas', data.pol],
+    ['aseguradoras', data.aseg], ['asegurados', data.asdo],
+    ['contactos', data.cont], ['reservas', data.res],
+    ['pagos', data.pag], ['honorarios', data.hon],
+    ['viaticos', data.viat], ['actividades', data.act],
+    ['documentos', data.doc], ['tipos_cambio', data.tc],
+    ['bitacora_ajustador', data.bit], ['informes', data.inf],
+    ['sublimites', data.sublim], ['coaseguradoras', data.coas],
+    ['ajustadores', data.ajust], ['oficinas', data.ofic],
+    ['siniestro_ajustadores', data.sinajust],
+    ['todos', data.todos], ['graficos_expediente', data.graf],
+  ];
+  for(const [store, rows] of tables){
+    if(rows?.length) await idbPutAll(store, rows).catch(()=>{});
+  }
+  await idbSetMeta('last_sync', new Date().toISOString());
+}
+
+// ── Cargar desde IDB cuando no hay red ───────────────────────────────────
+async function offlineLoadAll(){
+  const [sin,pol,aseg,asdo,cont,res,pag,hon,viat,act,doc,tc,bit,inf,sublim,coas,ajust,ofic,sinajust,todos,graf] = await Promise.all([
+    idbGetAll('siniestros'), idbGetAll('polizas'),
+    idbGetAll('aseguradoras'), idbGetAll('asegurados'),
+    idbGetAll('contactos'), idbGetAll('reservas'),
+    idbGetAll('pagos'), idbGetAll('honorarios'),
+    idbGetAll('viaticos'), idbGetAll('actividades'),
+    idbGetAll('documentos'), idbGetAll('tipos_cambio'),
+    idbGetAll('bitacora_ajustador'), idbGetAll('informes'),
+    idbGetAll('sublimites'), idbGetAll('coaseguradoras'),
+    idbGetAll('ajustadores'), idbGetAll('oficinas'),
+    idbGetAll('siniestro_ajustadores'), idbGetAll('todos'),
+    idbGetAll('graficos_expediente'),
+  ]);
+  data.sin=sin; data.pol=pol; data.aseg=aseg; data.asdo=asdo;
+  data.cont=cont; data.res=res; data.pag=pag; data.hon=hon;
+  data.viat=viat; data.act=act; data.doc=doc; data.tc=tc;
+  data.bit=bit; data.inf=inf; data.sublim=sublim; data.coas=coas;
+  data.ajust=ajust; data.ofic=ofic; data.sinajust=sinajust;
+  data.todos=todos; data.graf=graf;
+  const lastSync = await idbGetMeta('last_sync');
+  const msg = lastSync
+    ? `Modo sin conexión — datos del ${new Date(lastSync).toLocaleString('es-MX',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}`
+    : 'Sin conexión — sin datos locales disponibles';
+  toast(msg);
+  renderAll();
+}
+
+// ── Sincronización: drenar cola contra Supabase ───────────────────────────
+async function offlineSync(){
+  if(_syncRunning || !_isOnline) return;
+  const queue = await queueGetAll();
+  if(!queue.length){ offlineUpdateBadge(); return; }
+
+  _syncRunning = true;
+  offlineSetState('syncing');
+  let ok = 0, fail = 0;
+
+  for(const op of queue.sort((a,b) => a.ts - b.ts)){
+    try {
+      let error;
+      if(op.op === 'insert'){
+        ({ error } = await db.from(op.tabla).insert(op.payload));
+      } else if(op.op === 'update' && op.matchId){
+        ({ error } = await db.from(op.tabla).update(op.payload).eq('id', op.matchId));
+      }
+      if(error) throw new Error(error.message);
+      await queueDelete(op._qid);
+      ok++;
+    } catch(e){
+      console.warn('Sync error:', op.tabla, e.message);
+      fail++;
+    }
+  }
+
+  _syncRunning = false;
+  offlineSetState('online');
+  offlineUpdateBadge();
+
+  if(ok > 0){
+    toast(`✓ Sincronizados ${ok} cambio${ok>1?'s':''} con Supabase`);
+    await loadAll();  // recargar desde Supabase con datos frescos
+  }
+  if(fail > 0) toast(`⚠ ${fail} cambio${fail>1?'s':''} no pudieron sincronizarse`);
+}
+
+// ── Guardar siniestro offline ─────────────────────────────────────────────
+async function offlineSaveSiniestro(id, payload){
+  // Generar id temporal negativo para registros nuevos
+  const tmpId = id ? parseInt(id) : -(Date.now());
+  const record = { ...payload, id: tmpId };
+
+  // Actualizar IDB local
+  await idbPut('siniestros', record);
+
+  // Encolar para sync
+  if(id){
+    await queueOp('siniestros', 'update', payload, parseInt(id));
+  } else {
+    await queueOp('siniestros', 'insert', payload);
+  }
+
+  // Actualizar data en memoria
+  if(id){
+    const idx = data.sin.findIndex(s => s.id === parseInt(id));
+    if(idx >= 0) data.sin[idx] = { ...data.sin[idx], ...payload };
+  } else {
+    data.sin.unshift(record);
+  }
+  offlineUpdateBadge();
+}
+
+// ── Guardar reserva offline ───────────────────────────────────────────────
+async function offlineSaveReserva(payload){
+  const tmpId = -(Date.now());
+  await idbPut('reservas', { ...payload, id: tmpId });
+  await queueOp('reservas', 'insert', payload);
+  data.res.unshift({ ...payload, id: tmpId });
+  offlineUpdateBadge();
+}
+
+// ── Guardar pago offline ──────────────────────────────────────────────────
+async function offlineSavePago(payload){
+  const tmpId = -(Date.now());
+  await idbPut('pagos', { ...payload, id: tmpId });
+  await queueOp('pagos', 'insert', payload);
+  data.pag.unshift({ ...payload, id: tmpId });
+  offlineUpdateBadge();
+}
+
+// ── Detectar cambios de red ───────────────────────────────────────────────
+window.addEventListener('online', async () => {
+  _isOnline = true;
+  offlineSetState('online');
+  toast('Conexión restaurada — sincronizando…');
+  await offlineSync();
+  // Registrar background sync si SW disponible
+  if('serviceWorker' in navigator && 'SyncManager' in window){
+    const reg = await navigator.serviceWorker.ready;
+    reg.sync.register('aasa-sync').catch(()=>{});
+  }
+});
+window.addEventListener('offline', () => {
+  _isOnline = false;
+  offlineSetState('offline');
+  toast('Sin conexión — los cambios se guardarán localmente');
+});
+
+// ── Escuchar mensajes del SW ──────────────────────────────────────────────
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.addEventListener('message', e => {
+    if(e.data?.type === 'DO_SYNC') offlineSync();
+  });
+}
+
+// ── Registro del Service Worker ───────────────────────────────────────────
+async function offlineRegisterSW(){
+  if(!('serviceWorker' in navigator)) return;
+  try {
+    const reg = await navigator.serviceWorker.register('/sw.js');
+    reg.addEventListener('updatefound', () => {
+      const nw = reg.installing;
+      nw.addEventListener('statechange', () => {
+        if(nw.state === 'installed' && navigator.serviceWorker.controller){
+          toast('Nueva versión disponible — recarga para actualizar');
+        }
+      });
+    });
+  } catch(e){ console.warn('SW registration failed:', e); }
+}
+
+// ── Inicialización ────────────────────────────────────────────────────────
+offlineRegisterSW();
+// Estado inicial
+setTimeout(()=>{
+  offlineSetState(_isOnline ? 'online' : 'offline');
+  offlineUpdateBadge();
+}, 500);
 
 </script>
 </body>
