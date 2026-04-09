@@ -637,6 +637,8 @@ body.modo-lectura .readonly-hidden { display:none !important; }
 .rte-field-item:hover { background:var(--surface2); color:var(--accent-lt); }
 
 </style>
+<!-- Google Identity Services (Drive OAuth) -->
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
 
@@ -949,6 +951,11 @@ body.modo-lectura .readonly-hidden { display:none !important; }
               <button class="btn" id="btn-word-generico" onclick="descargarWord()" style="width:100%;font-size:12px;">AASA PRELIMINAR (.docx)</button>
               <button class="btn" id="btn-word-final" onclick="descargarWordFinal()" style="width:100%;font-size:12px;background:rgba(0,32,96,.18);border-color:rgba(0,32,96,.5);color:var(--text);">AASA FINAL (.docx)</button>
               <button class="btn" id="btn-word-gnp" onclick="descargarWordGNP()" style="width:100%;font-size:12px;display:none;background:rgba(255,204,128,.12);border-color:rgba(255,204,128,.4);color:#ffcc80;">Descargar Informe GNP (.docx)</button>
+              <div style="border-top:1px solid var(--border);margin:4px 0;"></div>
+              <button class="btn" id="btn-drive-preliminar" onclick="driveSubirWord('preliminar')" style="width:100%;font-size:12px;background:rgba(66,133,244,.12);border-color:rgba(66,133,244,.4);color:#4285f4;">&#9729; Subir Preliminar a Drive</button>
+              <button class="btn" id="btn-drive-final" onclick="driveSubirWord('final')" style="width:100%;font-size:12px;background:rgba(66,133,244,.12);border-color:rgba(66,133,244,.4);color:#4285f4;">&#9729; Subir Final a Drive</button>
+              <button class="btn" id="btn-drive-gnp" onclick="driveSubirWord('gnp')" style="width:100%;font-size:12px;display:none;background:rgba(66,133,244,.12);border-color:rgba(66,133,244,.4);color:#4285f4;">&#9729; Subir Informe GNP a Drive</button>
+              <div id="drive-status" style="font-size:10px;color:var(--text-ter);text-align:center;min-height:14px;"></div>
               <div style="font-size:10px;color:var(--text-ter);text-align:center;">PDF: selecciona "Guardar como PDF"<br>en el diálogo de impresión</div>
             </div>
           </div>
@@ -6465,7 +6472,7 @@ function buildGNP(s, secs){
 // ══════════════════════════════════════════════════════════════════════
 // descargarWordGNP — genera .docx GNP con banner y estructura clonada
 // ══════════════════════════════════════════════════════════════════════
-async function descargarWord(modelOverride=null, forceFinal=false){
+async function descargarWord(modelOverride=null, forceFinal=false, returnBlob=false){
   const id=parseInt(v('r-caso'));
   if(!id){ toast('Selecciona un expediente primero.'); return; }
   const s=data.sin.find(x=>x.id===id); if(!s) return;
@@ -6900,6 +6907,7 @@ async function descargarWord(modelOverride=null, forceFinal=false){
   const tipoStr=(lastInf.tipo||'preliminar').toUpperCase().replace(/\s+/g,'_');
   const filename=(s.numero_exp||'INFORME')+'_'+tipoStr+'.docx';
 
+  if(returnBlob) return blob;
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');
   a.href=url; a.download=filename; a.style.display='none';
@@ -6921,7 +6929,7 @@ async function descargarWordFinal(){
 }
 
 
-async function descargarWordGNP(){
+async function descargarWordGNP(returnBlob=false){
   const id=parseInt(v('r-caso'));
   if(!id){ toast('Selecciona un expediente primero.'); return; }
   const s=data.sin.find(x=>x.id===id); if(!s) return;
@@ -7268,6 +7276,7 @@ async function descargarWordGNP(){
   }
   const filename=(s.tramite_gnp||s.numero_exp)+'_INFORME_GNP.docx';
 
+  if(returnBlob) return blob;
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');
   a.href=url; a.download=filename; a.style.display='none';
@@ -9462,6 +9471,165 @@ function mobIaVisionAplicar(){
   if(etq) etq.value = text.replace(/\n/g,' ').slice(0,150);
   toast('Descripción aplicada');
 }
+
+// ── GOOGLE DRIVE MODULE ──────────────────────────────────────────────────────
+const DriveModule = (() => {
+  const CLIENT_ID = '1046145726953-49p324gi0792fu6c7dt47e9sruur0qac.apps.googleusercontent.com';
+  const SCOPE     = 'https://www.googleapis.com/auth/drive.file';
+  const ROOT_NAME = 'AdjusterPro JChA';
+
+  let _accessToken = null;
+  let _tokenClient = null;
+
+  function driveStatus(msg, color) {
+    const el = document.getElementById('drive-status');
+    if (!el) return;
+    el.textContent = msg;
+    el.style.color = color || 'var(--text-ter)';
+  }
+
+  async function authenticate() {
+    return new Promise((resolve, reject) => {
+      if (!window.google || !window.google.accounts) {
+        reject(new Error('Google Identity Services no cargó. Verifica tu conexión.'));
+        return;
+      }
+      if (!_tokenClient) {
+        _tokenClient = google.accounts.oauth2.initTokenClient({
+          client_id: CLIENT_ID,
+          scope: SCOPE,
+          callback: () => {},
+        });
+      }
+      _tokenClient.callback = (resp) => {
+        if (resp.error) { reject(new Error('Error de autenticación: ' + resp.error)); return; }
+        _accessToken = resp.access_token;
+        resolve();
+      };
+      if (_accessToken) { resolve(); return; }
+      _tokenClient.requestAccessToken({ prompt: '' });
+    });
+  }
+
+  async function apiFetch(url, options = {}) {
+    const resp = await fetch(url, {
+      ...options,
+      headers: {
+        'Authorization': 'Bearer ' + _accessToken,
+        ...(options.headers || {}),
+      },
+    });
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      throw new Error(err.error?.message || 'Error Drive API: ' + resp.status);
+    }
+    return resp.json();
+  }
+
+  async function getOrCreateFolder(name, parentId) {
+    const safeQ = name.replace(/'/g, "\'");
+    const q = `name='${safeQ}' and mimeType='application/vnd.google-apps.folder' and trashed=false${parentId ? ` and '${parentId}' in parents` : ''}`;
+    const res = await apiFetch('https://www.googleapis.com/drive/v3/files?q=' + encodeURIComponent(q) + '&fields=files(id,name)');
+    if (res.files && res.files.length > 0) return res.files[0].id;
+    const body = { name, mimeType: 'application/vnd.google-apps.folder' };
+    if (parentId) body.parents = [parentId];
+    const created = await apiFetch('https://www.googleapis.com/drive/v3/files?fields=id', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    return created.id;
+  }
+
+  async function uploadFile(blob, filename, folderId) {
+    const meta = JSON.stringify({ name: filename, parents: [folderId] });
+    const form = new FormData();
+    form.append('metadata', new Blob([meta], { type: 'application/json' }));
+    form.append('file', blob);
+    const resp = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + _accessToken },
+      body: form,
+    });
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      throw new Error(err.error?.message || 'Error al subir archivo: ' + resp.status);
+    }
+    return resp.json();
+  }
+
+  async function subirWord(tipo) {
+    if (!currentSin) { toast('Selecciona un expediente primero.'); return; }
+    const nExp = (currentSin.numero_exp || 'SIN_NUMERO').replace(/[\/:\*\?"<>|]/g, '-');
+    const ts   = new Date().toISOString().slice(0,10);
+
+    ['btn-drive-preliminar','btn-drive-final','btn-drive-gnp'].forEach(id => {
+      const b = document.getElementById(id);
+      if (b) { b.disabled = true; b.style.opacity = '0.5'; }
+    });
+
+    try {
+      driveStatus('Autenticando con Google...', '#4285f4');
+      await authenticate();
+
+      driveStatus('Generando documento...', '#4285f4');
+      let blob, filename;
+
+      if (tipo === 'preliminar') {
+        blob = await descargarWord(null, false, true);
+        filename = nExp + '_Preliminar_' + ts + '.docx';
+      } else if (tipo === 'final') {
+        blob = await descargarWord(FINAL_MODEL_B64, true, true);
+        filename = nExp + '_Final_' + ts + '.docx';
+      } else if (tipo === 'gnp') {
+        blob = await descargarWordGNP(true);
+        filename = nExp + '_GNP_' + ts + '.docx';
+      }
+
+      if (!blob) { driveStatus('No se pudo generar el documento.', '#f08080'); return; }
+
+      driveStatus('Preparando carpetas en Drive...', '#4285f4');
+      const rootId = await getOrCreateFolder(ROOT_NAME, null);
+      const expId  = await getOrCreateFolder(nExp, rootId);
+
+      driveStatus('Subiendo archivo...', '#4285f4');
+      const result = await uploadFile(blob, filename, expId);
+
+      driveStatus('✓ Subido: ' + result.name, '#80c880');
+      toast('✓ Archivo subido a Drive → AdjusterPro JChA / ' + nExp);
+
+    } catch (err) {
+      console.error('DriveModule error:', err);
+      driveStatus('Error: ' + err.message, '#f08080');
+      toast('Error al subir a Drive: ' + err.message);
+    } finally {
+      ['btn-drive-preliminar','btn-drive-final','btn-drive-gnp'].forEach(id => {
+        const b = document.getElementById(id);
+        if (b) { b.disabled = false; b.style.opacity = ''; }
+      });
+    }
+  }
+
+  return { subirWord };
+})();
+
+function driveSubirWord(tipo) { DriveModule.subirWord(tipo); }
+
+// Sincronizar visibilidad btn-drive-gnp con btn-word-gnp via MutationObserver
+(function() {
+  const init = () => {
+    const gnpWord  = document.getElementById('btn-word-gnp');
+    const gnpDrive = document.getElementById('btn-drive-gnp');
+    if (!gnpWord || !gnpDrive) return;
+    const obs = new MutationObserver(() => {
+      gnpDrive.style.display = gnpWord.style.display;
+    });
+    obs.observe(gnpWord, { attributes: true, attributeFilter: ['style'] });
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+// ── FIN GOOGLE DRIVE MODULE ──────────────────────────────────────────────────
 
 </script>
 </body>
