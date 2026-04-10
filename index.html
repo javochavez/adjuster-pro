@@ -1191,7 +1191,7 @@ body.modo-lectura .readonly-hidden { display:none !important; }
       <div class="fg"><label>Clave ajustador GNP</label><input type="text" id="s-gnp-clave-ajust-vis" placeholder="ej. GNPJCA010970226" oninput="g('s-gnp-clave-ajust').value=this.value;g('s-clave-ajust').value=this.value"><span class="field-hint">Portada → Clave ajustador GNP · Referencia ajustadora</span></div>
       <div class="fg"><label>Jefe de Depto. (GNP)</label><input type="text" id="s-gnp-jefe-vis" placeholder="ej. Rocío Rodríguez Nava" oninput="g('s-gnp-jefe').value=this.value"><span class="field-hint">Portada → Jefe Depto.</span></div>
       <div class="fg"><label>Oficina GNP</label><input type="text" id="s-gnp-oficina-vis" placeholder="ej. Veracruz" oninput="g('s-gnp-oficina').value=this.value"><span class="field-hint">Portada → Oficina</span></div>
-      <div class="fg"><label>Giro del asegurado</label><input type="text" id="s-giro-vis" placeholder="ej. Fabricación de estructuras metálicas" oninput="g('s-giro').value=this.value"><span class="field-hint">Portada → Giro del asegurado</span></div>
+      <div class="fg"><label>Giro del asegurado</label><input type="text" id="s-giro-vis" placeholder="ej. Fabricación de estructuras metálicas" oninput="g('s-giro').value=this.value"><span class="field-hint">Portada → Giro del asegurado · Tabla de Póliza (usar campo en Póliza para texto largo)</span></div>
       <div class="fg"><label>Clave evento (catastrófico)</label><input type="text" id="s-clave-evento-vis" placeholder="ej. No aplica" oninput="g('s-clave-evento').value=this.value"><span class="field-hint">Portada → Clave evento (catastrófico)</span></div>
     </div>
     <div style="font-size:10px;color:#ffcc80;text-transform:uppercase;letter-spacing:.07em;margin:14px 0 8px;">Cronología GNP</div>
@@ -1329,7 +1329,9 @@ body.modo-lectura .readonly-hidden { display:none !important; }
   </div>
   <div class="fg full">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-        <label style="margin-bottom:0;">Descripción de los Bienes Afectados</label>
+        <label style="margin-bottom:0;">Descripción de los Bienes Afectados
+          <span class="field-hint" style="display:inline;margin-left:8px;">Cap. VII — Descripción de los Bienes Afectados · Cap. II (tabla portada)</span>
+        </label>
       </div>
       <div class="rte-wrap">
       <div class="rte-toolbar">
@@ -1928,13 +1930,14 @@ body.modo-lectura .readonly-hidden { display:none !important; }
     <div class="fg"></div>
 
     <div style="grid-column:1/-1;font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.06em;margin-top:6px;">Domicilios</div>
-    <div class="fg full"><label>Domicilio legal del asegurado</label><input type="text" id="p-dom-legal" placeholder="Domicilio fiscal según póliza"></div>
+    <div class="fg full"><label>Domicilio legal del asegurado<span class="field-hint">Tabla de Póliza → Domicilio fiscal · Portada → Domicilio Legal</span></label><input type="text" id="p-dom-legal" placeholder="Domicilio fiscal según póliza"></div>
     <div class="fg full"><label>Ubicación del riesgo asegurado</label><input type="text" id="p-ubic-riesgo" placeholder="Ubicación física donde está el riesgo"></div>
 
     <div class="fg full">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
         <label style="margin-bottom:0;">Giro del Asegurado
           <span style="font-size:10px;color:var(--text-ter);font-weight:400;">— según póliza</span>
+          <span class="field-hint" style="display:inline;margin-left:8px;">Tabla de Póliza → Giro del asegurado · Portada → Giro del negocio</span>
         </label>
       </div>
       <div class="rte-wrap">
@@ -1961,6 +1964,7 @@ body.modo-lectura .readonly-hidden { display:none !important; }
           <span style="font-size:10px;color:var(--text-ter);font-weight:400;">
             — Breve historia, giro, a qué se dedica, características relevantes del riesgo
           </span>
+          <span class="field-hint" style="display:inline;margin-left:8px;">Cap. II — El Asegurado</span>
         </label>
       </div>
       <div class="rte-wrap">
@@ -4469,8 +4473,8 @@ async function guardarSiniestro(){
     fecha_inspeccion:v('s-finsp')||null, fecha_informe:v('s-finf')||null,
     inspeccion_persona:v('s-insp-persona')||null, inspeccion_cargo:v('s-insp-cargo')||null,
     inspeccion_telefono:v('s-insp-tel')||null, inspeccion_domicilio:v('s-insp-dom')||null,
-    bienes_danados:v('s-bienes')||null,
-    descripcion_danios_html:v('s-bienes')||null,
+    bienes_danados:v('s-desc')||null,
+    descripcion_danios_html:v('s-desc')||null,
     bienes_amparados:v('s-bienes-amparados')||null,
     intervencion_autoridades:v('s-autoridades')==='1',
     intervencion_autoridades_detalle:v('s-autoridades-det')||null,
@@ -6661,7 +6665,7 @@ async function descargarWord(modelOverride=null, forceFinal=false, returnBlob=fa
     'Introducción del Informe':       esFinal?(s.introduccion||'').replace(/informe\s+preliminar/gi,'Informe Final'):(s.introduccion||''),
     'Descripción del Asegurado':      pol.descripcion_asegurado||'',
     'Inspección del siniestro':       s.inspeccion_narrativa||'',
-    'Bienes afectados y Daños Sufridos': s.descripcion_danios_html||s.bienes_danados||'',
+    'Bienes afectados y Daños Sufridos': s.descripcion_danios_html||s.bienes_danados||s.descripcion||'',
     'Naturaleza y Alcance de los Daños': s.naturaleza_alcance_danios||'',
     'Fundamento de Procedencia':      s.fundamento||'',
     'Reclamación del Asegurado':      s.reclamacion_asegurado||'',
