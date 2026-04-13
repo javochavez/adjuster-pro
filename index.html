@@ -8929,22 +8929,48 @@ function rteRestoreSel(rte, saved){
 // ── Generar texto para textarea del modal de informe ─────────────────────
 function iaGenerarInfCampo(fieldId, promptKey){
   if(!iaCheckKey()) return;
+  // Leer contenido actual del textarea
+  const el = g(fieldId);
+  const existente = (el?.value||'').trim();
   const ctx = iaContextoSin();
-  const prompt = iaPrompt(promptKey, ctx);
+  let promptFinal = iaPrompt(promptKey, ctx);
+  if(existente){
+    promptFinal += '\n\nCONTENIDO ACTUAL DEL CAMPO (ya capturado — intégralo o mejóralo sin repetirlo literalmente):\n---\n' + existente + '\n---';
+  }
   const titulos = {
     'narracion':'Desarrollo del siniestro',
     'estrategias':'Estrategias y documentos requeridos'
   };
-  const el = g(fieldId);
-  if(!el) return;
-  el.value = '⏳ Generando…';
-  el.disabled = true;
+  // Redirigir al panel de sugerencia editable
+  _iaCurrentSuffix = '__textarea__' + fieldId;
+  _iaCurrentPrompt = promptFinal;
+  iaAbrirPanel(titulos[promptKey]||promptKey, null);
+  // Indicador de contenido existente
+  const lbl  = g('ia-panel-existing-lbl');
+  const hint = g('ia-panel-hint');
+  if(lbl) lbl.style.display = existente ? 'inline' : 'none';
+  if(hint) hint.textContent = existente
+    ? '(IA leyó el contenido actual para complementar)'
+    : '(campo vacío — sugerencia desde contexto del expediente)';
+  const editor = g('ia-panel-editor');
   let acum = '';
   iaCall(
-    prompt,
-    (chunk)=>{ acum += chunk; el.value = acum; },
-    ()=>{ el.disabled = false; toast('✦ IA: texto generado'); },
-    (err)=>{ el.value = ''; el.disabled = false; toast('⚠ Error IA: ' + err); }
+    promptFinal,
+    (chunk)=>{ acum += chunk; if(editor) editor.value = acum; },
+    ()=>{
+      _iaCurrentText = acum;
+      g('ia-panel-spinner').style.display = 'none';
+      if(editor){ editor.disabled = false; editor.focus(); }
+      g('ia-btn-aplicar').disabled = false;
+      g('ia-btn-regenerar').disabled = false;
+      const ab = g('ia-btn-aplicar-append');
+      if(ab) ab.disabled = false;
+    },
+    (err)=>{
+      g('ia-panel-spinner').style.display = 'none';
+      if(editor){ editor.value = 'Error: ' + err; editor.disabled = false; }
+      g('ia-btn-regenerar').disabled = false;
+    }
   );
 }
 
@@ -9124,6 +9150,26 @@ function iaAplicarAppend(){
 }
 
 function iaEscribirEnCampo(suffix, texto, append){
+  // ── Caso especial: textarea simple del modal de informe ───────────────
+  if(suffix && suffix.startsWith('__textarea__')){
+    const fieldId = suffix.replace('__textarea__','');
+    const el = g(fieldId);
+    if(!el){ toast('Campo no encontrado: ' + fieldId); return; }
+    if(append){
+      const actual = el.value.trim();
+      el.value = actual ? actual + '\n\n' + texto : texto;
+    } else {
+      el.value = texto;
+    }
+    el.dispatchEvent(new Event('input'));
+    g('ia-result-panel').classList.remove('open');
+    _iaCurrentSuffix = null; _iaCurrentText = '';
+    toast(append ? 'Sugerencia agregada al final del campo' : 'Sugerencia aplicada — campo sustituido');
+    // Scroll al campo
+    el.scrollIntoView({behavior:'smooth', block:'center'});
+    return;
+  }
+  // ── RTE normal ─────────────────────────────────────────────────────────
   const rteEl = g('s-' + suffix + '-rte');
   if(rteEl){
     if(append){
@@ -9165,7 +9211,11 @@ function iaEscribirEnCampo(suffix, texto, append){
 }
 
 function iaRegenerarActual(){
-  if(_iaCurrentPrompt) iaLlamarPanel(_iaCurrentPrompt, g('ia-panel-title').textContent.replace('Sugerencia IA — ',''), _iaCurrentSuffix);
+  if(_iaCurrentPrompt) iaLlamarPanel(
+    _iaCurrentPrompt,
+    g('ia-panel-title').textContent.replace('Sugerencia IA — ',''),
+    _iaCurrentSuffix
+  );
 }
 
 function iaLlamarPanel(prompt, titulo, suffix){
