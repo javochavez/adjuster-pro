@@ -1131,8 +1131,9 @@ body.modo-lectura .readonly-hidden { display:none !important; }
     <button class="btn" onclick="cerrarModal('modal-sol-detalle')">Cerrar</button>
     <button class="btn btn-sm" onclick="solEditarDesdeDetalle()">✏ Editar</button>
     <button class="btn btn-sm" onclick="solGenerarEmail()">✉ Correo</button>
-    <button class="btn btn-sm" onclick="solGenerarPDF()">⬇ PDF</button>
-    <button class="btn btn-primary btn-sm" onclick="solGenerarWord()">⬇ Word</button>
+    <button class="btn btn-sm" onclick="solGenerarRecordatorio(window._solActual, window._solItemsActual, currentSin)" style="background:rgba(255,204,0,.15);color:#ffd700;border-color:rgba(255,204,0,.3);">🔔 Recordatorio</button>
+    <button class="btn btn-sm" onclick="solGenerarPDF()">⬇ PDF Solicitud</button>
+    <button class="btn btn-primary btn-sm" onclick="solGenerarWord()">⬇ Word Solicitud</button>
   </div>
 </div>
 </div>
@@ -10064,22 +10065,142 @@ function renderSolicitudesTab(){
     }</span>`;
     const vence = sol.fecha_compromiso
       ? `· Compromiso: ${fmtD(sol.fecha_compromiso)}`:'';
-    html += `<div class="sol-card" onclick="verSolicitud(${sol.id})">
-      <div class="sol-card-head">
+    html += `<div class="sol-card">
+      <div class="sol-card-head" onclick="verSolicitud(${sol.id})" style="cursor:pointer;">
         <span class="sol-card-exp">${sol.asunto||'Solicitud #'+sol.id}</span>
         ${badge}
       </div>
-      <div class="sol-card-sub">
+      <div class="sol-card-sub" onclick="verSolicitud(${sol.id})" style="cursor:pointer;">
         ${sol.destinatario_nombre||'Sin destinatario'} ${sol.destinatario_empresa?'— '+sol.destinatario_empresa:''}
         ${vence} · ${recibidos}/${total} documentos recibidos
       </div>
-      ${total>0?`<div class="sol-progress-bar"><div class="sol-progress-fill" style="width:${pct}%"></div></div>`:''}
+      ${total>0?`<div class="sol-progress-bar" onclick="verSolicitud(${sol.id})" style="cursor:pointer;"><div class="sol-progress-fill" style="width:${pct}%"></div></div>`:''}
+      <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
+        <button class="btn btn-sm" onclick="verSolicitud(${sol.id})" style="font-size:11px;">📋 Ver / Seguimiento</button>
+        <button class="btn btn-sm" onclick="solAccionRapida(${sol.id},'email')" style="font-size:11px;">✉ Correo</button>
+        <button class="btn btn-sm" onclick="solAccionRapida(${sol.id},'pdf')" style="font-size:11px;">⬇ PDF</button>
+        <button class="btn btn-sm" onclick="solAccionRapida(${sol.id},'word')" style="font-size:11px;">⬇ Word</button>
+        ${sol.estatus!=='completa'?`<button class="btn btn-sm" onclick="solAccionRapida(${sol.id},'recordatorio')" style="font-size:11px;background:rgba(255,204,0,.15);color:#ffd700;border-color:rgba(255,204,0,.3);">🔔 Recordatorio</button>`:''}
+      </div>
     </div>`;
   });
   wrap.innerHTML = html;
 }
 
-// ── Ver detalle de solicitud ──────────────────────────────────────────────
+// ── Acción rápida desde tarjeta (sin abrir modal de detalle) ─────────────
+async function solAccionRapida(solId, accion){
+  const sol   = (data.solicitudes||[]).find(s=>s.id===solId);
+  if(!sol){ toast('Solicitud no encontrada'); return; }
+  const items = (data.sol_items||[]).filter(i=>i.id_solicitud===solId).sort((a,b)=>(a.orden||0)-(b.orden||0));
+  // Encontrar el expediente correspondiente
+  const sin = data.sin.find(s=>s.id===sol.id_siniestro);
+  if(!sin){ toast('Expediente no encontrado'); return; }
+  const prevSin = currentSin;
+  // Temporalmente establecer contexto
+  window._solActual      = sol;
+  window._solItemsActual = items;
+  // Establecer currentSin para que las funciones de generación encuentren los datos
+  currentSin = sin;
+  if(accion==='email')         solGenerarEmail();
+  else if(accion==='pdf')      await solGenerarPDF();
+  else if(accion==='word')     await solGenerarWord();
+  else if(accion==='recordatorio') await solGenerarRecordatorio(sol, items, sin);
+  // Restaurar currentSin
+  currentSin = prevSin;
+}
+
+// ── Generar recordatorio Word ─────────────────────────────────────────────
+async function solGenerarRecordatorio(sol, items, sin){
+  if(!sol){ toast('Abre una solicitud primero'); return; }
+  const pol  = data.pol.find(p=>p.id===sin.id_poliza)||{};
+  const asdo = data.asdo.find(a=>a.id===pol.id_asegurado)||{};
+  const aseg = data.aseg.find(a=>a.id===pol.id_aseguradora)||{};
+  const user = g('user-lbl')?.textContent||'Ajustador';
+  const pendientes = items.filter(i=>!i.recibido);
+  const recibidos  = items.filter(i=>i.recibido);
+  const hoy = new Date().toLocaleDateString('es-MX',{day:'2-digit',month:'long',year:'numeric'});
+
+  const filasPend = pendientes.map((it,i)=>`
+    <tr style="background:${i%2===0?'#fff8f0':'#fff'};">
+      <td style="padding:6px 8px;border:1px solid #e0c8a0;font-size:11px;text-align:center;">${i+1}</td>
+      <td style="padding:6px 8px;border:1px solid #e0c8a0;font-size:10px;color:#8b5000;">${it.categoria||''}</td>
+      <td style="padding:6px 8px;border:1px solid #e0c8a0;font-size:11px;">${it.descripcion}</td>
+    </tr>`).join('');
+
+  const filasRec = recibidos.map((it,i)=>`
+    <tr style="background:${i%2===0?'#f0fff4':'#fff'};">
+      <td style="padding:5px 8px;border:1px solid #b0d8b8;font-size:11px;text-align:center;">✓</td>
+      <td style="padding:5px 8px;border:1px solid #b0d8b8;font-size:10px;color:#2e7d52;">${it.categoria||''}</td>
+      <td style="padding:5px 8px;border:1px solid #b0d8b8;font-size:11px;text-decoration:line-through;color:#666;">${it.descripcion}</td>
+      <td style="padding:5px 8px;border:1px solid #b0d8b8;font-size:10px;color:#2e7d52;">${fmtD(it.fecha_recepcion)||''}</td>
+    </tr>`).join('');
+
+  const htmlRec = `<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <style>body{font-family:Arial,sans-serif;margin:40px;color:#1a1a2e;font-size:12px;}
+  .header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #e65c00;padding-bottom:12px;margin-bottom:16px;}
+  .brand{font-size:22px;font-weight:900;color:#1558b0;letter-spacing:-.5px;}
+  .titulo{font-size:15px;font-weight:700;color:#e65c00;margin-bottom:4px;}
+  .subtitulo{font-size:12px;color:#666;margin-bottom:16px;}
+  table{width:100%;border-collapse:collapse;margin-bottom:16px;}
+  th{padding:7px 8px;font-size:10px;text-align:left;}
+  .datos{display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;margin-bottom:16px;background:#f0f4ff;padding:10px;border-radius:4px;}
+  .dato{font-size:11px;} .dato strong{color:#1558b0;}
+  .footer{margin-top:24px;border-top:1px solid #c8d4e8;padding-top:8px;font-size:10px;color:#666;text-align:center;}
+  </style></head><body>
+  <div class="header">
+    <div><div class="brand">AASA</div><div style="font-size:10px;color:#666;">Almaraz Ajustadores, S.A.</div></div>
+    <div style="text-align:right;font-size:10px;color:#666;">
+      Calle Miguel Hidalgo 61, Oficina 3<br>Col. San Jerónimo Lídice, CDMX<br>
+      +52 55 5593-8823 · aasa.mexico@aasa.com.mx
+    </div>
+  </div>
+  <div class="titulo">RECORDATORIO — DOCUMENTACIÓN PENDIENTE</div>
+  <div class="subtitulo">Fecha: ${hoy}</div>
+  <div class="datos">
+    <div class="dato"><strong>Asegurado:</strong> ${asdo.nombre||'—'}</div>
+    <div class="dato"><strong>Aseguradora:</strong> ${aseg.nombre||'—'}</div>
+    <div class="dato"><strong>No. Siniestro:</strong> ${sin.numero_siniestro||'—'}</div>
+    <div class="dato"><strong>Ref. AASA:</strong> ${sin.numero_exp||'—'}</div>
+    <div class="dato"><strong>Destinatario:</strong> ${sol.destinatario_nombre||'—'}</div>
+    <div class="dato"><strong>Fecha solicitud original:</strong> ${fmtD(sol.fecha_solicitud)||'—'}</div>
+    <div class="dato"><strong>Fecha compromiso:</strong> ${fmtD(sol.fecha_compromiso)||'—'}</div>
+    <div class="dato"><strong>Avance:</strong> ${recibidos.length}/${items.length} documentos recibidos</div>
+  </div>
+  ${pendientes.length ? `
+  <div style="font-size:13px;font-weight:700;color:#e65c00;margin-bottom:8px;">⚠ Documentación pendiente de recibir (${pendientes.length} ítem${pendientes.length>1?'s':''})</div>
+  <table>
+    <thead><tr style="background:#e65c00;"><th style="color:#fff;width:36px;">#</th><th style="color:#fff;width:100px;">Categoría</th><th style="color:#fff;">Documento / Información requerida</th></tr></thead>
+    <tbody>${filasPend}</tbody>
+  </table>` : '<div style="color:#2e7d52;font-weight:700;font-size:13px;margin-bottom:16px;">✓ Toda la documentación ha sido recibida.</div>'}
+  ${recibidos.length ? `
+  <div style="font-size:13px;font-weight:700;color:#2e7d52;margin-bottom:8px;">✓ Documentación ya recibida (${recibidos.length} ítem${recibidos.length>1?'s':''})</div>
+  <table>
+    <thead><tr style="background:#2e7d52;"><th style="color:#fff;width:30px;">✓</th><th style="color:#fff;width:100px;">Categoría</th><th style="color:#fff;">Documento</th><th style="color:#fff;width:90px;">Recibido</th></tr></thead>
+    <tbody>${filasRec}</tbody>
+  </table>` : ''}
+  <div style="margin-top:30px;display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+    <div style="border-top:1px solid #1558b0;padding-top:8px;text-align:center;font-size:11px;">${user}<br><span style="color:#666;">Ajustador — AASA</span></div>
+    <div style="border-top:1px solid #999;padding-top:8px;text-align:center;font-size:11px;">Acuse de recibo<br><span style="color:#666;">${sol.destinatario_nombre||''}</span></div>
+  </div>
+  <div class="footer">ALMARAZ AJUSTADORES, S.A. · Calle Miguel Hidalgo 61, Of. 3, Col. San Jerónimo Lídice, C.P. 10200, CDMX · CNSF: C15979</div>
+  </body></html>`;
+
+  const win = window.open('','_blank');
+  win.document.write(htmlRec);
+  win.document.close();
+  setTimeout(()=>{ win.print(); }, 500);
+  // Registrar recordatorio en seguimiento
+  await db.from('solicitud_seguimiento').insert({
+    id_solicitud: sol.id, tipo:'recordatorio',
+    fecha: new Date().toISOString().slice(0,10),
+    descripcion: `Recordatorio generado — ${pendientes.length} documento${pendientes.length!==1?'s':''} pendiente${pendientes.length!==1?'s':''}`,
+    usuario: g('user-lbl')?.textContent||'Sistema'
+  });
+  await loadAll();
+  toast('🔔 Recordatorio generado y registrado en el seguimiento');
+}
+
+
 async function verSolicitud(solId){
   const sol  = (data.solicitudes||[]).find(s=>s.id===solId);
   if(!sol) return;
