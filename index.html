@@ -218,6 +218,78 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); co
   color: #10a37f; margin-bottom: 5px;
 }
 
+
+/* ── SOLICITUDES DE INFORMACIÓN ──────────────────────────────────────── */
+.sol-card {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 12px 14px; margin-bottom: 8px;
+  cursor: pointer; transition: border-color .15s;
+}
+.sol-card:hover { border-color: var(--border-hi); }
+.sol-card-head { display:flex; align-items:center; gap:8px; margin-bottom:4px; }
+.sol-card-exp  { font-size:13px; font-weight:700; color:var(--text); flex:1; }
+.sol-badge {
+  font-size:10px; font-weight:700; padding:2px 8px;
+  border-radius:10px; white-space:nowrap;
+}
+.sol-badge.borrador  { background:rgba(100,160,255,.15); color:#7aaed4; }
+.sol-badge.enviada   { background:rgba(255,204,0,.15);   color:#ffd700; }
+.sol-badge.parcial   { background:rgba(230,92,0,.2);     color:#ff9944; }
+.sol-badge.completa  { background:rgba(46,125,82,.25);   color:#81c784; }
+.sol-badge.vencida   { background:rgba(220,60,60,.2);    color:#ef9f9f; }
+.sol-card-sub { font-size:11px; color:var(--text-sec); }
+.sol-progress-bar {
+  height:4px; background:var(--surface); border-radius:2px;
+  margin-top:6px; overflow:hidden;
+}
+.sol-progress-fill { height:100%; background:#2e7d52; border-radius:2px; transition:width .3s; }
+/* Modal solicitud */
+#modal-sol .modal { max-width:820px; }
+.sol-cat-grid {
+  display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+  gap:6px; margin-bottom:8px;
+}
+.sol-item-row {
+  display:flex; align-items:flex-start; gap:8px;
+  padding:6px 8px; border-radius:4px; background:var(--surface);
+  border:1px solid var(--border); font-size:12px;
+}
+.sol-item-row:hover { border-color:var(--border-md); }
+.sol-item-row input[type=checkbox] { margin-top:2px; flex-shrink:0; accent-color:var(--accent-lt); }
+.sol-item-row label { cursor:pointer; line-height:1.4; color:var(--text); }
+.sol-cat-header {
+  font-size:10px; font-weight:700; text-transform:uppercase;
+  letter-spacing:.06em; color:var(--accent-lt);
+  margin:12px 0 5px; padding-bottom:3px;
+  border-bottom:1px solid var(--border);
+}
+.sol-tab-btn {
+  padding:5px 12px; font-size:12px; border-radius:var(--r);
+  border:1px solid var(--border-md); background:var(--surface2);
+  color:var(--text-sec); cursor:pointer; font-family:inherit;
+  transition:all .15s;
+}
+.sol-tab-btn.active {
+  background:var(--accent); border-color:var(--accent);
+  color:#fff; font-weight:600;
+}
+/* Detalle solicitud */
+.sol-item-check {
+  display:flex; align-items:flex-start; gap:8px;
+  padding:8px 10px; border-radius:4px;
+  border-bottom:1px solid var(--border); font-size:12px;
+}
+.sol-item-check.recibido { opacity:.6; }
+.sol-item-check input[type=checkbox] { accent-color:#2e7d52; margin-top:2px; }
+.sol-seguimiento-row {
+  display:flex; gap:10px; padding:6px 0;
+  border-bottom:1px solid var(--border); font-size:11px;
+  align-items:flex-start;
+}
+.sol-seg-icon { font-size:14px; flex-shrink:0; }
+.sol-seg-fecha { color:var(--text-ter); white-space:nowrap; min-width:90px; }
+.sol-seg-txt { color:var(--text-sec); flex:1; }
+
 /* ── LOGIN ── */
 .login-wrap { min-height:100vh; display:flex; align-items:center; justify-content:center; background:var(--bg); }
 .login-card { background:var(--surface); border:1px solid var(--border-md); border-radius:var(--rl); padding:2.5rem 2rem; width:360px; }
@@ -637,8 +709,6 @@ body.modo-lectura .readonly-hidden { display:none !important; }
 .rte-field-item:hover { background:var(--surface2); color:var(--accent-lt); }
 
 </style>
-<!-- Google Identity Services (Drive OAuth) -->
-<script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
 
@@ -769,6 +839,13 @@ body.modo-lectura .readonly-hidden { display:none !important; }
               <tbody id="inf-act-body"></tbody>
             </table>
           </div>
+        </div>
+
+        <!-- Solicitudes vencidas / próximas a vencer -->
+        <div style="margin-top:28px;">
+          <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px;">📋 Solicitudes de Información — Pendientes</div>
+          <div style="font-size:12px;color:var(--text-sec);margin-bottom:10px;">Solicitudes enviadas sin acuse total y con fecha compromiso próxima o vencida</div>
+          <div id="sol-alerta-body" style="font-size:12px;color:var(--text-ter);">—</div>
         </div>
 
         <!-- ToDos pendientes -->
@@ -951,11 +1028,6 @@ body.modo-lectura .readonly-hidden { display:none !important; }
               <button class="btn" id="btn-word-generico" onclick="descargarWord()" style="width:100%;font-size:12px;">AASA PRELIMINAR (.docx)</button>
               <button class="btn" id="btn-word-final" onclick="descargarWordFinal()" style="width:100%;font-size:12px;background:rgba(0,32,96,.18);border-color:rgba(0,32,96,.5);color:var(--text);">AASA FINAL (.docx)</button>
               <button class="btn" id="btn-word-gnp" onclick="descargarWordGNP()" style="width:100%;font-size:12px;display:none;background:rgba(255,204,128,.12);border-color:rgba(255,204,128,.4);color:#ffcc80;">Descargar Informe GNP (.docx)</button>
-              <div style="border-top:1px solid var(--border);margin:4px 0;"></div>
-              <button class="btn" id="btn-drive-preliminar" onclick="driveSubirWord('preliminar')" style="width:100%;font-size:12px;background:rgba(66,133,244,.12);border-color:rgba(66,133,244,.4);color:#4285f4;">&#9729; Subir Preliminar a Drive</button>
-              <button class="btn" id="btn-drive-final" onclick="driveSubirWord('final')" style="width:100%;font-size:12px;background:rgba(66,133,244,.12);border-color:rgba(66,133,244,.4);color:#4285f4;">&#9729; Subir Final a Drive</button>
-              <button class="btn" id="btn-drive-gnp" onclick="driveSubirWord('gnp')" style="width:100%;font-size:12px;display:none;background:rgba(66,133,244,.12);border-color:rgba(66,133,244,.4);color:#4285f4;">&#9729; Subir Informe GNP a Drive</button>
-              <div id="drive-status" style="font-size:10px;color:var(--text-ter);text-align:center;min-height:14px;"></div>
               <div style="font-size:10px;color:var(--text-ter);text-align:center;">PDF: selecciona "Guardar como PDF"<br>en el diálogo de impresión</div>
             </div>
           </div>
@@ -971,6 +1043,126 @@ body.modo-lectura .readonly-hidden { display:none !important; }
 </div></div>
 
 <!-- ── MODALS ── -->
+
+<!-- ── MODAL SOLICITUD DE INFORMACIÓN ──────────────────────────────── -->
+<div class="overlay" id="modal-sol">
+<div class="modal modal-lg" style="max-width:860px;">
+  <div class="modal-title" id="sol-modal-title">Nueva Solicitud de Información</div>
+  <div class="modal-scroll" style="padding:1rem 1.5rem 0.5rem;max-height:80vh;overflow-y:auto;">
+    <input type="hidden" id="sol-id">
+    <input type="hidden" id="sol-sin-id">
+
+    <!-- Datos del destinatario -->
+    <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;">Destinatario</div>
+    <div class="form-grid">
+      <div class="fg"><label>Nombre</label><input type="text" id="sol-dest-nombre" placeholder="Nombre del destinatario"></div>
+      <div class="fg"><label>Cargo</label><input type="text" id="sol-dest-cargo" placeholder="Ej: Responsable de reclamaciones"></div>
+      <div class="fg"><label>Empresa / Organización</label><input type="text" id="sol-dest-empresa" placeholder="Nombre de la empresa"></div>
+      <div class="fg"><label>Correo electrónico</label><input type="email" id="sol-dest-email" placeholder="correo@empresa.com"></div>
+      <div class="fg"><label>Fecha de la solicitud</label><input type="date" id="sol-fecha"></div>
+      <div class="fg"><label>Fecha compromiso de entrega</label><input type="date" id="sol-fecha-compromiso"><span class="field-hint">Genera alerta en dashboard al vencer</span></div>
+      <div class="fg full"><label>Asunto / Referencia</label><input type="text" id="sol-asunto" placeholder="Ej: Documentación siniestro No. 0180203622 — FICEP A31"></div>
+    </div>
+
+    <!-- Selector de ramo -->
+    <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin:14px 0 8px;">Documentos / Información solicitada</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;" id="sol-ramo-tabs"></div>
+
+    <!-- IA suggest button -->
+    <div style="display:flex;justify-content:flex-end;margin-bottom:8px;">
+      <button type="button" class="btn-ia" onclick="solIaSugerir()" title="Sugerir documentos según el tipo de siniestro">✦ IA — Sugerir documentos</button>
+    </div>
+
+    <!-- Catálogo de items con checkboxes -->
+    <div id="sol-catalogo-wrap" style="max-height:340px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--r);padding:10px 12px;background:var(--bg2);">
+      <div style="font-size:11px;color:var(--text-ter);text-align:center;padding:20px;">Selecciona un ramo para ver los documentos disponibles</div>
+    </div>
+
+    <!-- Agregar item personalizado -->
+    <div style="margin-top:10px;display:flex;gap:8px;align-items:flex-end;">
+      <div style="flex:1;">
+        <label style="font-size:11px;color:var(--text-sec);display:block;margin-bottom:3px;">+ Agregar ítem personalizado</label>
+        <input type="text" id="sol-item-custom" placeholder="Descripción del documento o información requerida…"
+          style="width:100%;padding:7px 10px;border:1px solid var(--border-md);border-radius:var(--r);background:var(--bg2);color:var(--text);font-size:12px;font-family:inherit;">
+      </div>
+      <div>
+        <label style="font-size:11px;color:var(--text-sec);display:block;margin-bottom:3px;">Categoría</label>
+        <input type="text" id="sol-item-custom-cat" placeholder="ej: Técnica"
+          style="width:130px;padding:7px 10px;border:1px solid var(--border-md);border-radius:var(--r);background:var(--bg2);color:var(--text);font-size:12px;font-family:inherit;">
+      </div>
+      <div style="display:flex;flex-direction:column;gap:3px;">
+        <label style="font-size:10px;color:var(--text-sec);">Guardar en catálogo</label>
+        <input type="checkbox" id="sol-item-custom-save" style="margin:0;accent-color:var(--accent-lt);">
+      </div>
+      <button type="button" class="btn btn-sm btn-primary" onclick="solAgregarCustom()">+ Agregar</button>
+    </div>
+
+    <!-- Items seleccionados (resumen) -->
+    <div id="sol-selected-wrap" style="margin-top:12px;display:none;">
+      <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">
+        Ítems seleccionados: <span id="sol-selected-count" style="color:var(--accent-lt);">0</span>
+      </div>
+      <div id="sol-selected-list" style="font-size:11px;color:var(--text-sec);"></div>
+    </div>
+
+    <!-- Notas generales -->
+    <div style="margin-top:12px;">
+      <label style="font-size:11px;color:var(--text-sec);display:block;margin-bottom:3px;">Notas / Instrucciones adicionales</label>
+      <textarea id="sol-notas" style="width:100%;min-height:60px;padding:7px 10px;border:1px solid var(--border-md);border-radius:var(--r);background:var(--bg2);color:var(--text);font-size:12px;font-family:inherit;resize:vertical;" placeholder="Instrucciones especiales, plazo de urgencia, forma de entrega…"></textarea>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <span id="sol-modo-lbl" style="font-size:10px;color:var(--text-ter);margin-right:auto;"></span>
+    <button class="btn" onclick="cerrarModal('modal-sol')">Cancelar</button>
+    <button class="btn btn-primary" onclick="guardarSolicitud('borrador')">Guardar borrador</button>
+    <button class="btn btn-primary" onclick="guardarSolicitud('enviada')" style="background:var(--success);">✓ Guardar como enviada</button>
+  </div>
+</div>
+</div>
+
+<!-- ── MODAL DETALLE SOLICITUD ───────────────────────────────────────── -->
+<div class="overlay" id="modal-sol-detalle">
+<div class="modal modal-lg" style="max-width:860px;">
+  <div class="modal-title" id="sol-det-title">Solicitud de Información</div>
+  <div class="modal-scroll" style="padding:1rem 1.5rem;max-height:85vh;overflow-y:auto;">
+    <div id="sol-det-body"></div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn" onclick="cerrarModal('modal-sol-detalle')">Cerrar</button>
+    <button class="btn btn-sm" onclick="solEditarDesdeDetalle()">✏ Editar</button>
+    <button class="btn btn-sm" onclick="solGenerarEmail()">✉ Correo</button>
+    <button class="btn btn-sm" onclick="solGenerarPDF()">⬇ PDF</button>
+    <button class="btn btn-primary btn-sm" onclick="solGenerarWord()">⬇ Word</button>
+  </div>
+</div>
+</div>
+
+<!-- ── MODAL ACUSE DE RECIBO ─────────────────────────────────────────── -->
+<div class="overlay" id="modal-sol-seg">
+<div class="modal" style="max-width:500px;">
+  <div class="modal-title">Agregar seguimiento</div>
+  <div style="padding:1rem 1.5rem;">
+    <input type="hidden" id="seg-sol-id">
+    <div class="form-grid">
+      <div class="fg"><label>Tipo</label>
+        <select id="seg-tipo">
+          <option value="acuse_parcial">Acuse parcial</option>
+          <option value="acuse_total">Acuse total (cierre)</option>
+          <option value="recordatorio">Recordatorio enviado</option>
+          <option value="nota">Nota interna</option>
+        </select></div>
+      <div class="fg"><label>Fecha</label><input type="date" id="seg-fecha"></div>
+      <div class="fg full"><label>Descripción / Nota</label>
+        <textarea id="seg-descripcion" style="min-height:70px;" placeholder="Documentos recibidos, instrucciones, observaciones…"></textarea></div>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn" onclick="cerrarModal('modal-sol-seg')">Cancelar</button>
+    <button class="btn btn-primary" onclick="guardarSeguimiento()">Guardar</button>
+  </div>
+</div>
+</div>
+
 
 <!-- ── MODAL CONFIG IA ──────────────────────────────────────────────── -->
 <div class="overlay" id="modal-ia-config">
@@ -1191,7 +1383,7 @@ body.modo-lectura .readonly-hidden { display:none !important; }
       <div class="fg"><label>Clave ajustador GNP</label><input type="text" id="s-gnp-clave-ajust-vis" placeholder="ej. GNPJCA010970226" oninput="g('s-gnp-clave-ajust').value=this.value;g('s-clave-ajust').value=this.value"><span class="field-hint">Portada → Clave ajustador GNP · Referencia ajustadora</span></div>
       <div class="fg"><label>Jefe de Depto. (GNP)</label><input type="text" id="s-gnp-jefe-vis" placeholder="ej. Rocío Rodríguez Nava" oninput="g('s-gnp-jefe').value=this.value"><span class="field-hint">Portada → Jefe Depto.</span></div>
       <div class="fg"><label>Oficina GNP</label><input type="text" id="s-gnp-oficina-vis" placeholder="ej. Veracruz" oninput="g('s-gnp-oficina').value=this.value"><span class="field-hint">Portada → Oficina</span></div>
-      <div class="fg"><label>Giro del asegurado</label><input type="text" id="s-giro-vis" placeholder="ej. Fabricación de estructuras metálicas" oninput="g('s-giro').value=this.value"><span class="field-hint">Portada → Giro del asegurado · Tabla de Póliza (usar campo en Póliza para texto largo)</span></div>
+      <div class="fg"><label>Giro del asegurado</label><input type="text" id="s-giro-vis" placeholder="ej. Fabricación de estructuras metálicas" oninput="g('s-giro').value=this.value"><span class="field-hint">Portada → Giro del asegurado</span></div>
       <div class="fg"><label>Clave evento (catastrófico)</label><input type="text" id="s-clave-evento-vis" placeholder="ej. No aplica" oninput="g('s-clave-evento').value=this.value"><span class="field-hint">Portada → Clave evento (catastrófico)</span></div>
     </div>
     <div style="font-size:10px;color:#ffcc80;text-transform:uppercase;letter-spacing:.07em;margin:14px 0 8px;">Cronología GNP</div>
@@ -1329,9 +1521,7 @@ body.modo-lectura .readonly-hidden { display:none !important; }
   </div>
   <div class="fg full">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-        <label style="margin-bottom:0;">Descripción de los Bienes Afectados
-          <span class="field-hint" style="display:inline;margin-left:8px;">Cap. VII — Descripción de los Bienes Afectados · Cap. II (tabla portada)</span>
-        </label>
+        <label style="margin-bottom:0;">Descripción de los Bienes Afectados</label>
       </div>
       <div class="rte-wrap">
       <div class="rte-toolbar">
@@ -1930,14 +2120,13 @@ body.modo-lectura .readonly-hidden { display:none !important; }
     <div class="fg"></div>
 
     <div style="grid-column:1/-1;font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.06em;margin-top:6px;">Domicilios</div>
-    <div class="fg full"><label>Domicilio legal del asegurado<span class="field-hint">Tabla de Póliza → Domicilio fiscal · Portada → Domicilio Legal</span></label><input type="text" id="p-dom-legal" placeholder="Domicilio fiscal según póliza"></div>
+    <div class="fg full"><label>Domicilio legal del asegurado</label><input type="text" id="p-dom-legal" placeholder="Domicilio fiscal según póliza"></div>
     <div class="fg full"><label>Ubicación del riesgo asegurado</label><input type="text" id="p-ubic-riesgo" placeholder="Ubicación física donde está el riesgo"></div>
 
     <div class="fg full">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
         <label style="margin-bottom:0;">Giro del Asegurado
           <span style="font-size:10px;color:var(--text-ter);font-weight:400;">— según póliza</span>
-          <span class="field-hint" style="display:inline;margin-left:8px;">Tabla de Póliza → Giro del asegurado · Portada → Giro del negocio</span>
         </label>
       </div>
       <div class="rte-wrap">
@@ -1964,7 +2153,6 @@ body.modo-lectura .readonly-hidden { display:none !important; }
           <span style="font-size:10px;color:var(--text-ter);font-weight:400;">
             — Breve historia, giro, a qué se dedica, características relevantes del riesgo
           </span>
-          <span class="field-hint" style="display:inline;margin-left:8px;">Cap. II — El Asegurado</span>
         </label>
       </div>
       <div class="rte-wrap">
@@ -2158,28 +2346,13 @@ body.modo-lectura .readonly-hidden { display:none !important; }
     <div class="fg"><label>Tipo de cambio</label><input type="number" id="res-tc" value="1" step="0.0001"></div>
     <div class="fg"><label>Suma asegurada cobertura <span style="font-size:10px;color:var(--text-ter);">(referencia)</span></label>
       <input type="number" id="res-suma-aseg-cob" value="0" step="0.01" placeholder="0.00" oninput="calcBajoSeguro()"></div>
-    <div class="fg"><label>Valor a Riesgo <span style="font-size:10px;color:var(--text-ter);">(valor total expuesto)</span></label>
-      <input type="number" id="res-valor-real" value="0" step="0.01" placeholder="0.00" oninput="calcBajoSeguro()"></div>
-    <div class="fg"><label>% Bajo Seguro <span style="font-size:10px;color:var(--text-ter);">1 − SA / Valor a Riesgo</span></label>
-      <input type="number" id="res-bajo-seguro-pct" placeholder="0.00" readonly step="0.0001"
-        style="background:rgba(255,204,128,.08);color:#ffcc80;font-weight:600;"></div>
     <div class="fg"><label>Fecha</label><input type="date" id="res-fecha"></div>
 
     <div style="grid-column:1/-1;border-top:1px solid var(--border);padding-top:10px;margin-top:4px;font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.06em;">Importe de la reserva</div>
 
-    <div class="fg"><label>Reserva bruta</label><input type="number" id="res-monto" placeholder="0.00" oninput="calcBajoSeguro()"></div>
-    <div class="fg"><label>Ajuste <span style="font-size:10px;color:var(--text-ter);">(monto determinado por el ajustador)</span></label>
-      <input type="number" id="res-ajuste" value="0" step="0.01" placeholder="0.00" oninput="calcBajoSeguro()"></div>
-    <div class="fg full"><label>Comentario del ajuste</label>
-      <input type="text" id="res-ajuste-comentario" placeholder="Fundamento o descripción del ajuste aplicado" style="font-size:12px;"></div>
-    <div class="fg"><label>Base Ajustada <span style="font-size:10px;color:var(--text-ter);">Reserva Bruta − Ajuste</span></label>
-      <input type="number" id="res-base-ajustada" placeholder="0.00" readonly style="background:var(--surface2);color:var(--text-sec);"></div>
-    <div class="fg"><label>Bajo Seguro <span style="font-size:10px;color:#ffcc80;">Base Ajustada × % Bajo Seguro</span></label>
-      <input type="number" id="res-bajo-seguro" placeholder="0.00" readonly
-        style="background:rgba(255,204,128,.08);color:#ffcc80;font-weight:600;"></div>
-
-    <div class="fg"><label>Monto pérdida estimada <span style="font-size:10px;color:var(--text-ter);">(referencia / reclamado)</span></label>
-      <input type="number" id="res-perdida" placeholder="0.00"></div>
+    <div class="fg"><label>Reserva bruta</label><input type="number" id="res-monto" placeholder="0.00"></div>
+    <div class="fg"><label>Depreciación %</label><input type="number" id="res-dep-pct" value="0" step="0.01" placeholder="0.00"></div>
+    <div class="fg"><label>Monto pérdida estimada</label><input type="number" id="res-perdida" placeholder="0.00" oninput="calcBajoSeguro();calcResNeta()"></div>
 
     <div style="grid-column:1/-1;font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.06em;margin-top:6px;">Deducible</div>
     <div class="fg"><label>Descripción del deducible</label>
@@ -2197,10 +2370,17 @@ body.modo-lectura .readonly-hidden { display:none !important; }
       <input type="number" id="res-coas-monto-display" placeholder="0.00" readonly style="background:var(--surface2);color:var(--text-sec);" title="Calculado: (Pérdida − Deducible) × Coaseguro %">
     </div>
 
+    <!-- Bajo Seguro -->
+    <div style="grid-column:1/-1;font-size:10px;color:#ffcc80;background:rgba(255,204,128,.07);border-left:3px solid #ffcc80;padding:5px 10px;margin:6px 0 4px;border-radius:0 4px 4px 0;">
+      Bajo Seguro = Pérdida × (1 − Suma Asegurada / Valor a Riesgo)
+    </div>
+    <div class="fg"><label>Valor a Riesgo</label><input type="number" id="res-valor-real" value="0" step="0.01" placeholder="0.00" oninput="calcBajoSeguro();calcResNeta()"></div>
+    <div class="fg"><label>Bajo Seguro (calculado)</label>
+      <input type="number" id="res-bajo-seguro" value="0" step="0.01" readonly style="background:rgba(255,204,128,.08);color:var(--text);" oninput="calcResNeta()"></div>
 
     <!-- Reserva Neta calculada -->
     <div style="grid-column:1/-1;background:var(--surface2);border:1px solid var(--border-hi);border-radius:var(--r);padding:10px 14px;display:flex;justify-content:space-between;align-items:center;margin-top:6px;">
-      <span style="font-size:13px;font-weight:600;color:var(--text);">Reserva Neta = Base Ajustada − Bajo Seguro − Deducible − Coaseguro</span>
+      <span style="font-size:13px;font-weight:600;color:var(--text);">Reserva Neta = Pérdida − Bajo Seguro − Deducible − Coaseguro</span>
       <span id="res-neta-display" style="font-size:16px;font-weight:700;color:var(--accent-lt);">—</span>
     </div>
 
@@ -2862,6 +3042,17 @@ async function loadAll(){
     data.sinajust= sinajust.data||[];
     data.todos  = todos.data||[];
     data.graf   = graf.data||[];
+    // Cargar datos de solicitudes
+    const [solRes, solItemsRes, solSegRes, solCatRes] = await Promise.all([
+      db.from('solicitudes_info').select('*').order('created_at',{ascending:false}),
+      db.from('solicitud_items').select('*').order('orden'),
+      db.from('solicitud_seguimiento').select('*').order('fecha'),
+      db.from('catalogo_documentos').select('*').order('orden'),
+    ]);
+    data.solicitudes  = solRes.data||[];
+    data.sol_items    = solItemsRes.data||[];
+    data.sol_seg      = solSegRes.data||[];
+    data.sol_catalogo = solCatRes.data||[];
     renderAll();
     // Guardar snapshot en IDB en background (silencioso)
     setTimeout(offlineSaveSnapshot, 1500);
@@ -3648,6 +3839,8 @@ function renderAlertas(){
   renderInformesPendientes();
   // Render ToDos pendientes
   renderTodosAlertas();
+  // Render Solicitudes pendientes
+  renderSolicitudesAlertas();
 }
 
 function reservaVigente(sinId){
@@ -3754,6 +3947,7 @@ function renderDetalle(){
     <button class="tab-btn" onclick="switchTab2('t-doc',this)">Documentos</button>
     <button class="tab-btn" onclick="switchTab2('t-notas',this)">📝 Notas</button>
     <button class="tab-btn" onclick="switchTab2('t-graf',this)">📷 Gráficos</button>
+    <button class="tab-btn" onclick="switchTab2('t-sol',this);renderSolicitudesTab()">📋 Solicitudes</button>
   </div>
 
   <div id="t-res" class="tab-pane active" style="overflow-y:auto;max-height:calc(100vh - 420px);">
@@ -3847,6 +4041,11 @@ function renderDetalle(){
       <div id="graf-empty" style="display:none;font-size:12px;color:var(--text-ter);padding:8px 0;">Sin imágenes registradas para este expediente.</div>
     </div>
   </div>
+  <div id="t-sol" class="tab-pane" style="overflow-y:auto;max-height:calc(100vh - 420px);">
+    <div style="padding:10px 0;" id="sol-tab-content">
+      <div style="font-size:12px;color:var(--text-ter);padding:20px;text-align:center;">Cargando solicitudes…</div>
+    </div>
+  </div>
   <div id="t-ajust-sin" class="tab-pane">
     <div class="toolbar"><button class="btn btn-primary" onclick="abrirModal('modal-sin-ajust')">+ Asignar ajustador</button></div>
     <div class="tbl-wrap"><table><thead><tr>
@@ -3925,21 +4124,18 @@ function renderReservaGrid(allRows){
   }
 
   const fN = n=>fmtMXN(n||0);
-  let totBruta=0, totAjuste=0, totBaseAj=0, totMPA=0, totDed=0, totPerdIndemniz=0, totCoas=0, totBajo=0, totNeta=0;
+  let totBruta=0, totPerdida=0, totDed=0, totCoas=0, totBajo=0, totNeta=0;
   const calc = rows.map(r=>{
     const bruta   = r.monto||0;
-    const ajuste  = r.ajuste_monto||0;
-    const baseAj  = bruta - ajuste;                           // Base Ajustada
-    const bajo    = r.monto_bajo_seguro||0;
-    const mpa     = baseAj - bajo;                            // Monto Pérdida Ajustada
+    const perdida = r.monto_perdida_estimada||r.monto||0;
+    const dep     = r.depreciacion_pct||0;
     const ded     = r.deducible||0;
     const coasPct = r.coaseguro_pct||0;
-    const coas    = r.monto_coaseguro||(mpa > 0 ? (mpa-ded)*(coasPct/100) : 0);
-    const perdIndemniz = mpa - ded;                           // Pérdida Indemnizable
-    const neta    = perdIndemniz - coas;                      // Reserva Neta
-    totBruta+=bruta; totAjuste+=ajuste; totBaseAj+=baseAj; totMPA+=mpa;
-    totDed+=ded; totPerdIndemniz+=perdIndemniz; totCoas+=coas; totBajo+=bajo; totNeta+=neta;
-    return {r, bruta, ajuste, baseAj, bajo, mpa, ded, coasPct, coas, perdIndemniz, neta};
+    const coas    = r.monto_coaseguro||((perdida-ded)*(coasPct/100));
+    const bajo    = r.monto_bajo_seguro||0;
+    const neta    = perdida-bajo-ded-coas;
+    totBruta+=bruta; totPerdida+=perdida; totDed+=ded; totCoas+=coas; totBajo+=bajo; totNeta+=neta;
+    return {r, bruta, perdida, dep, ded, coasPct, coas, bajo, neta};
   });
 
   const moneda   = rows[0]?.moneda||'MXN';
@@ -3958,15 +4154,14 @@ function renderReservaGrid(allRows){
   html += `</tr></thead><tbody>`;
 
   const ROWS_DEF = [
-    { label:'Reserva bruta',                          key:'bruta',        fmt:'money', tot:totBruta                    },
-    { label:'Ajuste',                                 key:'ajuste',       fmt:'money', tot:totAjuste                   },
-    { label:'Base Ajustada',                          key:'baseAj',       fmt:'money', tot:totBaseAj                   },
-    { label:'Bajo Seguro',                            key:'bajo',         fmt:'money', tot:totBajo                     },
-    { label:'Monto Pérdida Ajustada',                 key:'mpa',          fmt:'money', tot:totMPA                      },
-    { label:'Deducible',                              key:'ded',          fmt:'money', tot:totDed                      },
-    { label:'Pérdida Indemnizable',                   key:'perdIndemniz', fmt:'money', tot:totPerdIndemniz              },
-    { label:'Coaseguro a cargo del Asegurado',        key:'coas',         fmt:'money', tot:totCoas                     },
-    { label:'Reserva Neta',                           key:'neta',         fmt:'money', tot:totNeta, bold:true, accent:true },
+    { label:'Reserva bruta',              key:'bruta',    fmt:'money', tot:totBruta                  },
+    { label:'Depreciación %',             key:'dep',      fmt:'pct',   tot:''                        },
+    { label:'Monto Pérdida Ajustada',     key:'perdida',  fmt:'money', tot:totPerdida                },
+    { label:'Deducible',                  key:'ded',      fmt:'money', tot:totDed                    },
+    { label:'Monto Pérdida Indemnizable', key:'indemniz', fmt:'money', tot:totPerdida-totDed         },
+    { label:'Coaseguro a cargo del Asegurado', key:'coas',     fmt:'money', tot:totCoas                   },
+    { label:'Bajo Seguro',                key:'bajo',     fmt:'money', tot:totBajo                   },
+    { label:'Reserva Neta',               key:'neta',     fmt:'money', tot:totNeta, bold:true, accent:true },
   ];
 
   ROWS_DEF.forEach((rd, ri)=>{
@@ -3977,7 +4172,7 @@ function renderReservaGrid(allRows){
     const valStyle   = `${rowStyle}padding:6px 12px;border-bottom:1px solid var(--border);text-align:right;font-weight:${rd.bold?'700':'400'};color:${rd.accent?'var(--accent-lt)':'var(--text)'};`;
     html += `<tr><td style="${labelStyle}">${rd.label}</td>`;
     calc.forEach(item=>{
-      let val = item[rd.key];
+      let val = rd.key==='indemniz' ? item.perdida-item.ded : item[rd.key];
       const disp = rd.fmt==='pct'
         ? (val===0?'—':val.toFixed(2)+'%')
         : (val===0&&rd.key!=='ded'&&rd.key!=='coas'&&rd.key!=='bajo'?'—':(moneda+' '+fN(val)));
@@ -4014,18 +4209,15 @@ function renderReservaGrid(allRows){
 function renderReservaRows(rows){
   if(!rows.length) return `<tr><td colspan="9" class="empty">Sin coberturas registradas.</td></tr>`;
   return rows.map(r=>{
-    const bruta     = r.monto||0;
-    const ajuste    = r.ajuste_monto||0;
-    const baseAj    = bruta - ajuste;
-    const bajo      = r.monto_bajo_seguro||0;
-    const mpa       = baseAj - bajo;
-    const ded       = r.deducible||0;
-    const coasMonto = r.monto_coaseguro||(mpa > 0 ? (mpa-ded)*(r.coaseguro_pct||0)/100 : 0);
-    const neta      = mpa - ded - coasMonto;
+    const perdida=r.monto_perdida_estimada||r.monto||0;
+    const ded=r.deducible||0;
+    const coasMonto=r.monto_coaseguro||(((perdida-ded)*(r.coaseguro_pct||0))/100);
+    const bajo=r.monto_bajo_seguro||0;
+    const neta=perdida-bajo-ded-coasMonto;
     return `<tr>
       <td>${r.concepto||'—'}</td>
-      <td style="text-align:right;">${fmtMXN(bruta)}</td>
-      <td style="text-align:right;">${fmtMXN(mpa)}</td>
+      <td style="text-align:right;">${fmtMXN(r.monto)}</td>
+      <td style="text-align:right;">${fmtMXN(perdida)}</td>
       <td style="text-align:right;">${fmtMXN(ded)}</td>
       <td style="text-align:center;">${r.coaseguro_pct||0}%</td>
       <td style="text-align:right;font-weight:600;">${fmtMXN(neta)}</td>
@@ -4264,8 +4456,8 @@ function abrirModal(id){
     const fids={'modal-res':'res-fecha','modal-pago':'pg-fecha','modal-viat':'vt-fecha','modal-act':'ac-fecha','modal-doc':'dc-fecha'};
     if(fids[id]) g(fids[id]).value=today;
     if(id==='modal-res'){
-      ['res-concepto','res-monto','res-perdida','res-deducible','res-ded-desc','res-bases','res-notas','res-ajuste-comentario'].forEach(f=>{if(g(f))g(f).value='';});
-      ['res-ajuste','res-ded-pct','res-coas-pct','res-bajo-seguro','res-bajo-seguro-pct','res-valor-real','res-suma-aseg-cob','res-base-ajustada'].forEach(f=>{if(g(f))g(f).value='0';});
+      ['res-concepto','res-monto','res-perdida','res-deducible','res-ded-desc','res-bases','res-notas'].forEach(f=>{if(g(f))g(f).value='';});
+      ['res-dep-pct','res-ded-pct','res-coas-pct','res-bajo-seguro','res-valor-real','res-suma-aseg-cob'].forEach(f=>{if(g(f))g(f).value='0';});
       if(g('res-tc'))g('res-tc').value='1';
       if(g('res-mon'))g('res-mon').value='MXN';
       if(g('res-id'))g('res-id').value='';
@@ -4473,8 +4665,8 @@ async function guardarSiniestro(){
     fecha_inspeccion:v('s-finsp')||null, fecha_informe:v('s-finf')||null,
     inspeccion_persona:v('s-insp-persona')||null, inspeccion_cargo:v('s-insp-cargo')||null,
     inspeccion_telefono:v('s-insp-tel')||null, inspeccion_domicilio:v('s-insp-dom')||null,
-    bienes_danados:v('s-desc')||null,
-    descripcion_danios_html:v('s-desc')||null,
+    bienes_danados:v('s-bienes')||null,
+    descripcion_danios_html:v('s-bienes')||null,
     bienes_amparados:v('s-bienes-amparados')||null,
     intervencion_autoridades:v('s-autoridades')==='1',
     intervencion_autoridades_detalle:v('s-autoridades-det')||null,
@@ -5047,38 +5239,30 @@ function buildInfResGrid(){
     <thead><tr>
       <th style="background:#1F3864;color:#fff;padding:5px 8px;text-align:left;border:1px solid #1F3864;">Cobertura</th>
       <th style="background:#1F3864;color:#fff;padding:5px 8px;text-align:center;border:1px solid #1F3864;">Reserva bruta<br><span style="font-size:9px;font-weight:400;opacity:.8;">actual → nuevo</span></th>
-      <th style="background:#1F3864;color:#fff;padding:5px 8px;text-align:center;border:1px solid #1F3864;">Ajuste<br><span style="font-size:9px;font-weight:400;opacity:.8;">actual → nuevo</span></th>
-      <th style="background:#1F3864;color:#fff;padding:5px 8px;text-align:center;border:1px solid #1F3864;">Bajo Seguro<br><span style="font-size:9px;font-weight:400;opacity:.8;">actual → nuevo</span></th>
+      <th style="background:#1F3864;color:#fff;padding:5px 8px;text-align:center;border:1px solid #1F3864;">Pérd. Estimada<br><span style="font-size:9px;font-weight:400;opacity:.8;">actual → nuevo</span></th>
       <th style="background:#1F3864;color:#fff;padding:5px 8px;text-align:center;border:1px solid #1F3864;">Deducible<br><span style="font-size:9px;font-weight:400;opacity:.8;">actual → nuevo</span></th>
       <th style="background:#1F3864;color:#fff;padding:5px 8px;text-align:center;border:1px solid #1F3864;">Coaseg %<br><span style="font-size:9px;font-weight:400;opacity:.8;">actual → nuevo</span></th>
+      <th style="background:#1F3864;color:#fff;padding:5px 8px;text-align:center;border:1px solid #1F3864;">Bajo Seguro<br><span style="font-size:9px;font-weight:400;opacity:.8;">actual → nuevo</span></th>
       <th style="background:#0F2744;color:#fff;padding:5px 8px;text-align:center;border:1px solid #0F2744;">Reserva Neta<br><span style="font-size:9px;font-weight:400;opacity:.8;">calculada</span></th>
     </tr></thead><tbody>`;
 
   vigentes.forEach((r,i)=>{
-    const brutaAct  = r.monto||0;
-    const ajusteAct = r.ajuste_monto||0;
-    const bajoAct   = r.monto_bajo_seguro||0;
-    const dedAct    = r.deducible||0;
-    const baseAjAct = brutaAct - ajusteAct;
-    const mpaAct    = baseAjAct - bajoAct;
-    const coasAct   = r.monto_coaseguro||(mpaAct > 0 ? (mpaAct-dedAct)*(r.coaseguro_pct||0)/100 : 0);
-    const netaAct   = mpaAct - dedAct - coasAct;
+    const perdidaAct=r.monto_perdida_estimada||r.monto||0;
+    const dedAct=r.deducible||0;
+    const coasAct=r.monto_coaseguro||((perdidaAct-dedAct)*(r.coaseguro_pct||0)/100);
+    const bajoAct=r.monto_bajo_seguro||0;
+    const netaAct=perdidaAct-bajoAct-dedAct-coasAct;
     const bg=i%2===0?'#F5F6F8':'#FFFFFF';
     html+=`<tr>
       <td style="background:${bg};padding:5px 8px;border:1px solid #DDE0E5;font-weight:600;">${r.concepto}</td>
       <td style="background:${bg};padding:3px 6px;border:1px solid #DDE0E5;">
-        <div style="font-size:10px;color:var(--text-ter);margin-bottom:2px;">${fN(brutaAct)}</div>
-        <input type="number" id="inf-res-${i}-monto" value="${brutaAct}" step="0.01" data-concepto="${r.concepto}" data-idx="${i}"
+        <div style="font-size:10px;color:var(--text-ter);margin-bottom:2px;">${fN(r.monto||0)}</div>
+        <input type="number" id="inf-res-${i}-monto" value="${r.monto||0}" step="0.01" data-concepto="${r.concepto}" data-idx="${i}"
           style="width:100%;padding:3px 5px;font-size:11px;border:1px solid var(--border-md);border-radius:4px;background:var(--bg2);color:var(--text);font-family:inherit;" oninput="recalcInfNeta(${i})">
       </td>
       <td style="background:${bg};padding:3px 6px;border:1px solid #DDE0E5;">
-        <div style="font-size:10px;color:var(--text-ter);margin-bottom:2px;">${fN(ajusteAct)}</div>
-        <input type="number" id="inf-res-${i}-ajuste" value="${ajusteAct}" step="0.01"
-          style="width:100%;padding:3px 5px;font-size:11px;border:1px solid var(--border-md);border-radius:4px;background:var(--bg2);color:var(--text);font-family:inherit;" oninput="recalcInfNeta(${i})">
-      </td>
-      <td style="background:${bg};padding:3px 6px;border:1px solid #DDE0E5;">
-        <div style="font-size:10px;color:var(--text-ter);margin-bottom:2px;">${fN(bajoAct)}</div>
-        <input type="number" id="inf-res-${i}-bajo" value="${bajoAct}" step="0.01"
+        <div style="font-size:10px;color:var(--text-ter);margin-bottom:2px;">${fN(perdidaAct)}</div>
+        <input type="number" id="inf-res-${i}-perdida" value="${perdidaAct}" step="0.01"
           style="width:100%;padding:3px 5px;font-size:11px;border:1px solid var(--border-md);border-radius:4px;background:var(--bg2);color:var(--text);font-family:inherit;" oninput="recalcInfNeta(${i})">
       </td>
       <td style="background:${bg};padding:3px 6px;border:1px solid #DDE0E5;">
@@ -5091,12 +5275,18 @@ function buildInfResGrid(){
         <input type="number" id="inf-res-${i}-coas" value="${r.coaseguro_pct||0}" step="0.01" min="0" max="100"
           style="width:60px;padding:3px 5px;font-size:11px;border:1px solid var(--border-md);border-radius:4px;background:var(--bg2);color:var(--text);font-family:inherit;" oninput="recalcInfNeta(${i})">
       </td>
+      <td style="background:${bg};padding:3px 6px;border:1px solid #DDE0E5;">
+        <div style="font-size:10px;color:var(--text-ter);margin-bottom:2px;">${fN(bajoAct)}</div>
+        <input type="number" id="inf-res-${i}-bajo" value="${bajoAct}" step="0.01"
+          style="width:100%;padding:3px 5px;font-size:11px;border:1px solid var(--border-md);border-radius:4px;background:var(--bg2);color:var(--text);font-family:inherit;" oninput="recalcInfNeta(${i})">
+      </td>
       <td style="background:#EBF3FF;padding:5px 8px;border:1px solid #DDE0E5;text-align:right;font-weight:700;">
         <span id="inf-res-${i}-neta" style="color:#1F3864;">${fN(netaAct)}</span>
       </td>
     </tr>`;
-    // Store metadata for insert
+    // Store original concepto and dates for insert
     html+=`<input type="hidden" id="inf-res-${i}-concepto" value="${r.concepto}">
+    <input type="hidden" id="inf-res-${i}-dep" value="${r.depreciacion_pct||0}">
     <input type="hidden" id="inf-res-${i}-mon" value="${r.moneda||'MXN'}">
     <input type="hidden" id="inf-res-${i}-tc"  value="${r.tipo_cambio_mxn||1}">
     <input type="hidden" id="inf-res-${i}-bases" value="${(r.bases_determinacion||'').replace(/"/g,'&quot;')}">`;
@@ -5107,15 +5297,12 @@ function buildInfResGrid(){
 }
 
 function recalcInfNeta(i){
-  const bruta  = parseFloat(document.getElementById('inf-res-'+i+'-monto')?.value)||0;
-  const ajuste = parseFloat(document.getElementById('inf-res-'+i+'-ajuste')?.value)||0;
-  const bajo   = parseFloat(document.getElementById('inf-res-'+i+'-bajo')?.value)||0;
-  const ded    = parseFloat(document.getElementById('inf-res-'+i+'-ded')?.value)||0;
-  const coasPct= parseFloat(document.getElementById('inf-res-'+i+'-coas')?.value)||0;
-  const baseAj = bruta - ajuste;
-  const mpa    = baseAj - bajo;
-  const coas   = mpa > 0 ? (mpa - ded) * (coasPct / 100) : 0;
-  const neta   = mpa - ded - coas;
+  const perdida=parseFloat(document.getElementById('inf-res-'+i+'-perdida')?.value)||0;
+  const ded    =parseFloat(document.getElementById('inf-res-'+i+'-ded')?.value)||0;
+  const coasPct=parseFloat(document.getElementById('inf-res-'+i+'-coas')?.value)||0;
+  const bajo   =parseFloat(document.getElementById('inf-res-'+i+'-bajo')?.value)||0;
+  const coas   =(perdida-ded)*(coasPct/100);
+  const neta   =perdida-bajo-ded-coas;
   const el=document.getElementById('inf-res-'+i+'-neta');
   if(el) el.textContent=fmtMXN(neta);
 }
@@ -5154,15 +5341,13 @@ async function guardarInforme(){
     const today=new Date().toISOString().slice(0,10);
     const inserts=[];
     for(let i=0;i<count;i++){
-      const bruta  =parseFloat(document.getElementById('inf-res-'+i+'-monto')?.value)||0;
-      const ajuste =parseFloat(document.getElementById('inf-res-'+i+'-ajuste')?.value)||0;
-      const bajo   =parseFloat(document.getElementById('inf-res-'+i+'-bajo')?.value)||0;
+      const perdida=parseFloat(document.getElementById('inf-res-'+i+'-perdida')?.value)||0;
       const ded    =parseFloat(document.getElementById('inf-res-'+i+'-ded')?.value)||0;
       const coasPct=parseFloat(document.getElementById('inf-res-'+i+'-coas')?.value)||0;
-      const baseAj =bruta - ajuste;
-      const mpa    =baseAj - bajo;
-      const coas   =mpa > 0 ? (mpa-ded)*(coasPct/100) : 0;
+      const bajo   =parseFloat(document.getElementById('inf-res-'+i+'-bajo')?.value)||0;
+      const coas   =(perdida-ded)*(coasPct/100);
       const concepto=document.getElementById('inf-res-'+i+'-concepto')?.value||('Cobertura '+(i+1));
+      const dep    =parseFloat(document.getElementById('inf-res-'+i+'-dep')?.value)||0;
       const mon    =document.getElementById('inf-res-'+i+'-mon')?.value||'MXN';
       const tc     =parseFloat(document.getElementById('inf-res-'+i+'-tc')?.value)||1;
       const bases  =document.getElementById('inf-res-'+i+'-bases')?.value||v('inf-bases-ajuste')||null;
@@ -5171,9 +5356,9 @@ async function guardarInforme(){
         id_informe:infId,
         es_actualizacion:true,
         concepto, fecha:today,
-        monto:bruta,
-        ajuste_monto:ajuste,
-        monto_perdida_estimada:mpa,
+        monto:parseFloat(document.getElementById('inf-res-'+i+'-monto')?.value)||0,
+        depreciacion_pct:dep,
+        monto_perdida_estimada:perdida,
         deducible:ded, coaseguro_pct:coasPct, monto_coaseguro:coas,
         monto_bajo_seguro:bajo,
         moneda:mon, tipo_cambio_mxn:tc,
@@ -5256,27 +5441,19 @@ async function guardarTC(){
 
 
 function calcBajoSeguro(){
-  const sumaAseg = parseFloat(document.getElementById('res-suma-aseg-cob')?.value)||0;
-  const valReal  = parseFloat(document.getElementById('res-valor-real')?.value)||0;
-  const pctField = document.getElementById('res-bajo-seguro-pct');
-  const montoField = document.getElementById('res-bajo-seguro');
-  if(!montoField) return;
-
+  const perdida = parseFloat(document.getElementById('res-perdida')?.value)||0;
+  const valReal = parseFloat(document.getElementById('res-valor-real')?.value)||0;
+  const sumaAseg= parseFloat(document.getElementById('res-suma-aseg-cob')?.value)||0;
+  const field   = document.getElementById('res-bajo-seguro');
+  if(!field) return;
   if(valReal > 0 && sumaAseg > 0 && sumaAseg < valReal){
-    // Porcentaje de Bajo Seguro = 1 − (SA / Valor a Riesgo)
-    const pct  = 1 - (sumaAseg / valReal);
-    // Se aplica sobre Base Ajustada (Bruta − Ajuste), calculada en tiempo real
-    const bruta  = parseFloat(document.getElementById('res-monto')?.value)||0;
-    const ajuste = parseFloat(document.getElementById('res-ajuste')?.value)||0;
-    const baseAj = bruta - ajuste;
-    const monto  = Math.max(0, baseAj * pct);
-    if(pctField) pctField.value = (pct * 100).toFixed(4);
-    montoField.value = monto.toFixed(2);
-  } else {
-    if(pctField) pctField.value = '0';
-    montoField.value = '0';
-  }
+    const ratio = sumaAseg / valReal;          // proporción cubierta
+    const bajo  = perdida * (1 - ratio);       // lo que no cubre la póliza
+    field.value = Math.max(0, bajo).toFixed(2);
   calcResNeta();
+  } else {
+    field.value = '0';
+  }
 }
 
 
@@ -5671,49 +5848,32 @@ function seleccionarResCobertura(sl){
 }
 
 function calcResNeta(){
-  // Nueva cadena:
-  // Reserva Bruta − Ajuste           = Base Ajustada
-  // Base Ajustada − Bajo Seguro      = Monto Pérdida Ajustada
-  // Monto Pérdida Ajustada − Ded     = Pérdida Indemnizable (Subtotal 2)
-  // Pérdida Indemnizable − Coaseguro = Reserva Neta
-  const bruta     = parseFloat(v('res-monto'))||0;
-  const ajuste    = parseFloat(v('res-ajuste'))||0;
-  const bajo      = parseFloat(v('res-bajo-seguro'))||0;
+  const perdida   = parseFloat(v('res-perdida'))||0;
   const ded       = parseFloat(v('res-deducible'))||0;
   const coasPct   = parseFloat(v('res-coas-pct'))||0;
+  const bajo      = parseFloat(v('res-bajo-seguro'))||0;
+  const coasMonto = (perdida - ded) * (coasPct / 100);
+  const neta      = perdida - bajo - ded - coasMonto;
   const moneda    = v('res-mon')||'MXN';
-
-  const baseAjustada  = bruta - ajuste;                       // Subtotal 1
-  const mpa           = baseAjustada - bajo;                  // Monto Pérdida Ajustada
-  const coasMonto     = mpa > 0 ? (mpa - ded) * (coasPct / 100) : 0;  // sobre MPA−Ded
-  const neta          = mpa - ded - coasMonto;                // Reserva Neta
-
-  if(g('res-base-ajustada'))       g('res-base-ajustada').value        = baseAjustada.toFixed(2);
-  if(g('res-coas-monto-display'))  g('res-coas-monto-display').value   = coasMonto.toFixed(2);
+  if(g('res-coas-monto-display')) g('res-coas-monto-display').value = coasMonto.toFixed(2);
   const disp = g('res-neta-display');
-  if(disp) disp.textContent = bruta===0 ? '—' : moneda+' '+fmtMXN(neta);
+  if(disp) disp.textContent = isNaN(neta)||perdida===0 ? '—' : moneda+' '+fmtMXN(neta);
 }
 
 async function guardarReserva(){
   if(!currentSin) return;
-  const bruta      = parseFloat(v('res-monto'))||0;
-  const ajuste     = parseFloat(v('res-ajuste'))||0;
-  const coasPct    = parseFloat(v('res-coas-pct'))||0;
-  const perdida    = parseFloat(v('res-perdida'))||0;
-  const ded        = parseFloat(v('res-deducible'))||0;
-  const bajoSeguro = parseFloat(v('res-bajo-seguro'))||0;
-
-  // Nueva cadena
-  const baseAjustada  = bruta - ajuste;
-  const mpa           = baseAjustada - bajoSeguro;
-  const coasMonto     = mpa > 0 ? (mpa - ded) * (coasPct / 100) : 0;
+  const coasPct=parseFloat(v('res-coas-pct'))||0;
+  const perdida=parseFloat(v('res-perdida'))||0;
+  const ded=parseFloat(v('res-deducible'))||0;
+  const bajoSeguro=parseFloat(v('res-bajo-seguro'))||0;
+  const subtotal=perdida-ded;
+  const coasMonto=subtotal*(coasPct/100);
 
   // Base payload — columns that always exist
   const payload={
     id_siniestro:currentSin.id, concepto:v('res-concepto'),
-    monto:bruta,
-    ajuste_monto:ajuste,
-    ajuste_comentario:v('res-ajuste-comentario')||null,
+    monto:parseFloat(v('res-monto'))||0,
+    depreciacion_pct:parseFloat(v('res-dep-pct'))||0,
     monto_perdida_estimada:perdida,
     deducible:ded, deducible_pct:parseFloat(v('res-ded-pct'))||0,
     coaseguro_pct:coasPct, monto_coaseguro:coasMonto,
@@ -5894,15 +6054,12 @@ function buildFormal(s, secs){
   const resRows=data.res.filter(r=>r.id_siniestro===s.id);
   const resVig={};
   resRows.forEach(r=>{if(!resVig[r.concepto]||r.id>resVig[r.concepto].id)resVig[r.concepto]=r;});
-  const reservaBruta  = Object.values(resVig).reduce((a,r)=>a+(r.monto||0),0);
-  const totalAjuste   = Object.values(resVig).reduce((a,r)=>a+(r.ajuste_monto||0),0);
-  const baseAjustada  = reservaBruta - totalAjuste;
-  const bajoSegTotal  = Object.values(resVig).reduce((a,r)=>a+(r.monto_bajo_seguro||0),0);
-  const perdidaAjust  = baseAjustada - bajoSegTotal;           // Monto Pérdida Ajustada
-  const deducible     = Object.values(resVig).reduce((a,r)=>a+(r.deducible||0),0);
-  const perdIndemniz  = perdidaAjust - deducible;              // Pérdida Indemnizable
-  const coasTotal     = Object.values(resVig).reduce((a,r)=>a+(r.monto_coaseguro||0),0);
-  const reservaNeta   = perdIndemniz - coasTotal;
+  const reservaBruta=Object.values(resVig).reduce((a,r)=>a+(r.monto||0),0);
+  const perdidaEst=Object.values(resVig).reduce((a,r)=>a+(r.monto_perdida_estimada||r.monto||0),0);
+  const deducible=Object.values(resVig).reduce((a,r)=>a+(r.deducible||0),0);
+  const reservaNeta=perdidaEst-deducible;
+  const deps=Object.values(resVig);
+  const depPct=deps.length?(deps.reduce((a,r)=>a+(r.depreciacion_pct||0),0)/deps.length).toFixed(2):'0.00';
   const pags=data.pag.filter(p=>p.id_siniestro===s.id);
   const hons=data.hon.filter(h=>h.id_siniestro===s.id);
   const honAjust=hons.reduce((a,h)=>a+(h.monto||0),0);
@@ -5928,7 +6085,7 @@ function buildFormal(s, secs){
       <tr><td class="lbl">Ramo</td><td class="val">${RAMOS[pol.ramo]||pol.ramo||''}</td><td class="lbl">Cobertura</td><td class="val">${s.subramo||pol.subramo||''}</td><td class="lbl">Vigencia</td><td class="val">Del ${fmtD(pol.vigencia_ini)} Al ${fmtD(pol.vigencia_fin)}</td></tr>
       <tr><td class="lbl">Fecha de siniestro</td><td class="val">${fmtD(s.fecha_siniestro)}</td><td class="lbl">Agente</td><td colspan="3" class="val">${pol.agente||''}</td></tr>
       <tr><td class="lbl">Asegurado</td><td colspan="3" class="val">${asdo.nombre||''}</td><td class="lbl">Referencia Asegurado</td><td class="val">${s.referencia_asegurado||''}</td></tr>
-      <tr><td class="lbl">Importe reclamado</td><td class="val">${perdidaAjust?fmtMXN(perdidaAjust):'Pendiente'}</td><td class="lbl">Moneda</td><td class="val">${moneda}</td><td class="lbl">Clave ajustador</td><td class="val">${s.clave_ajustador_cia||''}</td></tr>
+      <tr><td class="lbl">Importe reclamado</td><td class="val">${perdidaEst?fmtMXN(perdidaEst):'Pendiente'}</td><td class="lbl">Moneda</td><td class="val">${moneda}</td><td class="lbl">Clave ajustador</td><td class="val">${s.clave_ajustador_cia||''}</td></tr>
       <tr><td class="lbl">Ref. AASA</td><td class="val">${s.numero_exp||''}</td><td class="lbl">Giro del asegurado</td><td colspan="3" class="val">${s.giro_asegurado||''}</td></tr>
       <tr><td class="lbl">Causa del siniestro</td><td colspan="2" class="val">${s.causa||''}</td><td class="lbl">Comentario de la causa</td><td colspan="2" class="val">${s.causa_comentario||''}</td></tr>
       <tr><td class="lbl">Clave evento (catastrófico)</td><td class="val">${s.clave_evento_catastrofico||''}</td><td class="lbl">Riesgo afectado</td><td colspan="3" class="val">${s.riesgo_afectado||''}</td></tr>
@@ -5939,13 +6096,9 @@ function buildFormal(s, secs){
     h+=`<div class="sec"><div class="sec-title">1&nbsp;&nbsp;Estimación por coberturas y secciones</div>`;
     h+=`<table class="cov-table"><thead><tr><th style="text-align:left;">Coberturas o secciones</th><th>${s.subramo||pol.subramo||'Cobertura 1'}</th><th>N/A – ${moneda}</th><th>Estimación total – ${moneda}</th></tr></thead><tbody>`;
     h+=`<tr><td class="lbl">Reserva bruta</td><td>${fmtMXN(reservaBruta)}</td><td></td><td>${fmtMXN(reservaBruta)}</td></tr>`;
-    h+=`<tr><td class="lbl">Ajuste</td><td>${fmtMXN(totalAjuste)}</td><td></td><td>${fmtMXN(totalAjuste)}</td></tr>`;
-    h+=`<tr><td class="lbl" style="font-weight:700;">Base Ajustada</td><td style="font-weight:700;">${fmtMXN(baseAjustada)}</td><td>–</td><td style="font-weight:700;">${fmtMXN(baseAjustada)}</td></tr>`;
-    h+=`<tr><td class="lbl">Bajo Seguro</td><td>${fmtMXN(bajoSegTotal)}</td><td></td><td>${fmtMXN(bajoSegTotal)}</td></tr>`;
-    h+=`<tr><td class="lbl" style="font-weight:700;">Monto Pérdida Ajustada</td><td style="font-weight:700;">${fmtMXN(perdidaAjust)}</td><td>–</td><td style="font-weight:700;">${fmtMXN(perdidaAjust)}</td></tr>`;
+    h+=`<tr><td class="lbl" style="font-style:italic;font-weight:400;">Depreciación ${depPct}% promedio</td><td></td><td></td><td></td></tr>`;
+    h+=`<tr><td class="lbl" style="font-weight:700;">Monto Pérdida Estimada</td><td style="font-weight:700;">${fmtMXN(perdidaEst)}</td><td>–</td><td style="font-weight:700;">${fmtMXN(perdidaEst)}</td></tr>`;
     h+=`<tr><td class="lbl">Deducible</td><td>${fmtMXN(deducible)}</td><td></td><td>${fmtMXN(deducible)}</td></tr>`;
-    h+=`<tr><td class="lbl">Pérdida Indemnizable</td><td>${fmtMXN(perdIndemniz)}</td><td></td><td>${fmtMXN(perdIndemniz)}</td></tr>`;
-    h+=`<tr><td class="lbl">Coaseguro a cargo del Asegurado</td><td>${fmtMXN(coasTotal)}</td><td></td><td>${fmtMXN(coasTotal)}</td></tr>`;
     h+=`<tr class="total"><td class="lbl" style="font-weight:700;">Reserva Neta</td><td style="font-weight:700;">${fmtMXN(reservaNeta)}</td><td style="font-weight:700;">0</td><td style="font-weight:700;">${fmtMXN(reservaNeta)}</td></tr>`;
     h+=`</tbody></table>`;
     if(bases) h+=`<div class="bases-box"><strong>Especificar las bases que se tomaron para determinar la reserva</strong><br>${bases}</div>`;
@@ -6188,18 +6341,17 @@ function buildGNP(s, secs){
   const fM = n=>{ if(!n&&n!==0) return ''; return new Intl.NumberFormat('es-MX',{minimumFractionDigits:2}).format(n); };
 
   // Totales por cobertura (primera reserva vigente como "Cobertura 1")
-  const cob1       = rvList[0]||{};
-  const res_bruta  = rvList.reduce((a,r)=>a+(r.monto||0),0);
-  const tot_ajuste = rvList.reduce((a,r)=>a+(r.ajuste_monto||0),0);
-  const base_aj    = res_bruta - tot_ajuste;                         // Base Ajustada
-  const bajo_seg   = rvList.reduce((a,r)=>a+(r.monto_bajo_seguro||0),0);
-  const p_ajustada = base_aj - bajo_seg;                             // Monto Pérdida Ajustada
-  const deducible  = rvList.reduce((a,r)=>a+(r.deducible||0),0);
-  const p_indemniz = p_ajustada - deducible;                         // Pérdida Indemnizable
-  const coas_aseg  = rvList.reduce((a,r)=>a+(r.monto_coaseguro||0),0);
-  const res_neta   = p_indemniz - coas_aseg;                         // Reserva Neta
-  const bases_det  = rvList.map(r=>r.bases_determinacion).filter(Boolean).join(' ');
-  const monedaStr  = (pol.moneda||'MXN');
+  const cob1 = rvList[0]||{};
+  const res_bruta   = rvList.reduce((a,r)=>a+(r.monto||0),0);
+  const dep_pct     = rvList.length?(rvList.reduce((a,r)=>a+(r.depreciacion_pct||0),0)/rvList.length):0;
+  const p_ajustada  = rvList.reduce((a,r)=>a+(r.monto_perdida_estimada||r.monto||0),0);
+  const deducible   = rvList.reduce((a,r)=>a+(r.deducible||0),0);
+  const p_indemniz  = p_ajustada - deducible;
+  const coas_aseg   = rvList.reduce((a,r)=>a+(r.monto_coaseguro||0),0);
+  const bajo_seg    = rvList.reduce((a,r)=>a+(r.monto_bajo_seguro||0),0);
+  const res_neta    = p_indemniz - bajo_seg - coas_aseg;
+  const bases_det   = rvList.map(r=>r.bases_determinacion).filter(Boolean).join(' ');
+  const monedaStr   = (pol.moneda||'MXN');
 
   const CSS = `
     *{box-sizing:border-box;margin:0;padding:0;}
@@ -6316,14 +6468,6 @@ function buildGNP(s, secs){
 
   // §1 ESTIMACIÓN POR COBERTURAS
   if(secs.includes('estimacion')){
-    // Valores por cobertura 1 con nueva cadena
-    const cob1Ajuste  = cob1.ajuste_monto||0;
-    const cob1BaseAj  = (cob1.monto||0) - cob1Ajuste;
-    const cob1Bajo    = cob1.monto_bajo_seguro||0;
-    const cob1MPA     = cob1BaseAj - cob1Bajo;
-    const cob1Ded     = cob1.deducible||0;
-    const cob1PI      = cob1MPA - cob1Ded;
-    const cob1Neta    = cob1PI - (cob1.monto_coaseguro||0);
     h += `<div class="sec-num">1. Estimación por coberturas y secciones</div>`;
     h += `<table class="cob-tbl">
       <tr>
@@ -6334,29 +6478,25 @@ function buildGNP(s, secs){
       <tr><td class="lbl">Reserva bruta</td>
           <td class="num">${monedaStr} ${fM(cob1.monto||0)}</td>
           <td class="num">${monedaStr} ${fM(res_bruta)}</td></tr>
-      <tr><td class="lbl">Ajuste</td>
-          <td class="num">${monedaStr} ${fM(cob1Ajuste)}</td>
-          <td class="num">${monedaStr} ${fM(tot_ajuste)}</td></tr>
-      <tr><td class="lbl" style="font-weight:700;">Base Ajustada</td>
-          <td class="num" style="font-weight:700;">${monedaStr} ${fM(cob1BaseAj)}</td>
-          <td class="num" style="font-weight:700;">${monedaStr} ${fM(base_aj)}</td></tr>
-      <tr><td class="lbl">Bajo Seguro</td>
-          <td class="num">${cob1Bajo?monedaStr+' '+fM(cob1Bajo):'N/A'}</td>
-          <td class="num">${bajo_seg?monedaStr+' '+fM(bajo_seg):'N/A'}</td></tr>
-      <tr><td class="lbl" style="font-weight:700;">Monto Pérdida Ajustada</td>
-          <td class="num" style="font-weight:700;">${monedaStr} ${fM(cob1MPA)}</td>
-          <td class="num" style="font-weight:700;">${monedaStr} ${fM(p_ajustada)}</td></tr>
+      <tr><td class="lbl">Depreciación ${dep_pct.toFixed(2)}% promedio</td>
+          <td></td><td></td></tr>
+      <tr><td class="lbl">Monto Pérdida Ajustada</td>
+          <td class="num">${monedaStr} ${fM(cob1.monto_perdida_estimada||cob1.monto||0)}</td>
+          <td class="num">${monedaStr} ${fM(p_ajustada)}</td></tr>
       <tr><td class="lbl">Deducible</td>
-          <td class="num">${monedaStr} ${fM(cob1Ded)}</td>
+          <td class="num">${monedaStr} ${fM(cob1.deducible||0)}</td>
           <td class="num">${monedaStr} ${fM(deducible)}</td></tr>
-      <tr><td class="lbl">Pérdida Indemnizable</td>
-          <td class="num">${monedaStr} ${fM(cob1PI)}</td>
+      <tr><td class="lbl">Monto Pérdida Indemnizable</td>
+          <td class="num">${monedaStr} ${fM((cob1.monto_perdida_estimada||cob1.monto||0)-(cob1.deducible||0))}</td>
           <td class="num">${monedaStr} ${fM(p_indemniz)}</td></tr>
-      <tr><td class="lbl">Coaseguro a cargo del Asegurado</td>
+      <tr><td class="lbl">Coaseguro Asegurado</td>
           <td class="num">${cob1.coaseguro_pct?monedaStr+' '+fM(cob1.monto_coaseguro||0):'N/A'}</td>
           <td class="num">${coas_aseg?monedaStr+' '+fM(coas_aseg):'N/A'}</td></tr>
+      <tr><td class="lbl">Bajo Seguro</td>
+          <td class="num">${(cob1.monto_bajo_seguro||0)?monedaStr+' '+fM(cob1.monto_bajo_seguro||0):'N/A'}</td>
+          <td class="num">${bajo_seg?monedaStr+' '+fM(bajo_seg):'N/A'}</td></tr>
       <tr><td class="lbl"><strong>Reserva Neta</strong></td>
-          <td class="num"><strong>${monedaStr} ${fM(cob1Neta)}</strong></td>
+          <td class="num"><strong>${monedaStr} ${fM((cob1.monto_perdida_estimada||cob1.monto||0)-(cob1.deducible||0)-(cob1.monto_coaseguro||0))}</strong></td>
           <td class="num"><strong>${monedaStr} ${fM(res_neta)}</strong></td></tr>
       <tr><td class="bases" colspan="3"><strong>Especificar las bases que se tomaron para determinar la reserva:</strong><br>${bases_det}</td></tr>
       <tr><td class="lbl">Honorarios ajustador</td><td colspan="2"></td></tr>
@@ -6543,7 +6683,7 @@ function buildGNP(s, secs){
 // ══════════════════════════════════════════════════════════════════════
 // descargarWordGNP — genera .docx GNP con banner y estructura clonada
 // ══════════════════════════════════════════════════════════════════════
-async function descargarWord(modelOverride=null, forceFinal=false, returnBlob=false){
+async function descargarWord(modelOverride=null, forceFinal=false){
   const id=parseInt(v('r-caso'));
   if(!id){ toast('Selecciona un expediente primero.'); return; }
   const s=data.sin.find(x=>x.id===id); if(!s) return;
@@ -6582,11 +6722,9 @@ async function descargarWord(modelOverride=null, forceFinal=false, returnBlob=fa
     ||rvList.map(r=>r.bases_determinacion).filter(Boolean).join('. ')||'';
   const coasTxt=sublims.filter(sl=>sl.coaseguro_pct).map(sl=>sl.concepto+': '+sl.coaseguro_pct+'%').join('; ')||'N/A';
   const totReserva=rvList.reduce((acc,r)=>{
-    const bruta  = r.monto||0, ajuste = r.ajuste_monto||0;
-    const baseAj = bruta - ajuste, bajo = r.monto_bajo_seguro||0;
-    const mpa    = baseAj - bajo, ded = r.deducible||0;
-    const coas   = r.monto_coaseguro||(mpa > 0 ? (mpa-ded)*(r.coaseguro_pct||0)/100 : 0);
-    return acc+(mpa-ded-coas);
+    const p=r.monto_perdida_estimada||r.monto||0,d2=r.deducible||0;
+    const c=r.monto_coaseguro||((p-d2)*(r.coaseguro_pct||0)/100),b=r.monto_bajo_seguro||0;
+    return acc+(p-b-d2-c);
   },0);
   const moneda=pol.moneda||'MXN';
   const ajustadorNombre=ajusts.length?ajusts.map(a=>a.nombre).join(' / '):'Javier Chávez Á.';
@@ -6599,11 +6737,9 @@ async function descargarWord(modelOverride=null, forceFinal=false, returnBlob=fa
     lines.push(pad('COBERTURA',C1)+' '+padR('RESERVA NETA',C2));
     lines.push(SEP);
     for(const r of rvList){
-      const bruta  = r.monto||0, ajuste = r.ajuste_monto||0;
-      const baseAj = bruta - ajuste, bajo = r.monto_bajo_seguro||0;
-      const mpa    = baseAj - bajo, ded = r.deducible||0;
-      const coas   = r.monto_coaseguro||(mpa > 0 ? (mpa-ded)*(r.coaseguro_pct||0)/100 : 0);
-      const neta   = mpa - ded - coas;
+      const p=r.monto_perdida_estimada||r.monto||0,d2=r.deducible||0;
+      const co=r.monto_coaseguro||((p-d2)*(r.coaseguro_pct||0)/100),b=r.monto_bajo_seguro||0;
+      const neta=p-b-d2-co;
       lines.push(pad(r.concepto,C1)+' '+padR(moneda+' '+fM(neta),C2));
     }
     lines.push(SEP);
@@ -6665,7 +6801,7 @@ async function descargarWord(modelOverride=null, forceFinal=false, returnBlob=fa
     'Introducción del Informe':       esFinal?(s.introduccion||'').replace(/informe\s+preliminar/gi,'Informe Final'):(s.introduccion||''),
     'Descripción del Asegurado':      pol.descripcion_asegurado||'',
     'Inspección del siniestro':       s.inspeccion_narrativa||'',
-    'Bienes afectados y Daños Sufridos': s.descripcion_danios_html||s.bienes_danados||s.descripcion||'',
+    'Bienes afectados y Daños Sufridos': s.descripcion_danios_html||s.bienes_danados||'',
     'Naturaleza y Alcance de los Daños': s.naturaleza_alcance_danios||'',
     'Fundamento de Procedencia':      s.fundamento||'',
     'Reclamación del Asegurado':      s.reclamacion_asegurado||'',
@@ -6982,7 +7118,6 @@ async function descargarWord(modelOverride=null, forceFinal=false, returnBlob=fa
   const tipoStr=(lastInf.tipo||'preliminar').toUpperCase().replace(/\s+/g,'_');
   const filename=(s.numero_exp||'INFORME')+'_'+tipoStr+'.docx';
 
-  if(returnBlob) return blob;
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');
   a.href=url; a.download=filename; a.style.display='none';
@@ -7004,7 +7139,7 @@ async function descargarWordFinal(){
 }
 
 
-async function descargarWordGNP(returnBlob=false){
+async function descargarWordGNP(){
   const id=parseInt(v('r-caso'));
   if(!id){ toast('Selecciona un expediente primero.'); return; }
   const s=data.sin.find(x=>x.id===id); if(!s) return;
@@ -7032,14 +7167,13 @@ async function descargarWordGNP(returnBlob=false){
 
   const cob1       = rvList[0]||{};
   const res_bruta  = rvList.reduce((a,r)=>a+(r.monto||0),0);
-  const tot_ajuste = rvList.reduce((a,r)=>a+(r.ajuste_monto||0),0);
-  const base_aj    = res_bruta - tot_ajuste;                         // Base Ajustada
-  const bajo_seg   = rvList.reduce((a,r)=>a+(r.monto_bajo_seguro||0),0);
-  const p_ajustada = base_aj - bajo_seg;                             // Monto Pérdida Ajustada
+  const dep_pct    = rvList.length?(rvList.reduce((a,r)=>a+(r.depreciacion_pct||0),0)/rvList.length):0;
+  const p_ajustada = rvList.reduce((a,r)=>a+(r.monto_perdida_estimada||r.monto||0),0);
   const deducible  = rvList.reduce((a,r)=>a+(r.deducible||0),0);
-  const p_indemniz = p_ajustada - deducible;                         // Pérdida Indemnizable
+  const p_indemniz = p_ajustada - deducible;
   const coas_aseg  = rvList.reduce((a,r)=>a+(r.monto_coaseguro||0),0);
-  const res_neta   = p_indemniz - coas_aseg;                         // Reserva Neta
+  const bajo_seg   = rvList.reduce((a,r)=>a+(r.monto_bajo_seguro||0),0);
+  const res_neta   = p_indemniz - bajo_seg - coas_aseg;
   const bases_det  = rvList.map(r=>r.bases_determinacion).filter(Boolean).join(' ');
   const monedaStr  = pol.moneda||'MXN';
 
@@ -7194,25 +7328,19 @@ async function descargarWordGNP(returnBlob=false){
   const cobHdr=(t,w)=>mkC(t,{w,bold:true,size:17,bg:'1F3864',color:'FFFFFF',align:AlignmentType.CENTER});
   const cobLbl=(t)=>mkC(t,{w:cobW[0],size:17,bg:'E8EDF5',bold:true});
   const cobVal=(t,idx)=>mkC(t,{w:cobW[idx],size:17,align:AlignmentType.RIGHT});
-  // Valores cob1 con nueva cadena
-  const cob1Ajuste  = cob1.ajuste_monto||0;
-  const cob1BaseAj  = (cob1.monto||0) - cob1Ajuste;
-  const cob1Bajo    = cob1.monto_bajo_seguro||0;
-  const cob1MPA     = cob1BaseAj - cob1Bajo;
-  const cob1Ded     = cob1.deducible||0;
-  const cob1PI      = cob1MPA - cob1Ded;
-  const cob1Neta    = cob1PI - (cob1.monto_coaseguro||0);
+  const cob1Bajo=(cob1.monto_bajo_seguro||0);
+  const cob1Perdida=(cob1.monto_perdida_estimada||cob1.monto||0);
+  const cob1MPA=cob1Perdida-(cob1.deducible||0);  // Monto Pérdida Indemnizable = Pérdida − Deducible
   const cobRows=[
     new TableRow({children:[cobHdr('Coberturas o secciones',cobW[0]),cobHdr('Cobertura 1  '+(cob1.concepto||''),cobW[1]),cobHdr('Estimación Total',cobW[2])]}),
     new TableRow({children:[cobLbl('Reserva bruta'),cobVal(monedaStr+' '+fM(cob1.monto||0),1),cobVal(monedaStr+' '+fM(res_bruta),2)]}),
-    new TableRow({children:[cobLbl('Ajuste'),cobVal(monedaStr+' '+fM(cob1Ajuste),1),cobVal(monedaStr+' '+fM(tot_ajuste),2)]}),
-    new TableRow({children:[cobLbl('Base Ajustada'),cobVal(monedaStr+' '+fM(cob1BaseAj),1),cobVal(monedaStr+' '+fM(base_aj),2)]}),
-    new TableRow({children:[cobLbl('Bajo Seguro'),cobVal(cob1Bajo?monedaStr+' '+fM(cob1Bajo):'N/A',1),cobVal(bajo_seg?monedaStr+' '+fM(bajo_seg):'N/A',2)]}),
-    new TableRow({children:[cobLbl('Monto Pérdida Ajustada'),cobVal(monedaStr+' '+fM(cob1MPA),1),cobVal(monedaStr+' '+fM(p_ajustada),2)]}),
-    new TableRow({children:[cobLbl('Deducible'),cobVal(monedaStr+' '+fM(cob1Ded),1),cobVal(monedaStr+' '+fM(deducible),2)]}),
-    new TableRow({children:[cobLbl('Pérdida Indemnizable'),cobVal(monedaStr+' '+fM(cob1PI),1),cobVal(monedaStr+' '+fM(p_indemniz),2)]}),
+    new TableRow({children:[cobLbl('Depreciación '+dep_pct.toFixed(2)+'% promedio'),mkC('',{w:cobW[1]}),mkC('',{w:cobW[2]})]}),
+    new TableRow({children:[cobLbl('Monto Pérdida Ajustada'),cobVal(monedaStr+' '+fM(cob1.monto_perdida_estimada||cob1.monto||0),1),cobVal(monedaStr+' '+fM(p_ajustada),2)]}),
+    new TableRow({children:[cobLbl('Deducible'),cobVal(monedaStr+' '+fM(cob1.deducible||0),1),cobVal(monedaStr+' '+fM(deducible),2)]}),
+    new TableRow({children:[cobLbl('Monto Pérdida Indemnizable'),cobVal(monedaStr+' '+fM(cob1MPA),1),cobVal(monedaStr+' '+fM(p_indemniz),2)]}),
     new TableRow({children:[cobLbl(cob1.coaseguro_pct?'Coaseguro a cargo del Asegurado ('+cob1.coaseguro_pct.toFixed(2)+'% s/MPA-Ded.)':'Coaseguro a cargo del Asegurado'),cobVal(cob1.coaseguro_pct?monedaStr+' '+fM(cob1.monto_coaseguro||0):'N/A',1),cobVal(coas_aseg?monedaStr+' '+fM(coas_aseg):'N/A',2)]}),
-    new TableRow({children:[cobLbl('Reserva Neta'),cobVal(monedaStr+' '+fM(cob1Neta),1),cobVal(monedaStr+' '+fM(res_neta),2)]}),
+    new TableRow({children:[cobLbl('Bajo Seguro'),cobVal(cob1Bajo?monedaStr+' '+fM(cob1Bajo):'N/A',1),cobVal(bajo_seg?monedaStr+' '+fM(bajo_seg):'N/A',2)]}),
+    new TableRow({children:[cobLbl('Reserva Neta'),cobVal(monedaStr+' '+fM(cob1MPA-cob1Bajo-(cob1.monto_coaseguro||0)),1),cobVal(monedaStr+' '+fM(res_neta),2)]}),
     new TableRow({children:[new TableCell({columnSpan:3,borders:allB,width:{size:CONTENT_W,type:WidthType.DXA},shading:{fill:'FAFBFC',type:ShadingType.CLEAR},margins:{top:60,bottom:60,left:100,right:100},children:[pr([tx('Especificar las bases que se tomaron para determinar la reserva:',{bold:true,size:17})],{sb:0,sa:20}),pr([tx(bases_det,{size:17,italics:true})],{sb:0,sa:0})]})]}),
     new TableRow({children:[cobLbl('Honorarios ajustador'),mkC('',{w:cobW[1]}),mkC('',{w:cobW[2]})]}),
     new TableRow({children:[cobLbl('Honorarios perito y/o asesor'),mkC('',{w:cobW[1]}),mkC('',{w:cobW[2]})]}),
@@ -7358,7 +7486,6 @@ async function descargarWordGNP(returnBlob=false){
   }
   const filename=(s.tramite_gnp||s.numero_exp)+'_INFORME_GNP.docx';
 
-  if(returnBlob) return blob;
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');
   a.href=url; a.download=filename; a.style.display='none';
@@ -7443,34 +7570,30 @@ function rvGridOoxml(sinId){
     const showTotal=rows.length>1;
 
     // Calculate per row
-    let totBruta=0,totAjuste=0,totBaseAj=0,totMPA=0,totDed=0,totPI=0,totCoas=0,totBajo=0,totNeta=0;
+    let totBruta=0,totPerdida=0,totDed=0,totCoas=0,totBajo=0,totNeta=0;
     const calc=rows.map(r=>{
-      const bruta   = r.monto||0;
-      const ajuste  = r.ajuste_monto||0;
-      const baseAj  = bruta - ajuste;
-      const bajo    = r.monto_bajo_seguro||0;
-      const mpa     = baseAj - bajo;
-      const ded     = r.deducible||0;
-      const coasPct = r.coaseguro_pct||0;
-      const coas    = r.monto_coaseguro||(mpa > 0 ? (mpa-ded)*(coasPct/100) : 0);
-      const perdIndemniz = mpa - ded;
-      const neta    = perdIndemniz - coas;
-      totBruta+=bruta;totAjuste+=ajuste;totBaseAj+=baseAj;totMPA+=mpa;
-      totDed+=ded;totPI+=perdIndemniz;totCoas+=coas;totBajo+=bajo;totNeta+=neta;
-      return {r,bruta,ajuste,baseAj,bajo,mpa,ded,coasPct,coas,perdIndemniz,neta};
+      const bruta=r.monto||0;
+      const perdida=r.monto_perdida_estimada||r.monto||0;
+      const dep=r.depreciacion_pct||0;
+      const ded=r.deducible||0;
+      const coasPct=r.coaseguro_pct||0;
+      const coas=r.monto_coaseguro||((perdida-ded)*(coasPct/100));
+      const bajo=r.monto_bajo_seguro||0;
+      const neta=perdida-bajo-ded-coas;
+      totBruta+=bruta;totPerdida+=perdida;totDed+=ded;totCoas+=coas;totBajo+=bajo;totNeta+=neta;
+      return {r,bruta,perdida,dep,ded,coasPct,coas,bajo,neta};
     });
 
     const ROWS_DEF=[
-      {label:'Reserva bruta',                   key:'bruta',        fmt:'money',tot:totBruta},
-      {label:'Ajuste',                           key:'ajuste',       fmt:'money',tot:totAjuste},
-      {label:'Base Ajustada',                    key:'baseAj',       fmt:'money',tot:totBaseAj},
-      {label:'Bajo Seguro',                      key:'bajo',         fmt:'money',tot:totBajo},
-      {label:'Monto Pérdida Ajustada',           key:'mpa',          fmt:'money',tot:totMPA},
-      {label:'Deducible',                        key:'ded',          fmt:'money',tot:totDed},
-      {label:'Pérdida Indemnizable',             key:'perdIndemniz', fmt:'money',tot:totPI},
-      {label:'Coaseguro a cargo del Asegurado',  key:'coas',         fmt:'money',tot:totCoas},
-      {label:'Reserva Neta',                     key:'neta',         fmt:'money',tot:totNeta,bold:true,accent:true},
-      {label:'Bases de la reserva',              key:'bases',        fmt:'text', tot:''},
+      {label:'Reserva bruta',                   key:'bruta',    fmt:'money',tot:totBruta},
+      {label:'Depreciación %',                   key:'dep',      fmt:'pct',  tot:''},
+      {label:'Monto Pérdida Ajustada',           key:'perdida',  fmt:'money',tot:totPerdida},
+      {label:'Deducible',                        key:'ded',      fmt:'money',tot:totDed},
+      {label:'Monto Pérdida Indemnizable',       key:'indemniz', fmt:'money',tot:totPerdida-totDed},
+      {label:'Coaseguro a cargo del Asegurado',  key:'coas',     fmt:'money',tot:totCoas},
+      {label:'Bajo Seguro',                      key:'bajo',     fmt:'money',tot:totBajo},
+      {label:'Reserva Neta',                     key:'neta',     fmt:'money',tot:totNeta,bold:true,accent:true},
+      {label:'Bases de la reserva',              key:'bases',    fmt:'text', tot:''},
     ];
 
     // OOXML helpers
@@ -7514,7 +7637,8 @@ function rvGridOoxml(sinId){
       row+=cell(rd.label,bg,rd.bold||false,false,isAccent?'002060':null);
       calc.forEach(item=>{
         let val;
-        if(rd.key==='bases') val=item.r.bases_determinacion||'—';
+        if(rd.key==='indemniz') val=item.perdida-item.ded;
+        else if(rd.key==='bases') val=item.r.bases_determinacion||'—';
         else val=item[rd.key];
         let disp;
         if(rd.fmt==='pct') disp=fP(val);
@@ -7613,24 +7737,19 @@ function buildCoberturaTableHTML(rvList, moneda){
   const showTotal=rvList.length>1;
 
   const calc=rvList.map(r=>{
-    const bruta   = r.monto||0;
-    const ajuste  = r.ajuste_monto||0;
-    const baseAj  = bruta - ajuste;
-    const bajo    = r.monto_bajo_seguro||0;
-    const mpa     = baseAj - bajo;
-    const ded     = r.deducible||0;
-    const coasPct = r.coaseguro_pct||0;
-    const coas    = r.monto_coaseguro||(mpa > 0 ? (mpa-ded)*(coasPct/100) : 0);
-    const perdIndemniz = mpa - ded;
-    const neta    = perdIndemniz - coas;
-    return {r,bruta,ajuste,baseAj,bajo,mpa,ded,coasPct,coas,perdIndemniz,neta};
+    const bruta=r.monto||0;
+    const perdida=r.monto_perdida_estimada||r.monto||0;
+    const dep=r.depreciacion_pct||0;
+    const ded=r.deducible||0;
+    const coasPct=r.coaseguro_pct||0;
+    const coas=r.monto_coaseguro||((perdida-ded)*(coasPct/100));
+    const bajo=r.monto_bajo_seguro||0;
+    const neta=perdida-bajo-ded-coas;  // Pérdida − Bajo Seguro − Deducible − Coaseguro
+    return {r,bruta,perdida,dep,ded,coasPct,coas,bajo,neta,indemniz:perdida-ded};
   });
 
-  let totBruta=0,totAjuste=0,totBaseAj=0,totMPA=0,totDed=0,totPI=0,totCoas=0,totBajo=0,totNeta=0;
-  calc.forEach(x=>{
-    totBruta+=x.bruta;totAjuste+=x.ajuste;totBaseAj+=x.baseAj;totMPA+=x.mpa;
-    totDed+=x.ded;totPI+=x.perdIndemniz;totCoas+=x.coas;totBajo+=x.bajo;totNeta+=x.neta;
-  });
+  let totBruta=0,totPerdida=0,totDed=0,totCoas=0,totBajo=0,totNeta=0;
+  calc.forEach(x=>{totBruta+=x.bruta;totPerdida+=x.perdida;totDed+=x.ded;totCoas+=x.coas;totBajo+=x.bajo;totNeta+=x.neta;});
 
   const th=(t,extra='')=>`<th style="background:#1F3864;color:#fff;font-size:9px;font-weight:700;padding:4px 7px;border:1px solid #1F3864;text-align:center;${extra}">${t}</th>`;
   const td=(t,bg='#fff',bold=false,right=false)=>`<td style="border:1px solid #ccc;padding:3px 7px;font-size:9px;background:${bg};font-weight:${bold?'700':'400'};text-align:${right?'right':'left'};">${t}</td>`;
@@ -7644,15 +7763,14 @@ function buildCoberturaTableHTML(rvList, moneda){
   h+=`</tr></thead><tbody>`;
 
   const ROWS=[
-    {label:'Reserva bruta',                    key:'bruta',        tot:totBruta},
-    {label:'Ajuste',                            key:'ajuste',       tot:totAjuste},
-    {label:'Base Ajustada',                     key:'baseAj',       tot:totBaseAj},
-    {label:'Bajo Seguro',                       key:'bajo',         tot:totBajo,  bajo:true},
-    {label:'Monto Pérdida Ajustada',            key:'mpa',          tot:totMPA},
-    {label:'Deducible',                         key:'ded',          tot:totDed},
-    {label:'Pérdida Indemnizable',              key:'perdIndemniz', tot:totPI},
-    {label:'Coaseguro a cargo del Asegurado',   key:'coas',         tot:totCoas,  coas:true},
-    {label:'Reserva Neta',                      key:'neta',         tot:totNeta,  bold:true, hl:true},
+    {label:'Reserva bruta',                           key:'bruta',    tot:totBruta},
+    {label:'Depreciación % promedio',                 key:'dep',      tot:'—',    fmt:'pct'},
+    {label:'Monto Pérdida Ajustada',                 key:'perdida',  tot:totPerdida},
+    {label:'Deducible',                               key:'ded',      tot:totDed},
+    {label:'Monto Pérdida Indemnizable',             key:'indemniz', tot:totPerdida-totDed},
+    {label:'Coaseguro a cargo del Asegurado',        key:'coas',     tot:totCoas, coas:true},
+    {label:'Bajo Seguro',                             key:'bajo',     tot:totBajo, bajo:true},
+    {label:'Reserva Neta',                            key:'neta',     tot:totNeta, bold:true, hl:true},
   ];
   ROWS.forEach((rd,ri)=>{
     const bg=rd.hl?'#EBF3FF':(ri%2===0?'#F5F6F8':'#FFFFFF');
@@ -7703,14 +7821,9 @@ function buildFormalGenerico(s, secs, aseg){
   const ajusts   = sinAjusts.map(sa=>data.ajust.find(a=>a.id===sa.id_ajustador)).filter(Boolean);
 
   const totReserva = rvList.reduce((acc,r)=>{
-    const bruta  = r.monto||0;
-    const ajuste = r.ajuste_monto||0;
-    const baseAj = bruta - ajuste;
-    const bajo   = r.monto_bajo_seguro||0;
-    const mpa    = baseAj - bajo;
-    const ded    = r.deducible||0;
-    const coas   = r.monto_coaseguro||(mpa > 0 ? (mpa-ded)*(r.coaseguro_pct||0)/100 : 0);
-    return acc + (mpa - ded - coas);
+    const p=r.monto_perdida_estimada||r.monto||0, d=r.deducible||0;
+    const c=r.monto_coaseguro||((p-d)*(r.coaseguro_pct||0)/100);
+    const b2=r.monto_bajo_seguro||0;return acc+(p-b2-d-c);
   },0);
 
   const fD = d=>{ if(!d) return '—'; const[y,m,dy]=d.split('-'); return dy+'/'+m+'/'+y; };
@@ -9568,171 +9681,736 @@ function mobIaVisionAplicar(){
   toast('Descripción aplicada');
 }
 
-// ── GOOGLE DRIVE MODULE ──────────────────────────────────────────────────────
-const DriveModule = (() => {
-  const CLIENT_ID = '1046145726953-49p324gi0792fu6c7dt47e9sruur0qac.apps.googleusercontent.com';
-  const SCOPE     = 'https://www.googleapis.com/auth/drive.file';
-  const ROOT_NAME = 'AdjusterPro JChA';
 
-  let _accessToken = null;
-  let _tokenClient = null;
+// ══════════════════════════════════════════════════════════════════════════
+// SOLICITUDES DE INFORMACIÓN
+// ══════════════════════════════════════════════════════════════════════════
 
-  function driveStatus(msg, color) {
-    const el = document.getElementById('drive-status');
-    if (!el) return;
-    el.textContent = msg;
-    el.style.color = color || 'var(--text-ter)';
-  }
+// ── Catálogo base de documentos ───────────────────────────────────────────
+const SOL_CATALOGO_BASE = {
+  'General': [
+    { cat:'Documentación General', desc:'Carta reclamación dirigida a la aseguradora, detallada y valorizada' },
+    { cat:'Documentación General', desc:'Copia de factura de compra del bien afectado' },
+    { cat:'Documentación General', desc:'Póliza de seguro vigente y endosos aplicables' },
+    { cat:'Documentación General', desc:'Identificación oficial del asegurado o representante legal' },
+    { cat:'Documentación General', desc:'Poder notarial del representante legal (si aplica)' },
+    { cat:'Documentación General', desc:'Acta constitutiva y RFC de la empresa asegurada' },
+    { cat:'Legal',                 desc:'Denuncia ante el Ministerio Público o autoridad competente (si aplica)' },
+    { cat:'Legal',                 desc:'Acta de hechos o declaración notarial de los hechos' },
+    { cat:'Legal',                 desc:'Cualquier otro documento que apoye la reclamación' },
+  ],
+  'Rotura de Maquinaria': [
+    { cat:'Técnica',     desc:'Ficha técnica del equipo afectado (marca, modelo, año, número de serie)' },
+    { cat:'Técnica',     desc:'Manuales de operación y mantenimiento del equipo' },
+    { cat:'Técnica',     desc:'Número de serie y año de fabricación del equipo' },
+    { cat:'Técnica',     desc:'Fotografías anteriores al siniestro del equipo (si existen)' },
+    { cat:'Técnica',     desc:'Layout o plano de ubicación del equipo dentro de la planta' },
+    { cat:'Técnica',     desc:'Diagrama unifilar eléctrico del equipo' },
+    { cat:'Técnica',     desc:'Bitácoras de mantenimiento de los 6 meses previos al evento' },
+    { cat:'Técnica',     desc:'Bitácoras de operación de los días previos al evento' },
+    { cat:'Técnica',     desc:'Bitácoras del CNC (si aplica)' },
+    { cat:'Operacional', desc:'Orden de producción en proceso al momento del evento' },
+    { cat:'Operacional', desc:'Operación que realizaba la máquina al momento del evento' },
+    { cat:'Operacional', desc:'Nombre del operador, supervisor y personal presente' },
+    { cat:'Operacional', desc:'Secuencia cronológica detallada de lo observado' },
+    { cat:'Operacional', desc:'Videos del momento del evento o inmediatamente posterior' },
+    { cat:'Diagnóstico',  desc:'Reporte técnico interno de mantenimiento post-siniestro' },
+    { cat:'Diagnóstico',  desc:'Diagnóstico preliminar o final del fabricante o su representante' },
+    { cat:'Diagnóstico',  desc:'Historial de fallas previas del equipo' },
+    { cat:'Diagnóstico',  desc:'Evidencia de disparo de protecciones eléctricas' },
+    { cat:'Diagnóstico',  desc:'Reportes de reparaciones previas al siniestro' },
+    { cat:'Diagnóstico',  desc:'Cambios recientes de componentes eléctricos o electrónicos' },
+    { cat:'Diagnóstico',  desc:'Evidencia de calibraciones recientes' },
+    { cat:'Diagnóstico',  desc:'Registro de capacitación del operador' },
+    { cat:'Diagnóstico',  desc:'Procedimientos de arranque, paro y seguridad del equipo' },
+    { cat:'Diagnóstico',  desc:'Últimas inspecciones internas de seguridad industrial' },
+    { cat:'Valuación',    desc:'Presupuesto de reparación desglosado y detallado' },
+    { cat:'Valuación',    desc:'Cotización de refacciones necesarias' },
+    { cat:'Valuación',    desc:'Cotización de reposición del equipo (si procede)' },
+    { cat:'Valuación',    desc:'Comparativo técnico-económico entre reparar y reemplazar' },
+    { cat:'Valuación',    desc:'Tiempos estimados de reparación o entrega del equipo nuevo' },
+    { cat:'Valuación',    desc:'Relación de maquinaria total de la planta (inventario)' },
+    { cat:'Facturación',  desc:'Factura de compra, pedimento de importación o contrato de leasing' },
+  ],
+  'Incendio': [
+    { cat:'Técnica',     desc:'Dictamen del Cuerpo de Bomberos o autoridad que atendió el siniestro' },
+    { cat:'Técnica',     desc:'Plano o croquis del área siniestrada con dimensiones' },
+    { cat:'Técnica',     desc:'Relación detallada de bienes afectados con valores' },
+    { cat:'Técnica',     desc:'Inventario de mercancías o existencias al momento del siniestro' },
+    { cat:'Técnica',     desc:'Planos de instalaciones eléctricas y de gas (si aplica)' },
+    { cat:'Operacional', desc:'Descripción de las actividades realizadas al momento del siniestro' },
+    { cat:'Operacional', desc:'Nombre y declaración de testigos presenciales' },
+    { cat:'Operacional', desc:'Videos o fotografías del área afectada pre y post siniestro' },
+    { cat:'Valuación',   desc:'Facturas de adquisición de bienes afectados' },
+    { cat:'Valuación',   desc:'Presupuesto de reparación o reconstrucción del inmueble' },
+    { cat:'Valuación',   desc:'Avalúo del inmueble afectado (si aplica cobertura de inmueble)' },
+    { cat:'Valuación',   desc:'Cotizaciones de reposición de bienes muebles afectados' },
+    { cat:'Legal',       desc:'Dictamen de causa del incendio por perito especializado' },
+    { cat:'Legal',       desc:'Constancia de no adeudo de impuesto predial (si aplica inmueble)' },
+  ],
+  'Robo': [
+    { cat:'Legal',       desc:'Denuncia formal ante el Ministerio Público con sello de recepción' },
+    { cat:'Legal',       desc:'Copia de la averiguación previa o carpeta de investigación' },
+    { cat:'Técnica',     desc:'Relación detallada de bienes robados con descripción y valores' },
+    { cat:'Técnica',     desc:'Facturas de los bienes sustraídos' },
+    { cat:'Técnica',     desc:'Fotografías del área de robo y evidencias de violencia (si aplica)' },
+    { cat:'Técnica',     desc:'Videos de cámaras de seguridad del evento' },
+    { cat:'Operacional', desc:'Descripción cronológica del descubrimiento del robo' },
+    { cat:'Operacional', desc:'Declaración de empleados o testigos' },
+    { cat:'Seguridad',   desc:'Bitácora de vigilancia y accesos del día del siniestro' },
+    { cat:'Seguridad',   desc:'Contrato con empresa de seguridad (si aplica)' },
+    { cat:'Seguridad',   desc:'Inventario previo al robo (últimas existencias verificadas)' },
+  ],
+  'Responsabilidad Civil': [
+    { cat:'Legal',       desc:'Carta o documento de reclamación del tercero afectado' },
+    { cat:'Legal',       desc:'Identificación del tercero reclamante' },
+    { cat:'Legal',       desc:'Documentos que acrediten la titularidad del bien dañado' },
+    { cat:'Técnica',     desc:'Descripción detallada del evento generador de la responsabilidad' },
+    { cat:'Técnica',     desc:'Fotografías de los daños causados al tercero' },
+    { cat:'Técnica',     desc:'Testimonios de testigos del evento' },
+    { cat:'Valuación',   desc:'Presupuesto de reparación de daños causados al tercero' },
+    { cat:'Valuación',   desc:'Dictamen médico (si hay lesiones a personas)' },
+    { cat:'Valuación',   desc:'Historial médico y gastos de hospitalización (si aplica)' },
+  ],
+  'Transporte': [
+    { cat:'Embarque',    desc:'Carta porte o Bill of Lading' },
+    { cat:'Embarque',    desc:'Factura comercial de la mercancía transportada' },
+    { cat:'Embarque',    desc:'Lista de empaque (Packing List)' },
+    { cat:'Embarque',    desc:'Certificado de origen (si aplica)' },
+    { cat:'Embarque',    desc:'Pedimento de importación o exportación (si aplica)' },
+    { cat:'Técnica',     desc:'Carta de protesta o reserva al transportista' },
+    { cat:'Técnica',     desc:'Reporte del transportista sobre el siniestro' },
+    { cat:'Técnica',     desc:'Fotografías de la mercancía dañada en destino o en tránsito' },
+    { cat:'Técnica',     desc:'Acta de inspección en destino' },
+    { cat:'Valuación',   desc:'Cotización de reposición de la mercancía afectada' },
+  ],
+  'Construcción / Montaje': [
+    { cat:'Contractual', desc:'Contrato de obra o de suministro e instalación' },
+    { cat:'Contractual', desc:'Planos del proyecto aprobados' },
+    { cat:'Contractual', desc:'Especificaciones técnicas de la obra o del equipo a montar' },
+    { cat:'Técnica',     desc:'Bitácora de obra del período afectado' },
+    { cat:'Técnica',     desc:'Memoria de cálculo estructural (si aplica)' },
+    { cat:'Técnica',     desc:'Estudios de mecánica de suelos (si aplica)' },
+    { cat:'Técnica',     desc:'Reporte del supervisor o director de obra' },
+    { cat:'Valuación',   desc:'Estimación de avance de obra al momento del siniestro' },
+    { cat:'Valuación',   desc:'Presupuesto de reparación o reconstrucción de lo dañado' },
+    { cat:'Valuación',   desc:'Facturación de materiales y mano de obra afectados' },
+  ],
+};
 
-  async function authenticate() {
-    return new Promise((resolve, reject) => {
-      if (!window.google || !window.google.accounts) {
-        reject(new Error('Google Identity Services no cargó. Verifica tu conexión.'));
-        return;
-      }
-      if (!_tokenClient) {
-        _tokenClient = google.accounts.oauth2.initTokenClient({
-          client_id: CLIENT_ID,
-          scope: SCOPE,
-          callback: () => {},
-        });
-      }
-      _tokenClient.callback = (resp) => {
-        if (resp.error) { reject(new Error('Error de autenticación: ' + resp.error)); return; }
-        _accessToken = resp.access_token;
-        resolve();
-      };
-      if (_accessToken) { resolve(); return; }
-      _tokenClient.requestAccessToken({ prompt: '' });
-    });
-  }
+// Estado del módulo
+let solRamoActivo = 'General';
+let solItemsExtra = []; // items personalizados de la sesión
 
-  async function apiFetch(url, options = {}) {
-    const resp = await fetch(url, {
-      ...options,
-      headers: {
-        'Authorization': 'Bearer ' + _accessToken,
-        ...(options.headers || {}),
-      },
-    });
-    if (!resp.ok) {
-      const err = await resp.json().catch(() => ({}));
-      throw new Error(err.error?.message || 'Error Drive API: ' + resp.status);
+// ── Catálogo extendido (incluye base + extras guardados en IDB) ───────────
+let solCatalogoExtendido = {};
+
+async function solInicializarCatalogo(){
+  // Cargar items guardados en BD
+  const rows = data.sol_catalogo || [];
+  solCatalogoExtendido = JSON.parse(JSON.stringify(SOL_CATALOGO_BASE));
+  rows.forEach(r => {
+    if(!solCatalogoExtendido[r.ramo]) solCatalogoExtendido[r.ramo] = [];
+    // Evitar duplicados
+    if(!solCatalogoExtendido[r.ramo].find(x=>x.desc===r.descripcion)){
+      solCatalogoExtendido[r.ramo].push({ cat: r.categoria||'General', desc: r.descripcion, id: r.id });
     }
-    return resp.json();
+  });
+}
+
+// ── Abrir modal nueva solicitud ────────────────────────────────────────────
+async function abrirNuevaSolicitud(){
+  if(!currentSin){ toast('Selecciona un expediente primero'); return; }
+  await solInicializarCatalogo();
+  solItemsExtra = [];
+  g('sol-modal-title').textContent = 'Nueva Solicitud de Información';
+  g('sol-id').value = '';
+  g('sol-sin-id').value = currentSin.id;
+  // Pre-llenar datos del expediente
+  const pol  = data.pol.find(p=>p.id===currentSin.id_poliza)||{};
+  const asdo = data.asdo.find(a=>a.id===pol.id_asegurado)||{};
+  g('sol-asunto').value = `Documentación siniestro ${currentSin.numero_siniestro||currentSin.numero_exp} — ${asdo.nombre||'Asegurado'}`;
+  g('sol-fecha').value = new Date().toISOString().slice(0,10);
+  g('sol-fecha-compromiso').value = '';
+  g('sol-dest-nombre').value = ''; g('sol-dest-cargo').value = '';
+  g('sol-dest-empresa').value = ''; g('sol-dest-email').value = '';
+  g('sol-notas').value = '';
+  g('sol-item-custom').value = ''; g('sol-item-custom-cat').value = '';
+  solRenderRamoTabs();
+  solRenderCatalogo();
+  abrirModal('modal-sol');
+  // No abrir con abrirModal normal porque resetearía — usar classList directo
+}
+
+// ── Tabs de ramo ──────────────────────────────────────────────────────────
+function solRenderRamoTabs(){
+  const ramos = Object.keys(solCatalogoExtendido);
+  const wrap = g('sol-ramo-tabs');
+  if(!wrap) return;
+  wrap.innerHTML = ramos.map(r=>`
+    <button type="button" class="sol-tab-btn ${r===solRamoActivo?'active':''}"
+      onclick="solCambiarRamo('${r}')">${r}</button>`).join('');
+}
+
+function solCambiarRamo(ramo){
+  solRamoActivo = ramo;
+  solRenderRamoTabs();
+  solRenderCatalogo();
+}
+
+// ── Renderizar catálogo con checkboxes ────────────────────────────────────
+function solRenderCatalogo(){
+  const wrap = g('sol-catalogo-wrap');
+  if(!wrap) return;
+  const items = [
+    ...(solCatalogoExtendido[solRamoActivo]||[]),
+    ...(solRamoActivo==='General' ? solItemsExtra : [])
+  ];
+  if(!items.length){
+    wrap.innerHTML = '<div style="font-size:11px;color:var(--text-ter);padding:16px;text-align:center;">Sin ítems en este ramo</div>';
+    return;
   }
-
-  async function getOrCreateFolder(name, parentId) {
-    const safeQ = name.replace(/'/g, "\'");
-    const q = `name='${safeQ}' and mimeType='application/vnd.google-apps.folder' and trashed=false${parentId ? ` and '${parentId}' in parents` : ''}`;
-    const res = await apiFetch('https://www.googleapis.com/drive/v3/files?q=' + encodeURIComponent(q) + '&fields=files(id,name)');
-    if (res.files && res.files.length > 0) return res.files[0].id;
-    const body = { name, mimeType: 'application/vnd.google-apps.folder' };
-    if (parentId) body.parents = [parentId];
-    const created = await apiFetch('https://www.googleapis.com/drive/v3/files?fields=id', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
+  // Agrupar por categoría
+  const byCat = {};
+  items.forEach((it,i) => {
+    const cat = it.cat || 'General';
+    if(!byCat[cat]) byCat[cat] = [];
+    byCat[cat].push({...it, _idx:i});
+  });
+  let html = '';
+  Object.entries(byCat).forEach(([cat, rows])=>{
+    html += `<div class="sol-cat-header">${cat}</div>`;
+    rows.forEach(it => {
+      const chkId = `sol-chk-${solRamoActivo.replace(/\s/g,'_')}-${it._idx}`;
+      const isExtra = it._isExtra;
+      html += `<div class="sol-item-row">
+        <input type="checkbox" id="${chkId}" value="${encodeURIComponent(JSON.stringify({cat:it.cat,desc:it.desc,ramo:solRamoActivo}))}"
+          onchange="solActualizarConteo()">
+        <label for="${chkId}">${it.desc}${isExtra?' <span style="font-size:9px;color:var(--accent-lt);">[personalizado]</span>':''}</label>
+      </div>`;
     });
-    return created.id;
+  });
+  wrap.innerHTML = html;
+  solActualizarConteo();
+}
+
+function solActualizarConteo(){
+  const all = document.querySelectorAll('#sol-catalogo-wrap input[type=checkbox]:checked');
+  const n = all.length + (solItemsExtra.length > 0 ? 0:0); // extras ya están en catalogo
+  const wrap = g('sol-selected-wrap');
+  const cnt  = g('sol-selected-count');
+  const lst  = g('sol-selected-list');
+  const total = document.querySelectorAll('#sol-catalogo-wrap input[type=checkbox]:checked').length;
+  if(cnt) cnt.textContent = total;
+  if(wrap) wrap.style.display = total > 0 ? 'block' : 'none';
+  if(lst){
+    const items = Array.from(document.querySelectorAll('#sol-catalogo-wrap input[type=checkbox]:checked'))
+      .map(c=>{ try{ return JSON.parse(decodeURIComponent(c.value)).desc; }catch(e){ return c.value; } });
+    lst.innerHTML = items.map(d=>`<div style="padding:2px 0;border-bottom:1px solid var(--border);">• ${d}</div>`).join('');
   }
+}
 
-  async function uploadFile(blob, filename, folderId) {
-    const meta = JSON.stringify({ name: filename, parents: [folderId] });
-    const form = new FormData();
-    form.append('metadata', new Blob([meta], { type: 'application/json' }));
-    form.append('file', blob);
-    const resp = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name', {
-      method: 'POST',
-      headers: { 'Authorization': 'Bearer ' + _accessToken },
-      body: form,
-    });
-    if (!resp.ok) {
-      const err = await resp.json().catch(() => ({}));
-      throw new Error(err.error?.message || 'Error al subir archivo: ' + resp.status);
-    }
-    return resp.json();
+// ── Agregar ítem personalizado ────────────────────────────────────────────
+async function solAgregarCustom(){
+  const desc = (g('sol-item-custom').value||'').trim();
+  const cat  = (g('sol-item-custom-cat').value||'General').trim();
+  const save = g('sol-item-custom-save')?.checked;
+  if(!desc){ toast('Escribe la descripción del ítem'); return; }
+
+  // Agregar al catálogo en memoria para este ramo
+  if(!solCatalogoExtendido[solRamoActivo]) solCatalogoExtendido[solRamoActivo] = [];
+  const newItem = { cat, desc, _isExtra:true };
+  solCatalogoExtendido[solRamoActivo].push(newItem);
+
+  // Guardar en BD si se marcó
+  if(save){
+    await db.from('catalogo_documentos').insert({ ramo:solRamoActivo, categoria:cat, descripcion:desc, orden:999 });
+    toast('Ítem guardado en catálogo');
   }
+  g('sol-item-custom').value = '';
+  solRenderCatalogo();
+}
 
-  async function subirWord(tipo) {
-    // Resolver expediente: desde r-caso (Reportes) o desde currentSin (detalle)
-    const rCasoId = parseInt((document.getElementById('r-caso')||{}).value||'0');
-    const sin = rCasoId ? data.sin.find(x=>x.id===rCasoId) : currentSin;
-    if (!sin) { toast('Selecciona un expediente primero.'); return; }
-    const nExp = (sin.numero_exp || 'SIN_NUMERO').replace(/[\/\\:*?"<>|]/g, '-');
-    const ts   = new Date().toISOString().slice(0,10);
-
-    ['btn-drive-preliminar','btn-drive-final','btn-drive-gnp'].forEach(id => {
-      const b = document.getElementById(id);
-      if (b) { b.disabled = true; b.style.opacity = '0.5'; }
+// ── IA: sugerir documentos ────────────────────────────────────────────────
+async function solIaSugerir(){
+  if(!iaCheckKey()) return;
+  if(!currentSin){ toast('Selecciona expediente primero'); return; }
+  const ramo   = data.pol.find(p=>p.id===currentSin.id_poliza)?.ramo || '';
+  const subramo = currentSin.subramo || '';
+  const causa  = currentSin.causa || '';
+  const prompt = `Eres un ajustador de seguros experto en México. Dado el siguiente siniestro:
+Ramo: ${ramo} | Subramo/Cobertura: ${subramo} | Causa: ${causa}
+Lista los tipos de documentos e información más importantes a solicitar al asegurado para este tipo de siniestro.
+Responde SOLO con un JSON array de objetos con campos "cat" (categoría) y "desc" (descripción breve del ítem). Máximo 12 ítems. Sin explicaciones.`;
+  toast('⏳ IA generando sugerencias…');
+  try {
+    const resp = await fetch('https://api.openai.com/v1/chat/completions',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+iaGetKey()},
+      body: JSON.stringify({ model:'gpt-4o', max_tokens:600, temperature:0.3,
+        messages:[{role:'user',content:prompt}] })
     });
-
-    try {
-      driveStatus('Autenticando con Google...', '#4285f4');
-      await authenticate();
-
-      driveStatus('Generando documento...', '#4285f4');
-      let blob, filename;
-
-      // Sincronizar r-caso con el expediente seleccionado
-      const selEl = document.getElementById('r-caso');
-      if (selEl && rCasoId) selEl.value = rCasoId;
-
-      if (tipo === 'preliminar') {
-        blob = await descargarWord(null, false, true);
-        filename = nExp + '_Preliminar_' + ts + '.docx';
-      } else if (tipo === 'final') {
-        blob = await descargarWord(FINAL_MODEL_B64, true, true);
-        filename = nExp + '_Final_' + ts + '.docx';
-      } else if (tipo === 'gnp') {
-        blob = await descargarWordGNP(true);
-        filename = nExp + '_GNP_' + ts + '.docx';
+    const j = await resp.json();
+    const txt = j.choices?.[0]?.message?.content||'[]';
+    const clean = txt.replace(/```json|```/g,'').trim();
+    const items = JSON.parse(clean);
+    // Agregar al catálogo del ramo activo
+    items.forEach(it => {
+      if(!solCatalogoExtendido[solRamoActivo]) solCatalogoExtendido[solRamoActivo] = [];
+      if(!solCatalogoExtendido[solRamoActivo].find(x=>x.desc===it.desc)){
+        solCatalogoExtendido[solRamoActivo].push({ cat:it.cat||'General', desc:it.desc, _iaGen:true });
       }
-
-      if (!blob) { driveStatus('No se pudo generar el documento.', '#f08080'); return; }
-
-      driveStatus('Preparando carpetas en Drive...', '#4285f4');
-      const rootId = await getOrCreateFolder(ROOT_NAME, null);
-      const expId  = await getOrCreateFolder(nExp, rootId);
-
-      driveStatus('Subiendo archivo...', '#4285f4');
-      const result = await uploadFile(blob, filename, expId);
-
-      driveStatus('✓ Subido: ' + result.name, '#80c880');
-      toast('✓ Archivo subido a Drive → AdjusterPro JChA / ' + nExp);
-
-    } catch (err) {
-      console.error('DriveModule error:', err);
-      driveStatus('Error: ' + err.message, '#f08080');
-      toast('Error al subir a Drive: ' + err.message);
-    } finally {
-      ['btn-drive-preliminar','btn-drive-final','btn-drive-gnp'].forEach(id => {
-        const b = document.getElementById(id);
-        if (b) { b.disabled = false; b.style.opacity = ''; }
+    });
+    solRenderCatalogo();
+    // Auto-marcar los sugeridos por IA
+    setTimeout(()=>{
+      document.querySelectorAll('#sol-catalogo-wrap input[type=checkbox]').forEach(chk=>{
+        try {
+          const val = JSON.parse(decodeURIComponent(chk.value));
+          if(items.find(i=>i.desc===val.desc)) chk.checked = true;
+        }catch(e){}
       });
-    }
+      solActualizarConteo();
+      toast(`✦ IA sugirió ${items.length} documentos — revisa y ajusta`);
+    }, 100);
+  } catch(e){ toast('⚠ Error IA: ' + e.message); }
+}
+
+// ── Guardar solicitud ─────────────────────────────────────────────────────
+async function guardarSolicitud(estatus){
+  const id     = g('sol-id').value;
+  const sinId  = parseInt(g('sol-sin-id').value) || currentSin?.id;
+  if(!sinId){ toast('Error: sin expediente asociado'); return; }
+
+  const items = Array.from(document.querySelectorAll('#sol-catalogo-wrap input[type=checkbox]:checked'))
+    .map(c=>{ try{ return JSON.parse(decodeURIComponent(c.value)); }catch(e){ return null; } })
+    .filter(Boolean);
+
+  if(!items.length){ toast('Selecciona al menos un documento'); return; }
+
+  const payload = {
+    id_siniestro:       sinId,
+    destinatario_nombre:g('sol-dest-nombre').value||null,
+    destinatario_cargo: g('sol-dest-cargo').value||null,
+    destinatario_empresa:g('sol-dest-empresa').value||null,
+    destinatario_email: g('sol-dest-email').value||null,
+    fecha_solicitud:    g('sol-fecha').value||null,
+    fecha_compromiso:   g('sol-fecha-compromiso').value||null,
+    asunto:             g('sol-asunto').value||null,
+    estatus,
+    notas:              g('sol-notas').value||null,
+  };
+
+  let solId;
+  if(id){
+    await db.from('solicitudes_info').update(payload).eq('id',id);
+    solId = parseInt(id);
+    // Borrar items viejos y reinsertarr
+    await db.from('solicitud_items').delete().eq('id_solicitud', solId);
+  } else {
+    const {data:row, error} = await db.from('solicitudes_info').insert(payload).select().single();
+    if(error){ toast('Error: '+error.message); return; }
+    solId = row.id;
   }
 
-  return { subirWord };
-})();
+  // Insertar items
+  const itemRows = items.map((it,i)=>({
+    id_solicitud: solId,
+    categoria:    it.cat||'General',
+    descripcion:  it.desc,
+    recibido:     false,
+    orden:        i+1,
+  }));
+  if(itemRows.length) await db.from('solicitud_items').insert(itemRows);
 
-function driveSubirWord(tipo) { DriveModule.subirWord(tipo); }
-
-// Sincronizar visibilidad btn-drive-gnp con btn-word-gnp via MutationObserver
-(function() {
-  const init = () => {
-    const gnpWord  = document.getElementById('btn-word-gnp');
-    const gnpDrive = document.getElementById('btn-drive-gnp');
-    if (!gnpWord || !gnpDrive) return;
-    const obs = new MutationObserver(() => {
-      gnpDrive.style.display = gnpWord.style.display;
+  // Agregar seguimiento de envío
+  if(estatus==='enviada' && !id){
+    await db.from('solicitud_seguimiento').insert({
+      id_solicitud: solId, tipo:'envio',
+      fecha: new Date().toISOString().slice(0,10),
+      descripcion: 'Solicitud generada y marcada como enviada',
+      usuario: g('user-lbl')?.textContent||'Sistema'
     });
-    obs.observe(gnpWord, { attributes: true, attributeFilter: ['style'] });
-  };
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
-  else init();
-})();
-// ── FIN GOOGLE DRIVE MODULE ──────────────────────────────────────────────────
+  }
+
+  cerrarModal('modal-sol');
+  await loadAll();
+  renderSolicitudesTab();
+  toast(estatus==='enviada' ? '✓ Solicitud guardada como enviada' : 'Borrador guardado');
+}
+
+// ── Renderizar tab de solicitudes en expediente ────────────────────────────
+function renderSolicitudesTab(){
+  const wrap = g('sol-tab-content');
+  if(!wrap || !currentSin) return;
+  const sols = (data.solicitudes||[]).filter(s=>s.id_siniestro===currentSin.id);
+
+  let html = `<div class="toolbar" style="margin-bottom:12px;">
+    <button class="btn btn-primary" onclick="abrirNuevaSolicitud()">+ Nueva solicitud</button>
+  </div>`;
+
+  if(!sols.length){
+    html += '<div style="font-size:12px;color:var(--text-ter);padding:20px 0;text-align:center;">Sin solicitudes registradas para este expediente.</div>';
+    wrap.innerHTML = html; return;
+  }
+
+  sols.forEach(sol => {
+    const items    = (data.sol_items||[]).filter(i=>i.id_solicitud===sol.id);
+    const recibidos = items.filter(i=>i.recibido).length;
+    const total    = items.length;
+    const pct      = total ? Math.round(recibidos/total*100) : 0;
+    const badge    = `<span class="sol-badge ${sol.estatus}">${
+      {borrador:'Borrador',enviada:'Enviada',parcial:'Parcial',completa:'✓ Completa',vencida:'⚠ Vencida'}[sol.estatus]||sol.estatus
+    }</span>`;
+    const vence = sol.fecha_compromiso
+      ? `· Compromiso: ${fmtD(sol.fecha_compromiso)}`:'';
+    html += `<div class="sol-card" onclick="verSolicitud(${sol.id})">
+      <div class="sol-card-head">
+        <span class="sol-card-exp">${sol.asunto||'Solicitud #'+sol.id}</span>
+        ${badge}
+      </div>
+      <div class="sol-card-sub">
+        ${sol.destinatario_nombre||'Sin destinatario'} ${sol.destinatario_empresa?'— '+sol.destinatario_empresa:''}
+        ${vence} · ${recibidos}/${total} documentos recibidos
+      </div>
+      ${total>0?`<div class="sol-progress-bar"><div class="sol-progress-fill" style="width:${pct}%"></div></div>`:''}
+    </div>`;
+  });
+  wrap.innerHTML = html;
+}
+
+// ── Ver detalle de solicitud ──────────────────────────────────────────────
+async function verSolicitud(solId){
+  const sol  = (data.solicitudes||[]).find(s=>s.id===solId);
+  if(!sol) return;
+  const items = (data.sol_items||[]).filter(i=>i.id_solicitud===solId).sort((a,b)=>(a.orden||0)-(b.orden||0));
+  const segs  = (data.sol_seg||[]).filter(s=>s.id_solicitud===solId).sort((a,b)=>a.fecha>b.fecha?1:-1);
+  const recibidos = items.filter(i=>i.recibido).length;
+
+  const badge = `<span class="sol-badge ${sol.estatus}" style="font-size:12px;padding:3px 10px;">${
+    {borrador:'Borrador',enviada:'Enviada',parcial:'Parcial',completa:'✓ Completa',vencida:'⚠ Vencida'}[sol.estatus]||sol.estatus
+  }</span>`;
+
+  let html = `
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
+    ${badge}
+    <span style="font-size:13px;font-weight:700;color:var(--text);">${sol.asunto||'Solicitud #'+sol.id}</span>
+  </div>
+  <div class="form-grid" style="margin-bottom:14px;">
+    <div class="fg"><label>Destinatario</label><div style="font-size:12px;padding:4px 0;">${sol.destinatario_nombre||'—'}</div></div>
+    <div class="fg"><label>Cargo</label><div style="font-size:12px;padding:4px 0;">${sol.destinatario_cargo||'—'}</div></div>
+    <div class="fg"><label>Empresa</label><div style="font-size:12px;padding:4px 0;">${sol.destinatario_empresa||'—'}</div></div>
+    <div class="fg"><label>Correo</label><div style="font-size:12px;padding:4px 0;">${sol.destinatario_email||'—'}</div></div>
+    <div class="fg"><label>Fecha solicitud</label><div style="font-size:12px;padding:4px 0;">${fmtD(sol.fecha_solicitud)||'—'}</div></div>
+    <div class="fg"><label>Fecha compromiso</label><div style="font-size:12px;padding:4px 0;${sol.fecha_compromiso&&sol.fecha_compromiso<new Date().toISOString().slice(0,10)?'color:#ef9f9f;font-weight:700;':''}">${fmtD(sol.fecha_compromiso)||'—'}</div></div>
+  </div>
+
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:6px;">
+    <div style="font-size:13px;font-weight:600;">Documentos solicitados — ${recibidos}/${items.length} recibidos</div>
+    <div style="display:flex;gap:6px;">
+      <button class="btn btn-sm" onclick="solAcuseTotal(${sol.id})" ${sol.estatus==='completa'?'disabled':''}>✓ Marcar todo recibido</button>
+      <button class="btn btn-primary btn-sm" onclick="abrirModal('modal-sol-seg');g('seg-sol-id').value=${sol.id};g('seg-fecha').value=new Date().toISOString().slice(0,10)">+ Seguimiento</button>
+    </div>
+  </div>
+  <div style="border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:16px;">
+    ${items.map(it=>`
+    <div class="sol-item-check ${it.recibido?'recibido':''}">
+      <input type="checkbox" ${it.recibido?'checked':''} onchange="solToggleItem(${it.id},this.checked)"
+        style="accent-color:#2e7d52;margin-top:2px;flex-shrink:0;">
+      <div style="flex:1;">
+        <div style="font-size:12px;color:var(--text);${it.recibido?'text-decoration:line-through;':''}">${it.descripcion}</div>
+        <div style="font-size:10px;color:var(--text-ter);">${it.categoria||''} ${it.fecha_recepcion?'· Recibido: '+fmtD(it.fecha_recepcion):''}</div>
+        ${it.notas_recepcion?`<div style="font-size:10px;color:var(--text-sec);margin-top:2px;">${it.notas_recepcion}</div>`:''}
+      </div>
+    </div>`).join('')}
+  </div>
+
+  ${sol.notas?`<div style="margin-bottom:14px;font-size:12px;color:var(--text-sec);background:var(--surface2);padding:10px;border-radius:var(--r);">
+    <strong style="color:var(--text);">Notas:</strong> ${sol.notas}</div>`:''}
+
+  <div style="font-size:13px;font-weight:600;margin-bottom:8px;">Historial de seguimiento</div>
+  <div style="border:1px solid var(--border);border-radius:var(--r);padding:8px 12px;max-height:200px;overflow-y:auto;">
+    ${segs.length ? segs.map(sg=>{
+      const icons = {envio:'📤',acuse_parcial:'📩',acuse_total:'✅',recordatorio:'🔔',nota:'📝'};
+      return `<div class="sol-seguimiento-row">
+        <span class="sol-seg-icon">${icons[sg.tipo]||'📌'}</span>
+        <span class="sol-seg-fecha">${fmtD(sg.fecha)}</span>
+        <span class="sol-seg-txt">${sg.descripcion||''} ${sg.usuario?'<em style="color:var(--text-ter);">— '+sg.usuario+'</em>':''}</span>
+      </div>`;}).join('')
+    : '<div style="font-size:11px;color:var(--text-ter);padding:8px 0;">Sin registros de seguimiento.</div>'}
+  </div>`;
+
+  g('sol-det-body').innerHTML = html;
+  g('sol-det-title').textContent = sol.asunto || 'Solicitud #' + sol.id;
+  // Store current sol for PDF/Word
+  window._solActual = sol;
+  window._solItemsActual = items;
+  abrirModal('modal-sol-detalle');
+}
+
+// ── Toggle ítem recibido ──────────────────────────────────────────────────
+async function solToggleItem(itemId, recibido){
+  await db.from('solicitud_items').update({
+    recibido,
+    fecha_recepcion: recibido ? new Date().toISOString().slice(0,10) : null
+  }).eq('id', itemId);
+  // Verificar si todos recibidos → actualizar estatus
+  const solId = (data.sol_items||[]).find(i=>i.id===itemId)?.id_solicitud;
+  if(solId){
+    const todos = (data.sol_items||[]).filter(i=>i.id_solicitud===solId);
+    const todosRec = todos.every(i=> i.id===itemId ? recibido : i.recibido);
+    const algunoRec = todos.some(i=> i.id===itemId ? recibido : i.recibido);
+    const nuevoEst = todosRec ? 'completa' : algunoRec ? 'parcial' : 'enviada';
+    await db.from('solicitudes_info').update({estatus:nuevoEst}).eq('id',solId);
+  }
+  await loadAll();
+  verSolicitud(solId||(data.sol_items||[]).find(i=>i.id===itemId)?.id_solicitud);
+}
+
+// ── Acuse total ───────────────────────────────────────────────────────────
+async function solAcuseTotal(solId){
+  const hoy = new Date().toISOString().slice(0,10);
+  await db.from('solicitud_items').update({recibido:true, fecha_recepcion:hoy}).eq('id_solicitud',solId);
+  await db.from('solicitudes_info').update({estatus:'completa'}).eq('id',solId);
+  await db.from('solicitud_seguimiento').insert({
+    id_solicitud:solId, tipo:'acuse_total', fecha:hoy,
+    descripcion:'Todos los documentos marcados como recibidos',
+    usuario: g('user-lbl')?.textContent||'Sistema'
+  });
+  await loadAll();
+  verSolicitud(solId);
+  toast('✓ Solicitud marcada como completa');
+}
+
+// ── Guardar seguimiento ───────────────────────────────────────────────────
+async function guardarSeguimiento(){
+  const solId = parseInt(g('seg-sol-id').value);
+  const tipo  = g('seg-tipo').value;
+  const fecha = g('seg-fecha').value || new Date().toISOString().slice(0,10);
+  const desc  = g('seg-descripcion').value||'';
+  if(!solId) return;
+  await db.from('solicitud_seguimiento').insert({
+    id_solicitud:solId, tipo, fecha, descripcion:desc,
+    usuario: g('user-lbl')?.textContent||'Sistema'
+  });
+  if(tipo==='acuse_total'){
+    await db.from('solicitudes_info').update({estatus:'completa'}).eq('id',solId);
+  } else if(tipo==='acuse_parcial'){
+    await db.from('solicitudes_info').update({estatus:'parcial'}).eq('id',solId);
+  }
+  g('seg-descripcion').value='';
+  cerrarModal('modal-sol-seg');
+  await loadAll();
+  verSolicitud(solId);
+  toast('Seguimiento registrado');
+}
+
+function solEditarDesdeDetalle(){
+  cerrarModal('modal-sol-detalle');
+  // TODO: reimplementar edición — por ahora abrir nueva
+  toast('Para editar, crea una nueva solicitud y elimina la anterior');
+}
+
+// ── Alertas de solicitudes vencidas ──────────────────────────────────────
+function renderSolicitudesAlertas(){
+  const wrap = g('sol-alerta-body');
+  if(!wrap) return;
+  const hoy  = new Date().toISOString().slice(0,10);
+  const sols = (data.solicitudes||[]).filter(s=>
+    s.estatus!=='completa' && s.estatus!=='borrador' && s.fecha_compromiso
+  );
+  const vencidas = sols.filter(s=>s.fecha_compromiso < hoy);
+  const proximas = sols.filter(s=>s.fecha_compromiso >= hoy);
+  if(!sols.length){ wrap.innerHTML='<div style="color:#81c784;font-size:12px;">✓ Sin solicitudes pendientes.</div>'; return; }
+  wrap.innerHTML = [...vencidas.map(s=>{
+    const sin = data.sin.find(x=>x.id===s.id_siniestro)||{};
+    return `<div style="display:flex;gap:10px;align-items:center;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px;">
+      <span style="color:#ef9f9f;font-weight:700;">⚠ Vencida</span>
+      <span style="color:var(--text);flex:1;">${s.asunto||'Solicitud #'+s.id}</span>
+      <span style="color:var(--text-ter);">${sin.numero_exp||''}</span>
+      <span style="color:#ef9f9f;">${fmtD(s.fecha_compromiso)}</span>
+      <button class="btn btn-sm" onclick="irAExpediente(${s.id_siniestro})" style="font-size:10px;">Ver</button>
+    </div>`;
+  }), ...proximas.map(s=>{
+    const sin = data.sin.find(x=>x.id===s.id_siniestro)||{};
+    const dias = Math.ceil((new Date(s.fecha_compromiso)-new Date())/(1000*60*60*24));
+    return `<div style="display:flex;gap:10px;align-items:center;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px;">
+      <span style="color:#ffd700;">⏳ ${dias}d</span>
+      <span style="color:var(--text);flex:1;">${s.asunto||'Solicitud #'+s.id}</span>
+      <span style="color:var(--text-ter);">${sin.numero_exp||''}</span>
+      <span style="color:var(--text-sec);">${fmtD(s.fecha_compromiso)}</span>
+      <button class="btn btn-sm" onclick="irAExpediente(${s.id_siniestro})" style="font-size:10px;">Ver</button>
+    </div>`;
+  })].join('');
+}
+
+// ── Generación correo ─────────────────────────────────────────────────────
+function solGenerarEmail(){
+  const sol   = window._solActual;
+  const items = window._solItemsActual || [];
+  if(!sol || !currentSin) return;
+  const pol  = data.pol.find(p=>p.id===currentSin.id_poliza)||{};
+  const asdo = data.asdo.find(a=>a.id===pol.id_asegurado)||{};
+  const aseg = data.aseg.find(a=>a.id===pol.id_aseguradora)||{};
+  const user = g('user-lbl')?.textContent || 'Ajustador';
+
+  const txt = `Estimado(a) ${sol.destinatario_nombre||''}${sol.destinatario_cargo?', '+sol.destinatario_cargo:''}:
+
+Por medio del presente, nos dirigimos a usted en relación al siniestro radicado bajo los siguientes datos:
+
+Asegurado: ${asdo.nombre||'—'}
+Aseguradora: ${aseg.nombre||'—'}
+No. Siniestro: ${currentSin.numero_siniestro||'—'}
+No. Trámite: ${currentSin.tramite_gnp||currentSin.numero_exp||'—'}
+Ref. AASA: ${currentSin.numero_exp||'—'}
+Causa: ${currentSin.causa||'—'}
+
+Con la finalidad de continuar con el proceso de ajuste, le solicitamos atentamente nos proporcione la siguiente documentación e información:
+
+${items.map((it,i)=>`${i+1}. [${it.categoria||'General'}] ${it.descripcion}`).join('\n')}
+
+${sol.notas ? '\nNota adicional: ' + sol.notas : ''}
+
+Le agradecemos nos haga llegar la información a más tardar el ${sol.fecha_compromiso ? fmtD(sol.fecha_compromiso) : 'a la brevedad posible'}.
+
+Quedamos a sus órdenes para cualquier aclaración.
+
+Atentamente,
+
+${user}
+Almaraz Ajustadores, S.A.
+PBX +52 55 5593-8823
+aasa.mexico@aasa.com.mx`;
+
+  // Copiar al portapapeles
+  navigator.clipboard.writeText(txt).then(()=>toast('✉ Texto del correo copiado al portapapeles'));
+}
+
+// ── Generación PDF ────────────────────────────────────────────────────────
+async function solGenerarPDF(){
+  const sol   = window._solActual;
+  const items = window._solItemsActual || [];
+  if(!sol || !currentSin){ toast('Abre una solicitud primero'); return; }
+  toast('Generando PDF…');
+  const pol  = data.pol.find(p=>p.id===currentSin.id_poliza)||{};
+  const asdo = data.asdo.find(a=>a.id===pol.id_asegurado)||{};
+  const aseg = data.aseg.find(a=>a.id===pol.id_aseguradora)||{};
+  const user = g('user-lbl')?.textContent||'Ajustador';
+
+  const filas = items.map((it,i)=>`
+    <tr style="background:${i%2===0?'#f8faff':'#fff'};">
+      <td style="padding:6px 8px;border:1px solid #c8d4e8;font-size:11px;text-align:center;">${i+1}</td>
+      <td style="padding:6px 8px;border:1px solid #c8d4e8;font-size:10px;color:#555;">${it.categoria||''}</td>
+      <td style="padding:6px 8px;border:1px solid #c8d4e8;font-size:11px;">${it.descripcion}</td>
+      <td style="padding:6px 8px;border:1px solid #c8d4e8;font-size:11px;text-align:center;">${it.recibido?'✓':'☐'}</td>
+    </tr>`).join('');
+
+  const htmlPDF = `<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <style>body{font-family:Arial,sans-serif;margin:40px;color:#1a1a2e;font-size:12px;}
+  .header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #1558b0;padding-bottom:12px;margin-bottom:16px;}
+  .brand{font-size:22px;font-weight:900;color:#1558b0;letter-spacing:-.5px;}
+  .titulo{font-size:15px;font-weight:700;color:#1558b0;margin-bottom:16px;}
+  table{width:100%;border-collapse:collapse;}
+  th{background:#1558b0;color:#fff;padding:7px 8px;font-size:10px;text-align:left;}
+  .datos{display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;margin-bottom:16px;background:#f0f4ff;padding:10px;border-radius:4px;}
+  .dato{font-size:11px;} .dato strong{color:#1558b0;}
+  .footer{margin-top:24px;border-top:1px solid #c8d4e8;padding-top:8px;font-size:10px;color:#666;text-align:center;}
+  </style></head><body>
+  <div class="header">
+    <div><div class="brand">AASA</div><div style="font-size:10px;color:#666;">Almaraz Ajustadores, S.A.</div></div>
+    <div style="text-align:right;font-size:10px;color:#666;">
+      Calle Miguel Hidalgo 61, Oficina 3<br>Col. San Jerónimo Lídice, CDMX<br>
+      +52 55 5593-8823 · aasa.mexico@aasa.com.mx
+    </div>
+  </div>
+  <div class="titulo">SOLICITUD DE INFORMACIÓN</div>
+  <div class="datos">
+    <div class="dato"><strong>Asegurado:</strong> ${asdo.nombre||'—'}</div>
+    <div class="dato"><strong>Aseguradora:</strong> ${aseg.nombre||'—'}</div>
+    <div class="dato"><strong>No. Siniestro:</strong> ${currentSin.numero_siniestro||'—'}</div>
+    <div class="dato"><strong>Ref. AASA:</strong> ${currentSin.numero_exp||'—'}</div>
+    <div class="dato"><strong>Causa:</strong> ${currentSin.causa||'—'}</div>
+    <div class="dato"><strong>Cobertura:</strong> ${currentSin.subramo||'—'}</div>
+    <div class="dato"><strong>Fecha solicitud:</strong> ${fmtD(sol.fecha_solicitud)||'—'}</div>
+    <div class="dato"><strong>Fecha compromiso:</strong> ${fmtD(sol.fecha_compromiso)||'—'}</div>
+    <div class="dato"><strong>Destinatario:</strong> ${sol.destinatario_nombre||'—'}</div>
+    <div class="dato"><strong>Cargo:</strong> ${sol.destinatario_cargo||'—'}</div>
+  </div>
+  <table>
+    <thead><tr><th style="width:36px;">#</th><th style="width:100px;">Categoría</th><th>Documento / Información requerida</th><th style="width:60px;text-align:center;">Recibido</th></tr></thead>
+    <tbody>${filas}</tbody>
+  </table>
+  ${sol.notas?`<div style="margin-top:14px;padding:10px;background:#fff8e1;border-radius:4px;font-size:11px;"><strong>Notas:</strong> ${sol.notas}</div>`:''}
+  <div style="margin-top:40px;display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+    <div style="border-top:1px solid #1558b0;padding-top:8px;text-align:center;font-size:11px;">${user}<br><span style="color:#666;">Ajustador responsable</span></div>
+    <div style="border-top:1px solid #999;padding-top:8px;text-align:center;font-size:11px;">Firma del destinatario<br><span style="color:#666;">${sol.destinatario_nombre||''}</span></div>
+  </div>
+  <div class="footer">ALMARAZ AJUSTADORES, S.A. · Calle Miguel Hidalgo 61, Of. 3, Col. San Jerónimo Lídice, C.P. 10200, CDMX · CNSF: C15979</div>
+  </body></html>`;
+
+  const win = window.open('','_blank');
+  win.document.write(htmlPDF);
+  win.document.close();
+  setTimeout(()=>{ win.print(); }, 500);
+}
+
+// ── Generación Word básico ────────────────────────────────────────────────
+async function solGenerarWord(){
+  const sol   = window._solActual;
+  const items = window._solItemsActual || [];
+  if(!sol || !currentSin){ toast('Abre una solicitud primero'); return; }
+  const pol  = data.pol.find(p=>p.id===currentSin.id_poliza)||{};
+  const asdo = data.asdo.find(a=>a.id===pol.id_asegurado)||{};
+  const aseg = data.aseg.find(a=>a.id===pol.id_aseguradora)||{};
+  const user = g('user-lbl')?.textContent||'Ajustador';
+
+  const { Document, Paragraph, Table, TableRow, TableCell, TextRun, HeadingLevel,
+          AlignmentType, BorderStyle, WidthType, Header, ImageRun } = docx;
+
+  const makeRow = (cells, isHeader=false) => new TableRow({
+    tableHeader: isHeader,
+    children: cells.map((txt,ci)=>new TableCell({
+      shading: isHeader ? {fill:'1558b0'} : ci===2&&txt==='✓' ? {fill:'d4edda'} : {},
+      children:[new Paragraph({
+        children:[new TextRun({text:String(txt), color:isHeader?'FFFFFF':'000000',
+          bold:isHeader, size:isHeader?18:16})],
+        alignment: ci===0||ci===3 ? AlignmentType.CENTER : AlignmentType.LEFT,
+      })],
+      margins:{top:60,bottom:60,left:80,right:80},
+    }))
+  });
+
+  const doc = new Document({ sections:[{ children:[
+    new Paragraph({ children:[new TextRun({text:'SOLICITUD DE INFORMACIÓN', bold:true, size:28, color:'1558b0'})], alignment:AlignmentType.CENTER, spacing:{after:200} }),
+    new Paragraph({ children:[new TextRun({text:'ALMARAZ AJUSTADORES, S.A.', bold:true, size:20, color:'555555'})], alignment:AlignmentType.CENTER, spacing:{after:400} }),
+    // Datos del expediente
+    ...['Asegurado: '+(asdo.nombre||'—'), 'Aseguradora: '+(aseg.nombre||'—'),
+       'No. Siniestro: '+(currentSin.numero_siniestro||'—'), 'Ref. AASA: '+(currentSin.numero_exp||'—'),
+       'Causa: '+(currentSin.causa||'—'), 'Fecha solicitud: '+(fmtD(sol.fecha_solicitud)||'—'),
+       'Fecha compromiso: '+(fmtD(sol.fecha_compromiso)||'—'),
+       'Destinatario: '+(sol.destinatario_nombre||'—')+' — '+(sol.destinatario_cargo||'—'),
+    ].map(t=>new Paragraph({ children:[new TextRun({text:t, size:20})], spacing:{after:80} })),
+    new Paragraph({spacing:{after:200}}),
+    // Tabla de documentos
+    new Table({ width:{size:100,type:WidthType.PERCENTAGE},
+      rows:[
+        makeRow(['#','Categoría','Documento / Información requerida','Recibido'], true),
+        ...items.map((it,i)=>makeRow([i+1, it.categoria||'', it.descripcion, it.recibido?'✓':'☐']))
+      ]
+    }),
+    ...(sol.notas ? [new Paragraph({spacing:{before:200}}), new Paragraph({children:[new TextRun({text:'Notas: '+sol.notas, italics:true, size:18, color:'555555'})]})] : []),
+    new Paragraph({spacing:{before:600}}),
+    new Paragraph({ children:[new TextRun({text:user, bold:true, size:20})], alignment:AlignmentType.LEFT }),
+    new Paragraph({ children:[new TextRun({text:'Ajustador — Almaraz Ajustadores, S.A.', size:18, color:'555555'})] }),
+  ]}]});
+
+  const blob = await docx.Packer.toBlob(doc);
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href=url; a.download=`Solicitud_${currentSin.numero_exp||sol.id}_${sol.fecha_solicitud||''}.docx`;
+  a.click(); URL.revokeObjectURL(url);
+  toast('✓ Word generado');
+}
 
 </script>
 </body>
