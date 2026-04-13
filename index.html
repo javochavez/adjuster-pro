@@ -1190,16 +1190,31 @@ body.modo-lectura .readonly-hidden { display:none !important; }
 <!-- ── PANEL RESULTADO IA ────────────────────────────────────────────── -->
 <div id="ia-result-panel">
   <div class="ia-panel-head">
-    <span id="ia-panel-title">✦ Asistente IA</span>
+    <span id="ia-panel-title">✦ Sugerencia IA</span>
     <div id="ia-panel-spinner" class="ia-spinner" style="display:none;"></div>
-    <button class="btn btn-sm" onclick="iaCerrarPanel()" style="padding:2px 8px;">✕</button>
+    <span style="font-size:10px;color:var(--text-ter);margin-left:6px;" id="ia-panel-hint"></span>
+    <button class="btn btn-sm" onclick="iaCerrarPanel()" style="padding:2px 8px;margin-left:auto;">✕ Descartar</button>
   </div>
-  <div class="ia-panel-body" id="ia-panel-body">Generando…</div>
+  <div style="padding:6px 14px 2px;font-size:10px;color:var(--text-ter);display:flex;align-items:center;gap:8px;">
+    <span>Edita la sugerencia antes de aplicar:</span>
+    <span id="ia-panel-existing-lbl" style="display:none;color:#ffd700;">⚑ Campo con contenido previo</span>
+  </div>
+  <div style="flex:1;overflow:hidden;display:flex;flex-direction:column;padding:4px 12px 4px;">
+    <textarea id="ia-panel-editor"
+      style="flex:1;min-height:120px;max-height:calc(55vh - 110px);width:100%;
+             padding:8px 10px;border:1px solid rgba(16,163,127,.4);border-radius:var(--r);
+             background:var(--bg2);color:var(--text);font-size:12px;font-family:inherit;
+             resize:none;line-height:1.5;box-sizing:border-box;"
+      placeholder="La sugerencia aparecerá aquí — puedes editarla libremente antes de aplicar…"></textarea>
+  </div>
   <div class="ia-panel-foot">
-    <button class="btn btn-primary btn-sm" id="ia-btn-aplicar" onclick="iaAplicar()">↑ Aplicar al campo</button>
+    <button class="btn btn-primary btn-sm" id="ia-btn-aplicar" onclick="iaAplicar()"
+      style="background:linear-gradient(135deg,#10a37f,#1558b0);">↑ Sustituir campo</button>
+    <button class="btn btn-sm" id="ia-btn-aplicar-append" onclick="iaAplicarAppend()"
+      title="Conserva lo que ya hay y agrega esto al final">↓ Agregar al final</button>
     <button class="btn btn-sm" id="ia-btn-regenerar" onclick="iaRegenerarActual()">↻ Regenerar</button>
-    <button class="btn btn-sm" onclick="iaCerrarPanel()">Descartar</button>
-    <button class="btn btn-sm" style="margin-left:auto;font-size:10px;color:var(--text-ter);" onclick="abrirModal('modal-ia-config')">⚙ Key</button>
+    <button class="btn btn-sm" style="margin-left:auto;font-size:10px;color:var(--text-ter);"
+      onclick="abrirModal('modal-ia-config')">⚙ Key</button>
   </div>
 </div>
 
@@ -1433,9 +1448,14 @@ body.modo-lectura .readonly-hidden { display:none !important; }
         <button class="btn-ia-simple" onclick="iaSugerirCampo('causa')" title="Sugerir causa con IA">✦ IA</button>
       </div>
       <div class="ia-sugg-box" id="ia-sugg-causa">
-        <div id="ia-sugg-causa-text" style="color:var(--text-sec);">Cargando…</div>
+        <div style="font-size:10px;color:var(--text-ter);margin-bottom:4px;">Sugerencia IA — edita si es necesario:</div>
+        <input type="text" id="ia-sugg-causa-text"
+          style="width:100%;padding:5px 8px;border:1px solid rgba(16,163,127,.4);border-radius:4px;
+                 background:var(--bg2);color:var(--text);font-size:12px;font-family:inherit;
+                 box-sizing:border-box;margin-bottom:6px;"
+          placeholder="Generando sugerencia…">
         <div class="ia-sugg-actions">
-          <button class="btn btn-primary btn-sm" onclick="iaAplicarCampo('causa')">Aplicar</button>
+          <button class="btn btn-primary btn-sm" onclick="iaAplicarCampo('causa')">↑ Aplicar</button>
           <button class="btn btn-sm" onclick="iaCerrarSugg('causa')">Descartar</button>
         </div>
       </div>
@@ -1446,9 +1466,14 @@ body.modo-lectura .readonly-hidden { display:none !important; }
         <button class="btn-ia-simple" onclick="iaSugerirCampo('causa-com')" title="Sugerir comentario con IA">✦ IA</button>
       </div>
       <div class="ia-sugg-box" id="ia-sugg-causa-com">
-        <div id="ia-sugg-causa-com-text" style="color:var(--text-sec);">Cargando…</div>
+        <div style="font-size:10px;color:var(--text-ter);margin-bottom:4px;">Sugerencia IA — edita si es necesario:</div>
+        <input type="text" id="ia-sugg-causa-com-text"
+          style="width:100%;padding:5px 8px;border:1px solid rgba(16,163,127,.4);border-radius:4px;
+                 background:var(--bg2);color:var(--text);font-size:12px;font-family:inherit;
+                 box-sizing:border-box;margin-bottom:6px;"
+          placeholder="Generando sugerencia…">
         <div class="ia-sugg-actions">
-          <button class="btn btn-primary btn-sm" onclick="iaAplicarCampo('causa-com')">Aplicar</button>
+          <button class="btn btn-primary btn-sm" onclick="iaAplicarCampo('causa-com')">↑ Aplicar</button>
           <button class="btn btn-sm" onclick="iaCerrarSugg('causa-com')">Descartar</button>
         </div>
       </div>
@@ -1458,9 +1483,14 @@ body.modo-lectura .readonly-hidden { display:none !important; }
         <button class="btn-ia-simple" onclick="iaSugerirCampo('riesgo')" title="Clasificar riesgo con IA">✦ IA</button>
       </div>
       <div class="ia-sugg-box" id="ia-sugg-riesgo">
-        <div id="ia-sugg-riesgo-text" style="color:var(--text-sec);">Cargando…</div>
+        <div style="font-size:10px;color:var(--text-ter);margin-bottom:4px;">Sugerencia IA — edita si es necesario:</div>
+        <input type="text" id="ia-sugg-riesgo-text"
+          style="width:100%;padding:5px 8px;border:1px solid rgba(16,163,127,.4);border-radius:4px;
+                 background:var(--bg2);color:var(--text);font-size:12px;font-family:inherit;
+                 box-sizing:border-box;margin-bottom:6px;"
+          placeholder="Generando sugerencia…">
         <div class="ia-sugg-actions">
-          <button class="btn btn-primary btn-sm" onclick="iaAplicarCampo('riesgo')">Aplicar</button>
+          <button class="btn btn-primary btn-sm" onclick="iaAplicarCampo('riesgo')">↑ Aplicar</button>
           <button class="btn btn-sm" onclick="iaCerrarSugg('riesgo')">Descartar</button>
         </div>
       </div>
@@ -9043,81 +9073,122 @@ async function iaCall(prompt, onChunk, onDone, onError){
 let _iaCurrentSuffix = null;
 let _iaCurrentText   = '';
 let _iaCurrentPrompt = null;
-let _iaPendingApply  = false;  // texto pendiente de aplicar tras reabrir modal
+let _iaPendingApply  = false;
 
-function iaAbrirPanel(titulo){
-  g('ia-panel-title').textContent = '✦ ' + titulo;
-  g('ia-panel-body').textContent  = '';
+// Leer texto plano del RTE actual
+function iaLeerCampoActual(suffix){
+  const rte = g('s-' + suffix + '-rte');
+  if(!rte) return '';
+  return (rte.innerText || rte.textContent || '').trim();
+}
+
+function iaAbrirPanel(titulo, suffix){
+  g('ia-panel-title').textContent = 'Sugerencia IA — ' + titulo;
+  const editor = g('ia-panel-editor');
+  if(editor){ editor.value = ''; editor.disabled = true; }
   g('ia-panel-spinner').style.display = 'inline-block';
   g('ia-btn-aplicar').disabled  = true;
   g('ia-btn-regenerar').disabled = true;
+  const appendBtn = g('ia-btn-aplicar-append');
+  if(appendBtn) appendBtn.disabled = true;
   g('ia-result-panel').classList.add('open');
   _iaCurrentText = '';
+  // Indicador de campo con contenido
+  const existente = suffix ? iaLeerCampoActual(suffix) : '';
+  const lbl  = g('ia-panel-existing-lbl');
+  const hint = g('ia-panel-hint');
+  if(lbl) lbl.style.display = existente ? 'inline' : 'none';
+  if(hint) hint.textContent = existente
+    ? '(IA leyó el contenido actual para complementar)'
+    : '(campo vacío — sugerencia desde contexto del expediente)';
 }
+
 function iaCerrarPanel(){
   g('ia-result-panel').classList.remove('open');
-  // NO limpiamos _iaCurrentSuffix ni _iaCurrentText aquí
-  // para que "Aplicar" siga funcionando si el panel se cerró manualmente
 }
+
+// Sustituir campo con el texto del editor
 function iaAplicar(){
-  if(!_iaCurrentSuffix || !_iaCurrentText) return;
-  const rteEl = g('s-' + _iaCurrentSuffix + '-rte');
+  const editor = g('ia-panel-editor');
+  const texto  = (editor ? editor.value : _iaCurrentText).trim();
+  if(!_iaCurrentSuffix || !texto){ toast('No hay sugerencia para aplicar'); return; }
+  iaEscribirEnCampo(_iaCurrentSuffix, texto, false);
+}
+
+// Agregar al final del campo existente
+function iaAplicarAppend(){
+  const editor = g('ia-panel-editor');
+  const texto  = (editor ? editor.value : _iaCurrentText).trim();
+  if(!_iaCurrentSuffix || !texto){ toast('No hay sugerencia para aplicar'); return; }
+  iaEscribirEnCampo(_iaCurrentSuffix, texto, true);
+}
+
+function iaEscribirEnCampo(suffix, texto, append){
+  const rteEl = g('s-' + suffix + '-rte');
   if(rteEl){
-    // Modal abierto: aplicar directo
-    loadRteSin(_iaCurrentSuffix, _iaCurrentText.replace(/\n/g,'<br>'));
-    syncRteSin(_iaCurrentSuffix);
-    g('ia-result-panel').classList.remove('open');
-    _iaCurrentSuffix = null;
-    _iaCurrentText   = '';
-    toast('Texto aplicado al campo');
-  } else {
-    // Modal cerrado: reabrir el expediente activo y aplicar tras carga
-    const sinId = currentSin?.id || parseInt(g('s-id')?.value);
-    if(!sinId){
-      toast('Abre el expediente primero y vuelve a intentarlo.');
-      return;
+    if(append){
+      const actual = rteEl.innerHTML;
+      const sep    = actual.trim() ? '<br><br>' : '';
+      loadRteSin(suffix, actual + sep + texto.replace(/\n/g,'<br>'));
+    } else {
+      loadRteSin(suffix, texto.replace(/\n/g,'<br>'));
     }
+    syncRteSin(suffix);
+    g('ia-result-panel').classList.remove('open');
+    _iaCurrentSuffix = null; _iaCurrentText = '';
+    toast(append ? 'Sugerencia agregada al final del campo' : 'Sugerencia aplicada — campo sustituido');
+  } else {
+    // Modal cerrado — reabrir expediente y aplicar
+    const sinId = currentSin?.id || parseInt(g('s-id')?.value);
+    if(!sinId){ toast('Abre el expediente primero'); return; }
     _iaPendingApply = true;
     editarSiniestro(sinId);
     g('modal-sin').classList.add('open');
     setTimeout(()=>{
-      const rte2 = g('s-' + _iaCurrentSuffix + '-rte');
+      const rte2 = g('s-' + suffix + '-rte');
       if(rte2){
-        loadRteSin(_iaCurrentSuffix, _iaCurrentText.replace(/\n/g,'<br>'));
-        syncRteSin(_iaCurrentSuffix);
-        // Scroll al campo dentro del modal
+        if(append){
+          const actual = rte2.innerHTML;
+          const sep    = actual.trim() ? '<br><br>' : '';
+          loadRteSin(suffix, actual + sep + texto.replace(/\n/g,'<br>'));
+        } else {
+          loadRteSin(suffix, texto.replace(/\n/g,'<br>'));
+        }
+        syncRteSin(suffix);
         rte2.scrollIntoView({behavior:'smooth', block:'center'});
       }
       g('ia-result-panel').classList.remove('open');
-      _iaCurrentSuffix = null;
-      _iaCurrentText   = '';
-      _iaPendingApply  = false;
-      toast('Texto aplicado — guarda el expediente para conservarlo');
+      _iaCurrentSuffix = null; _iaCurrentText = ''; _iaPendingApply = false;
+      toast(append ? 'Texto agregado — guarda el expediente' : 'Texto aplicado — guarda el expediente');
     }, 450);
   }
 }
+
 function iaRegenerarActual(){
-  if(_iaCurrentPrompt) iaLlamarPanel(_iaCurrentPrompt, g('ia-panel-title').textContent.replace('✦ ',''), _iaCurrentSuffix);
+  if(_iaCurrentPrompt) iaLlamarPanel(_iaCurrentPrompt, g('ia-panel-title').textContent.replace('Sugerencia IA — ',''), _iaCurrentSuffix);
 }
 
 function iaLlamarPanel(prompt, titulo, suffix){
   _iaCurrentSuffix = suffix;
   _iaCurrentPrompt = prompt;
-  iaAbrirPanel(titulo);
+  iaAbrirPanel(titulo, suffix);
+  const editor = g('ia-panel-editor');
   iaCall(
     prompt,
     (chunk)=>{
       _iaCurrentText += chunk;
-      g('ia-panel-body').textContent = _iaCurrentText;
+      if(editor) editor.value = _iaCurrentText;
     },
     ()=>{
       g('ia-panel-spinner').style.display='none';
+      if(editor){ editor.disabled = false; editor.focus(); }
       g('ia-btn-aplicar').disabled = false;
       g('ia-btn-regenerar').disabled = false;
+      if(g('ia-btn-aplicar-append')) g('ia-btn-aplicar-append').disabled = false;
     },
     (err)=>{
       g('ia-panel-spinner').style.display='none';
-      g('ia-panel-body').textContent = '⚠ Error: ' + err;
+      if(editor){ editor.value = 'Error: ' + err; editor.disabled = false; }
       g('ia-btn-regenerar').disabled = false;
     }
   );
@@ -9127,7 +9198,12 @@ function iaLlamarPanel(prompt, titulo, suffix){
 function iaGenerarRte(suffix, key){
   if(!iaCheckKey()) return;
   const ctx = iaContextoSin();
-  const prompt = iaPrompt(key, ctx);
+  // Leer contenido actual del campo
+  const existente = iaLeerCampoActual(suffix);
+  let promptFinal = iaPrompt(key, ctx);
+  if(existente){
+    promptFinal += '\n\nCONTENIDO ACTUAL DEL CAMPO (ya capturado por el usuario — intégralo o mejóralo, no lo repitas literalmente):\n---\n' + existente + '\n---';
+  }
   const titulos = {
     'desc':'Descripción de bienes afectados','narracion':'Narración de los hechos',
     'inspeccion':'Resultado de la inspección','naturaleza':'Naturaleza y alcance de daños',
@@ -9135,37 +9211,41 @@ function iaGenerarRte(suffix, key){
     'considerandos':'Considerandos del ajuste','actividades':'Actividades por realizar',
     'salvamento':'Detalle de salvamento','introduccion':'Introducción del informe'
   };
-  iaLlamarPanel(prompt, titulos[key]||key, suffix);
+  iaLlamarPanel(promptFinal, titulos[key]||key, suffix);
 }
 
 // ── Sugerencias para campos simples ──────────────────────────────────────
 function iaSugerirCampo(campo){
   if(!iaCheckKey()) return;
-  const ctx = iaContextoSin();
+  const ctx      = iaContextoSin();
   const promptKeys = {
     'causa':'causa_simple','causa-com':'causa_com_simple','riesgo':'riesgo_simple'
   };
-  const prompt = iaPrompt(promptKeys[campo]||campo, ctx);
+  // Leer valor actual del campo
+  const inputEl     = g('s-' + campo);
+  const valorActual = (inputEl?.value||'').trim();
+  let promptFinal   = iaPrompt(promptKeys[campo]||campo, ctx);
+  if(valorActual){
+    promptFinal += '\n\nEl campo ya contiene: "' + valorActual + '". Sugiere una versión mejorada si aplica, o confirma si ya es correcto.';
+  }
   const box = g('ia-sugg-' + campo);
   const txt = g('ia-sugg-' + campo + '-text');
   if(!box||!txt) return;
   box.classList.add('open');
-  txt.textContent = '⏳ Generando…';
-  txt.dataset.valor = '';
+  txt.value = '';
+  txt.placeholder = '⏳ Generando sugerencia…';
   let acum = '';
   iaCall(
-    prompt,
-    (chunk)=>{ acum+=chunk; txt.textContent=acum; txt.dataset.valor=acum; },
-    ()=>{ txt.dataset.valor=acum; },
-    (err)=>{ txt.textContent='⚠ '+err; }
+    promptFinal,
+    (chunk)=>{ acum+=chunk; txt.value=acum; },
+    ()=>{ txt.placeholder='Edita si es necesario y presiona Aplicar'; },
+    (err)=>{ txt.value='Error: '+err; }
   );
 }
 function iaAplicarCampo(campo){
-  const txt = g('ia-sugg-' + campo + '-text');
+  const txt   = g('ia-sugg-' + campo + '-text');
   const input = g('s-' + campo);
-  if(txt && input){
-    input.value = (txt.dataset.valor||txt.textContent).trim();
-  }
+  if(txt && input) input.value = txt.value.trim();
   iaCerrarSugg(campo);
 }
 function iaCerrarSugg(campo){
