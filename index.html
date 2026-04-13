@@ -1131,7 +1131,9 @@ body.modo-lectura .readonly-hidden { display:none !important; }
     <button class="btn" onclick="cerrarModal('modal-sol-detalle')">Cerrar</button>
     <button class="btn btn-sm" onclick="solEditarDesdeDetalle()">✏ Editar</button>
     <button class="btn btn-sm" onclick="solGenerarEmail()">✉ Correo</button>
-    <button class="btn btn-sm" onclick="solGenerarRecordatorio(window._solActual, window._solItemsActual, currentSin)" style="background:rgba(255,204,0,.15);color:#ffd700;border-color:rgba(255,204,0,.3);">🔔 Recordatorio</button>
+    <button class="btn btn-sm" onclick="solGenerarRecordatorio(window._solActual, window._solItemsActual, currentSin)" style="background:rgba(255,204,0,.15);color:#ffd700;border-color:rgba(255,204,0,.3);">🔔 Rec PDF</button>
+    <button class="btn btn-sm" onclick="solGenerarRecordatorioWord(window._solActual, window._solItemsActual, currentSin)" style="background:rgba(255,204,0,.1);color:#ffd700;border-color:rgba(255,204,0,.25);">🔔 Rec Word</button>
+    <button class="btn btn-sm" onclick="solGenerarRecordatorioEmail(window._solActual, window._solItemsActual, currentSin)" style="background:rgba(255,204,0,.08);color:#ffd700;border-color:rgba(255,204,0,.2);">🔔 Rec Correo</button>
     <button class="btn btn-sm" onclick="solGenerarPDF()">⬇ PDF Solicitud</button>
     <button class="btn btn-primary btn-sm" onclick="solGenerarWord()">⬇ Word Solicitud</button>
   </div>
@@ -10232,7 +10234,10 @@ function renderSolicitudesTab(){
         <button class="btn btn-sm" onclick="solAccionRapida(${sol.id},'email')" style="font-size:11px;">✉ Correo</button>
         <button class="btn btn-sm" onclick="solAccionRapida(${sol.id},'pdf')" style="font-size:11px;">⬇ PDF</button>
         <button class="btn btn-sm" onclick="solAccionRapida(${sol.id},'word')" style="font-size:11px;">⬇ Word</button>
-        ${sol.estatus!=='completa'?`<button class="btn btn-sm" onclick="solAccionRapida(${sol.id},'recordatorio')" style="font-size:11px;background:rgba(255,204,0,.15);color:#ffd700;border-color:rgba(255,204,0,.3);">🔔 Recordatorio</button>`:''}
+        ${sol.estatus!=='completa'?`
+        <button class="btn btn-sm" onclick="solAccionRapida(${sol.id},'recordatorio')" style="font-size:11px;background:rgba(255,204,0,.15);color:#ffd700;border-color:rgba(255,204,0,.3);">🔔 Rec PDF</button>
+        <button class="btn btn-sm" onclick="solAccionRapida(${sol.id},'rec_word')" style="font-size:11px;background:rgba(255,204,0,.1);color:#ffd700;border-color:rgba(255,204,0,.25);">🔔 Rec Word</button>
+        <button class="btn btn-sm" onclick="solAccionRapida(${sol.id},'rec_email')" style="font-size:11px;background:rgba(255,204,0,.08);color:#ffd700;border-color:rgba(255,204,0,.2);">🔔 Rec Correo</button>`:''}
       </div>
     </div>`;
   });
@@ -10256,7 +10261,9 @@ async function solAccionRapida(solId, accion){
   if(accion==='email')         solGenerarEmail();
   else if(accion==='pdf')      await solGenerarPDF();
   else if(accion==='word')     await solGenerarWord();
-  else if(accion==='recordatorio') await solGenerarRecordatorio(sol, items, sin);
+  else if(accion==='recordatorio')      await solGenerarRecordatorio(sol, items, sin);
+  else if(accion==='rec_word')          await solGenerarRecordatorioWord(sol, items, sin);
+  else if(accion==='rec_email')              solGenerarRecordatorioEmail(sol, items, sin);
   // Restaurar currentSin
   currentSin = prevSin;
 }
@@ -10272,20 +10279,8 @@ async function solGenerarRecordatorio(sol, items, sin){
   const recibidos  = items.filter(i=>i.recibido);
   const hoy = new Date().toLocaleDateString('es-MX',{day:'2-digit',month:'long',year:'numeric'});
 
-  const filasPend = pendientes.map((it,i)=>`
-    <tr style="background:${i%2===0?'#fff8f0':'#fff'};">
-      <td style="padding:6px 8px;border:1px solid #e0c8a0;font-size:11px;text-align:center;">${i+1}</td>
-      <td style="padding:6px 8px;border:1px solid #e0c8a0;font-size:10px;color:#8b5000;">${it.categoria||''}</td>
-      <td style="padding:6px 8px;border:1px solid #e0c8a0;font-size:11px;">${it.descripcion}</td>
-    </tr>`).join('');
-
-  const filasRec = recibidos.map((it,i)=>`
-    <tr style="background:${i%2===0?'#f0fff4':'#fff'};">
-      <td style="padding:5px 8px;border:1px solid #b0d8b8;font-size:11px;text-align:center;">✓</td>
-      <td style="padding:5px 8px;border:1px solid #b0d8b8;font-size:10px;color:#2e7d52;">${it.categoria||''}</td>
-      <td style="padding:5px 8px;border:1px solid #b0d8b8;font-size:11px;text-decoration:line-through;color:#666;">${it.descripcion}</td>
-      <td style="padding:5px 8px;border:1px solid #b0d8b8;font-size:10px;color:#2e7d52;">${fmtD(it.fecha_recepcion)||''}</td>
-    </tr>`).join('');
+  const filasPend = solFilasAgrupadas(pendientes,'#e65c00','#e0c8a0','#fff8f0',false,false);
+  const filasRec  = solFilasAgrupadas(recibidos,'#2e7d52','#b0d8b8','#f0fff4',true,true);
 
   const htmlRec = `<!DOCTYPE html><html><head><meta charset="UTF-8">
   <style>body{font-family:Arial,sans-serif;margin:40px;color:#1a1a2e;font-size:12px;}
@@ -10321,13 +10316,13 @@ async function solGenerarRecordatorio(sol, items, sin){
   ${pendientes.length ? `
   <div style="font-size:13px;font-weight:700;color:#e65c00;margin-bottom:8px;">⚠ Documentación pendiente de recibir (${pendientes.length} ítem${pendientes.length>1?'s':''})</div>
   <table>
-    <thead><tr style="background:#e65c00;"><th style="color:#fff;width:36px;">#</th><th style="color:#fff;width:100px;">Categoría</th><th style="color:#fff;">Documento / Información requerida</th></tr></thead>
+    <thead><tr style="background:#e65c00;"><th style="color:#fff;width:32px;">#</th><th style="color:#fff;">Documento / Información requerida</th></tr></thead>
     <tbody>${filasPend}</tbody>
   </table>` : '<div style="color:#2e7d52;font-weight:700;font-size:13px;margin-bottom:16px;">✓ Toda la documentación ha sido recibida.</div>'}
   ${recibidos.length ? `
   <div style="font-size:13px;font-weight:700;color:#2e7d52;margin-bottom:8px;">✓ Documentación ya recibida (${recibidos.length} ítem${recibidos.length>1?'s':''})</div>
   <table>
-    <thead><tr style="background:#2e7d52;"><th style="color:#fff;width:30px;">✓</th><th style="color:#fff;width:100px;">Categoría</th><th style="color:#fff;">Documento</th><th style="color:#fff;width:90px;">Recibido</th></tr></thead>
+    <thead><tr style="background:#2e7d52;"><th style="color:#fff;width:30px;">✓</th><th style="color:#fff;">Documento</th><th style="color:#fff;width:90px;">Recibido</th></tr></thead>
     <tbody>${filasRec}</tbody>
   </table>` : ''}
   <div style="margin-top:30px;display:grid;grid-template-columns:1fr 1fr;gap:20px;">
@@ -10350,6 +10345,137 @@ async function solGenerarRecordatorio(sol, items, sin){
   });
   await loadAll();
   toast('🔔 Recordatorio generado y registrado en el seguimiento');
+}
+
+
+// ── Recordatorio Word ─────────────────────────────────────────────────────
+async function solGenerarRecordatorioWord(sol, items, sin){
+  if(!sol || !sin){ toast('Contexto de solicitud no disponible'); return; }
+  const pol  = data.pol.find(p=>p.id===sin.id_poliza)||{};
+  const asdo = data.asdo.find(a=>a.id===pol.id_asegurado)||{};
+  const aseg = data.aseg.find(a=>a.id===pol.id_aseguradora)||{};
+  const user = g('user-lbl')?.textContent||'Ajustador';
+  const hoy  = new Date().toLocaleDateString('es-MX',{day:'2-digit',month:'long',year:'numeric'});
+  const pendientes = items.filter(i=>!i.recibido);
+  const recibidos  = items.filter(i=>i.recibido);
+
+  const { Document, Paragraph, Table, TableRow, TableCell, TextRun,
+          AlignmentType, WidthType } = docx;
+
+  const mkCell = (txt, opts={}) => new TableCell({
+    shading: opts.bg ? {fill:opts.bg} : {},
+    columnSpan: opts.span||1,
+    children:[new Paragraph({
+      children:[new TextRun({text:String(txt||''), bold:!!opts.bold,
+        size:opts.size||16, color:opts.color||'000000', italics:!!opts.italics})],
+      alignment: opts.center ? AlignmentType.CENTER : AlignmentType.LEFT,
+    })],
+    margins:{top:60,bottom:60,left:80,right:80}
+  });
+
+  const buildSection = (sectionItems, headerColor, tachado) => {
+    const grupos = solAgruparItems(sectionItems);
+    const rows = [];
+    let num = 1;
+    grupos.forEach(([cat, its]) => {
+      rows.push(new TableRow({children:[mkCell(cat.toUpperCase(),{bg:'dce8f8',bold:true,color:'1558b0',span:tachado?3:2})]}));
+      its.forEach(it => {
+        const cells = [
+          mkCell(tachado?'✓':num++, {center:true}),
+          mkCell(it.descripcion, {italics:tachado, color:tachado?'888888':'000000'}),
+        ];
+        if(tachado) cells.push(mkCell(it.fecha_recepcion||'',{color:'2e7d52',center:true}));
+        rows.push(new TableRow({children:cells}));
+      });
+    });
+    return rows;
+  };
+
+  const bodyChildren = [
+    new Paragraph({children:[new TextRun({text:'RECORDATORIO — DOCUMENTACIÓN PENDIENTE',bold:true,size:28,color:'b85000'})],alignment:AlignmentType.CENTER,spacing:{after:100}}),
+    new Paragraph({children:[new TextRun({text:'ALMARAZ AJUSTADORES, S.A.',size:18,color:'555555'})],alignment:AlignmentType.CENTER,spacing:{after:100}}),
+    new Paragraph({children:[new TextRun({text:'Fecha: '+hoy,size:18,color:'555555'})],alignment:AlignmentType.CENTER,spacing:{after:300}}),
+    ...['Asegurado: '+(asdo.nombre||'—'),'Aseguradora: '+(aseg.nombre||'—'),
+        'No. Siniestro: '+(sin.numero_siniestro||'—'),'Ref. AASA: '+(sin.numero_exp||'—'),
+        'Destinatario: '+(sol.destinatario_nombre||'—')+' — '+(sol.destinatario_cargo||'—'),
+        'Fecha solicitud original: '+(sol.fecha_solicitud||'—'),
+        'Fecha compromiso: '+(sol.fecha_compromiso||'—'),
+        'Avance: '+recibidos.length+'/'+items.length+' documentos recibidos',
+    ].map(t=>new Paragraph({children:[new TextRun({text:t,size:20})],spacing:{after:60}})),
+    new Paragraph({spacing:{after:200}}),
+  ];
+
+  if(pendientes.length){
+    bodyChildren.push(new Paragraph({children:[new TextRun({text:'DOCUMENTACIÓN PENDIENTE ('+pendientes.length+')',bold:true,size:22,color:'b85000'})],spacing:{after:120}}));
+    bodyChildren.push(new Table({width:{size:100,type:WidthType.PERCENTAGE},rows:[
+      new TableRow({tableHeader:true,children:[mkCell('#',{bg:'e65c00',color:'FFFFFF',bold:true,center:true}),mkCell('Documento / Información requerida',{bg:'e65c00',color:'FFFFFF',bold:true})]}),
+      ...buildSection(pendientes,'e65c00',false)
+    ]}));
+    bodyChildren.push(new Paragraph({spacing:{after:200}}));
+  }
+  if(recibidos.length){
+    bodyChildren.push(new Paragraph({children:[new TextRun({text:'DOCUMENTACIÓN RECIBIDA ('+recibidos.length+')',bold:true,size:22,color:'2e7d52'})],spacing:{after:120}}));
+    bodyChildren.push(new Table({width:{size:100,type:WidthType.PERCENTAGE},rows:[
+      new TableRow({tableHeader:true,children:[mkCell('✓',{bg:'2e7d52',color:'FFFFFF',bold:true,center:true}),mkCell('Documento',{bg:'2e7d52',color:'FFFFFF',bold:true}),mkCell('Recibido',{bg:'2e7d52',color:'FFFFFF',bold:true,center:true})]}),
+      ...buildSection(recibidos,'2e7d52',true)
+    ]}));
+  }
+
+  bodyChildren.push(new Paragraph({spacing:{before:600}}));
+  bodyChildren.push(new Paragraph({children:[new TextRun({text:user,bold:true,size:20})]}));
+  bodyChildren.push(new Paragraph({children:[new TextRun({text:'Ajustador — Almaraz Ajustadores, S.A.',size:18,color:'555555'})]}));
+
+  const doc = new Document({sections:[{children:bodyChildren}]});
+  const blob = await docx.Packer.toBlob(doc);
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href=url; a.download=`Recordatorio_${sin.numero_exp||sol.id}_${hoy.replace(/ /g,'_')}.docx`;
+  a.click(); URL.revokeObjectURL(url);
+  toast('✓ Recordatorio Word generado');
+}
+
+// ── Recordatorio Email (texto para correo) ────────────────────────────────
+function solGenerarRecordatorioEmail(sol, items, sin){
+  if(!sol || !sin){ toast('Contexto de solicitud no disponible'); return; }
+  const pol  = data.pol.find(p=>p.id===sin.id_poliza)||{};
+  const asdo = data.asdo.find(a=>a.id===pol.id_asegurado)||{};
+  const aseg = data.aseg.find(a=>a.id===pol.id_aseguradora)||{};
+  const user = g('user-lbl')?.textContent||'Ajustador';
+  const hoy  = new Date().toLocaleDateString('es-MX',{day:'2-digit',month:'long',year:'numeric'});
+  const pendientes = items.filter(i=>!i.recibido);
+  const recibidos  = items.filter(i=>i.recibido);
+
+  const txt = `Estimado(a) ${sol.destinatario_nombre||''}${sol.destinatario_cargo?', '+sol.destinatario_cargo:''}:
+
+Por medio del presente le recordamos que con fecha ${fmtD(sol.fecha_solicitud)||'anterior'} le fue enviada solicitud de documentación relacionada con el siniestro que se detalla a continuación:
+
+Asegurado: ${asdo.nombre||'—'}
+Aseguradora: ${aseg.nombre||'—'}
+No. Siniestro: ${sin.numero_siniestro||'—'}
+Ref. AASA: ${sin.numero_exp||'—'}
+Causa: ${sin.causa||'—'}
+
+Avance actual: ${recibidos.length}/${items.length} documentos recibidos.
+${sol.fecha_compromiso ? 'Fecha compromiso de entrega: ' + fmtD(sol.fecha_compromiso) : ''}
+
+${pendientes.length ? `La siguiente documentación aún se encuentra PENDIENTE de recibir:
+
+${solTextoPorCategoria(pendientes)}` : '✓ Toda la documentación ha sido recibida. Gracias.'}
+
+${recibidos.length && pendientes.length ? `
+Documentación ya recibida:
+${solTextoPorCategoria(recibidos)}` : ''}
+
+Le agradecemos su atención a la brevedad posible.
+
+Atentamente,
+
+${user}
+Almaraz Ajustadores, S.A.
+PBX +52 55 5593-8823
+aasa.mexico@aasa.com.mx`;
+
+  navigator.clipboard.writeText(txt).then(()=>toast('✉ Texto del recordatorio copiado al portapapeles'));
 }
 
 
@@ -10518,6 +10644,73 @@ function renderSolicitudesAlertas(){
 }
 
 // ── Generación correo ─────────────────────────────────────────────────────
+
+// ── Helper: agrupar ítems por categoría, "Documentación General" primero ─
+function solAgruparItems(items){
+  const orden = {};
+  let idx = 0;
+  // Primero: Documentación General siempre al frente
+  items.forEach(it => {
+    const cat = it.categoria || 'General';
+    if(cat === 'Documentación General' || cat === 'General'){
+      if(orden[cat] === undefined) orden[cat] = idx++;
+    }
+  });
+  // Resto de categorías en orden de aparición
+  items.forEach(it => {
+    const cat = it.categoria || 'General';
+    if(orden[cat] === undefined) orden[cat] = idx++;
+  });
+  // Agrupar
+  const grupos = {};
+  items.forEach(it => {
+    const cat = it.categoria || 'General';
+    if(!grupos[cat]) grupos[cat] = [];
+    grupos[cat].push(it);
+  });
+  // Ordenar grupos
+  return Object.entries(grupos).sort((a,b) => (orden[a[0]]||0) - (orden[b[0]]||0));
+}
+
+// ── Helper: filas HTML agrupadas para PDF (solicitud o recordatorio) ──────
+function solFilasAgrupadas(items, colorHeader, colorBorder, colorAlt, tachado=false, mostrarRecibido=false){
+  const grupos = solAgruparItems(items);
+  let num = 1;
+  let html = '';
+  grupos.forEach(([cat, rows]) => {
+    // Fila de cabecera de categoría
+    html += `<tr>
+      <td colspan="${mostrarRecibido?4:3}" style="padding:5px 8px;background:${colorHeader}22;
+        border:1px solid ${colorBorder};font-size:10px;font-weight:700;
+        color:${colorHeader};text-transform:uppercase;letter-spacing:.05em;">
+        ${cat}
+      </td>
+    </tr>`;
+    rows.forEach(it => {
+      const bg = num%2===0 ? '#fff' : (tachado ? '#f0fff4' : '#f8faff');
+      html += `<tr style="background:${bg};">
+        <td style="padding:6px 8px;border:1px solid ${colorBorder};font-size:11px;text-align:center;width:32px;">${tachado?'✓':num++}</td>
+        <td style="padding:6px 8px;border:1px solid ${colorBorder};font-size:11px;${tachado?'text-decoration:line-through;color:#666;':''};">${it.descripcion}</td>
+        ${mostrarRecibido?`<td style="padding:6px 8px;border:1px solid ${colorBorder};font-size:10px;color:#2e7d52;width:90px;">${it.fecha_recepcion?(it.fecha_recepcion.split('-').reverse().join('/')):''}</td>`:''}
+      </tr>`;
+      if(!tachado) num;
+    });
+  });
+  return html;
+}
+
+// ── Helper: texto plano agrupado para correo ──────────────────────────────
+function solTextoPorCategoria(items){
+  const grupos = solAgruparItems(items);
+  let num = 1;
+  let txt = '';
+  grupos.forEach(([cat, rows]) => {
+    txt += `\n${cat.toUpperCase()}\n${'─'.repeat(cat.length)}\n`;
+    rows.forEach(it => { txt += `  ${num++}. ${it.descripcion}\n`; });
+  });
+  return txt.trim();
+}
+
 function solGenerarEmail(){
   const sol   = window._solActual;
   const items = window._solItemsActual || [];
@@ -10540,7 +10733,7 @@ Causa: ${currentSin.causa||'—'}
 
 Con la finalidad de continuar con el proceso de ajuste, le solicitamos atentamente nos proporcione la siguiente documentación e información:
 
-${items.map((it,i)=>`${i+1}. [${it.categoria||'General'}] ${it.descripcion}`).join('\n')}
+${solTextoPorCategoria(items)}
 
 ${sol.notas ? '\nNota adicional: ' + sol.notas : ''}
 
@@ -10570,13 +10763,7 @@ async function solGenerarPDF(){
   const aseg = data.aseg.find(a=>a.id===pol.id_aseguradora)||{};
   const user = g('user-lbl')?.textContent||'Ajustador';
 
-  const filas = items.map((it,i)=>`
-    <tr style="background:${i%2===0?'#f8faff':'#fff'};">
-      <td style="padding:6px 8px;border:1px solid #c8d4e8;font-size:11px;text-align:center;">${i+1}</td>
-      <td style="padding:6px 8px;border:1px solid #c8d4e8;font-size:10px;color:#555;">${it.categoria||''}</td>
-      <td style="padding:6px 8px;border:1px solid #c8d4e8;font-size:11px;">${it.descripcion}</td>
-      <td style="padding:6px 8px;border:1px solid #c8d4e8;font-size:11px;text-align:center;">${it.recibido?'✓':'☐'}</td>
-    </tr>`).join('');
+  const filas = solFilasAgrupadas(items,'#1558b0','#c8d4e8','#f8faff',false,false);
 
   const htmlPDF = `<!DOCTYPE html><html><head><meta charset="UTF-8">
   <style>body{font-family:Arial,sans-serif;margin:40px;color:#1a1a2e;font-size:12px;}
@@ -10610,7 +10797,7 @@ async function solGenerarPDF(){
     <div class="dato"><strong>Cargo:</strong> ${sol.destinatario_cargo||'—'}</div>
   </div>
   <table>
-    <thead><tr><th style="width:36px;">#</th><th style="width:100px;">Categoría</th><th>Documento / Información requerida</th><th style="width:60px;text-align:center;">Recibido</th></tr></thead>
+    <thead><tr style="background:#1558b0;"><th style="color:#fff;width:32px;">#</th><th style="color:#fff;">Documento / Información requerida</th></tr></thead>
     <tbody>${filas}</tbody>
   </table>
   ${sol.notas?`<div style="margin-top:14px;padding:10px;background:#fff8e1;border-radius:4px;font-size:11px;"><strong>Notas:</strong> ${sol.notas}</div>`:''}
@@ -10643,11 +10830,11 @@ async function solGenerarWord(){
   const makeRow = (cells, isHeader=false) => new TableRow({
     tableHeader: isHeader,
     children: cells.map((txt,ci)=>new TableCell({
-      shading: isHeader ? {fill:'1558b0'} : ci===2&&txt==='✓' ? {fill:'d4edda'} : {},
+      shading: isHeader ? {fill:'1558b0'} : (ci===cells.length-1&&txt==='✓') ? {fill:'d4edda'} : {},
       children:[new Paragraph({
         children:[new TextRun({text:String(txt), color:isHeader?'FFFFFF':'000000',
           bold:isHeader, size:isHeader?18:16})],
-        alignment: ci===0||ci===3 ? AlignmentType.CENTER : AlignmentType.LEFT,
+        alignment: ci===0||ci===cells.length-1 ? AlignmentType.CENTER : AlignmentType.LEFT,
       })],
       margins:{top:60,bottom:60,left:80,right:80},
     }))
@@ -10667,8 +10854,22 @@ async function solGenerarWord(){
     // Tabla de documentos
     new Table({ width:{size:100,type:WidthType.PERCENTAGE},
       rows:[
-        makeRow(['#','Categoría','Documento / Información requerida','Recibido'], true),
-        ...items.map((it,i)=>makeRow([i+1, it.categoria||'', it.descripcion, it.recibido?'✓':'☐']))
+        makeRow(['#','Documento / Información requerida','Recibido'], true),
+        ...(() => {
+          const grupos = solAgruparItems(items);
+          const rows = [];
+          let num = 1;
+          grupos.forEach(([cat, its]) => {
+            rows.push(new TableRow({ children:[new TableCell({
+              columnSpan:3,
+              shading:{fill:'dce8f8'},
+              children:[new Paragraph({children:[new TextRun({text:cat.toUpperCase(), bold:true, size:18, color:'1558b0'})]})],
+              margins:{top:60,bottom:60,left:80,right:80}
+            })] }));
+            its.forEach(it => rows.push(makeRow([num++, it.descripcion, it.recibido?'✓':'☐'])));
+          });
+          return rows;
+        })()
       ]
     }),
     ...(sol.notas ? [new Paragraph({spacing:{before:200}}), new Paragraph({children:[new TextRun({text:'Notas: '+sol.notas, italics:true, size:18, color:'555555'})]})] : []),
