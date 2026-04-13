@@ -3893,10 +3893,14 @@ function renderSiniestros(){
     const match=(s.numero_exp||'').toLowerCase().includes(q)||(asdo.nombre||'').toLowerCase().includes(q)||(aseg.nombre||'').toLowerCase().includes(q);
     return match&&(!est||s.estatus===est);
   });
-  g('sin-body').innerHTML=fil.map(s=>{
+
+  const activos  = fil.filter(s=>s.estatus!=='cerrado');
+  const cerrados = fil.filter(s=>s.estatus==='cerrado');
+
+  const renderFila = s => {
     const pol=data.pol.find(p=>p.id===s.id_poliza)||{};
     const asdo=data.asdo.find(a=>a.id===pol.id_asegurado)||{};
-    return `<tr onclick="verSiniestro(${s.id})" style="cursor:pointer;">
+    return `<tr onclick="verSiniestro(${s.id})" style="cursor:pointer;${s.estatus==='cerrado'?'opacity:.7;':''}">
       <td><strong>${s.numero_exp}</strong></td>
       <td>${pol.numero||'—'}</td>
       <td>${asdo.nombre||'—'}</td>
@@ -3908,7 +3912,25 @@ function renderSiniestros(){
         <button class="btn btn-sm" onclick="event.stopPropagation();editarSiniestro(${s.id})">Editar</button>
         <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();eliminar('siniestros',${s.id})">Eliminar</button>
       </div></td>
-    </tr>`;}).join('')||'<tr><td colspan="8" class="empty">Sin expedientes.</td></tr>';
+    </tr>`;
+  };
+
+  let rows = '';
+  if(!activos.length && !cerrados.length){
+    rows = '<tr><td colspan="8" class="empty">Sin expedientes.</td></tr>';
+  } else {
+    rows += activos.map(renderFila).join('');
+    if(cerrados.length){
+      // Separador visual entre activos y cerrados
+      rows += `<tr>
+        <td colspan="8" style="padding:10px 12px 6px;background:var(--bg);border-top:2px solid var(--border-md);font-size:10px;font-weight:700;color:var(--text-ter);text-transform:uppercase;letter-spacing:.08em;pointer-events:none;">
+          ── Expedientes cerrados (${cerrados.length}) ──
+        </td>
+      </tr>`;
+      rows += cerrados.map(renderFila).join('');
+    }
+  }
+  g('sin-body').innerHTML = rows;
 }
 
 function verSiniestro(id){
