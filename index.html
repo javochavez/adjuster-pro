@@ -927,6 +927,7 @@ body.modo-lectura .readonly-hidden { display:none !important; }
           <button class="tab-btn" onclick="switchCat('ajust',this)">Ajustadores</button>
           <button class="tab-btn" onclick="switchCat('ofic',this)">Oficinas</button>
           <button class="tab-btn" onclick="switchCat('tc',this)">Tipos de cambio</button>
+          <button class="tab-btn" onclick="switchCat('catdoc',this);renderCatDoc()">📋 Catálogo Documentos</button>
         </div>
         <div id="cat-aseg">
           <div class="toolbar">
@@ -975,6 +976,22 @@ body.modo-lectura .readonly-hidden { display:none !important; }
             <th>Nombre</th><th>Ciudad</th><th>Estado</th><th>Teléfono</th><th></th>
           </tr></thead>
           <tbody id="ofic-body"></tbody></table></div>
+        </div>
+        <!-- ── CATÁLOGO DE DOCUMENTOS ── -->
+        <div id="cat-catdoc" style="display:none;">
+          <div class="toolbar" style="flex-wrap:wrap;gap:8px;">
+            <select id="catdoc-filtro-ramo" onchange="renderCatDoc()"
+              style="padding:6px 10px;border:1px solid var(--border-md);border-radius:var(--r);
+                     background:var(--bg2);color:var(--text);font-size:12px;font-family:inherit;">
+              <option value="">— Todos los ramos —</option>
+            </select>
+            <input type="text" id="catdoc-search" placeholder="Buscar documento o categoría…"
+              oninput="renderCatDoc()"
+              style="flex:1;min-width:200px;padding:6px 10px;border:1px solid var(--border-md);
+                     border-radius:var(--r);background:var(--bg2);color:var(--text);font-size:12px;font-family:inherit;">
+            <button class="btn btn-primary btn-sm" onclick="abrirModal('modal-catdoc')">+ Nuevo ítem</button>
+          </div>
+          <div id="catdoc-body"></div>
         </div>
       </div>
 
@@ -1043,6 +1060,65 @@ body.modo-lectura .readonly-hidden { display:none !important; }
 </div></div>
 
 <!-- ── MODALS ── -->
+
+<!-- ── MODAL CATÁLOGO DOCUMENTOS ───────────────────────────────────────── -->
+<div class="overlay" id="modal-catdoc">
+<div class="modal" style="max-width:520px;">
+  <div class="modal-title" id="catdoc-modal-title">Nuevo ítem de catálogo</div>
+  <div style="padding:1.2rem 1.5rem;">
+    <input type="hidden" id="catdoc-id">
+    <div class="form-grid">
+      <div class="fg"><label>Ramo</label>
+        <select id="catdoc-ramo"
+          style="padding:7px 10px;border:1px solid var(--border-md);border-radius:var(--r);
+                 background:var(--bg2);color:var(--text);font-size:13px;font-family:inherit;width:100%;">
+          <option value="General">General (todos los ramos)</option>
+          <option value="Rotura de Maquinaria">Rotura de Maquinaria</option>
+          <option value="Incendio">Incendio</option>
+          <option value="Robo">Robo</option>
+          <option value="Responsabilidad Civil">Responsabilidad Civil</option>
+          <option value="Transporte">Transporte</option>
+          <option value="Construcción / Montaje">Construcción / Montaje</option>
+          <option value="__nuevo__">+ Ramo nuevo…</option>
+        </select>
+      </div>
+      <div class="fg" id="catdoc-ramo-nuevo-wrap" style="display:none;">
+        <label>Nombre del ramo nuevo</label>
+        <input type="text" id="catdoc-ramo-nuevo" placeholder="Nombre del ramo">
+      </div>
+      <div class="fg"><label>Categoría</label>
+        <input type="text" id="catdoc-categoria" list="catdoc-cat-list"
+          placeholder="ej. Técnica, Legal, Valuación…">
+        <datalist id="catdoc-cat-list">
+          <option value="Documentación General">
+          <option value="Técnica">
+          <option value="Operacional">
+          <option value="Diagnóstico">
+          <option value="Valuación">
+          <option value="Legal">
+          <option value="Facturación">
+          <option value="Seguridad">
+          <option value="Contractual">
+          <option value="Embarque">
+        </datalist>
+      </div>
+      <div class="fg"><label>Orden de aparición</label>
+        <input type="number" id="catdoc-orden" value="0" min="0" step="1"
+          placeholder="0 = al final">
+      </div>
+      <div class="fg full"><label>Descripción del documento / información</label>
+        <textarea id="catdoc-descripcion" style="min-height:80px;"
+          placeholder="Descripción completa del documento o información a solicitar…"></textarea>
+      </div>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn" onclick="cerrarModal('modal-catdoc')">Cancelar</button>
+    <button class="btn btn-primary" onclick="guardarCatDoc()">Guardar</button>
+  </div>
+</div>
+</div>
+
 
 <!-- ── MODAL SOLICITUD DE INFORMACIÓN ──────────────────────────────── -->
 <div class="overlay" id="modal-sol">
@@ -4574,6 +4650,7 @@ function abrirModal(id){
     ['aj-nombre','aj-iniciales','aj-correo','aj-tel','aj-cnsf'].forEach(f=>{if(g(f))g(f).value='';});
     if(g('aj-oficina')) g('aj-oficina').value='';
   }
+  if(id==='modal-catdoc'){ catDocPrepararNuevo(); }
   if(id==='modal-ofic'){
     g('ofic-modal-title').textContent='Nueva oficina';
     g('of-id').value='';
@@ -8290,7 +8367,7 @@ async function guardarSinAjust(){
 }
 
 function switchCat(id,btn){
-  ['aseg','asdo','cont','tc','ajust','ofic'].forEach(c=>{
+  ['aseg','asdo','cont','tc','ajust','ofic','catdoc'].forEach(c=>{
     const el=g('cat-'+c); if(el) el.style.display=c===id?'block':'none';
   });
   document.querySelectorAll('#panel-catalogos .tab-btn').forEach(b=>b.classList.remove('active'));
@@ -10884,6 +10961,186 @@ async function solGenerarWord(){
   a.href=url; a.download=`Solicitud_${currentSin.numero_exp||sol.id}_${sol.fecha_solicitud||''}.docx`;
   a.click(); URL.revokeObjectURL(url);
   toast('✓ Word generado');
+}
+
+
+// ══════════════════════════════════════════════════════════════════════════
+// CATÁLOGO DE DOCUMENTOS — gestión desde panel de Catálogos
+// ══════════════════════════════════════════════════════════════════════════
+
+function renderCatDoc(){
+  const wrap  = g('catdoc-body');
+  if(!wrap) return;
+  const q     = (g('catdoc-search')?.value||'').toLowerCase();
+  const ramo  = g('catdoc-filtro-ramo')?.value||'';
+
+  // Combinar catálogo base (del JS) + BD
+  const baseItems = [];
+  Object.entries(SOL_CATALOGO_BASE).forEach(([r, items]) =>
+    items.forEach(it => baseItems.push({_base:true, ramo:r, categoria:it.cat, descripcion:it.desc}))
+  );
+  const dbItems = (data.sol_catalogo||[]).map(r=>({...r, _base:false}));
+
+  // Poblar selector de ramos
+  const sel = g('catdoc-filtro-ramo');
+  if(sel && sel.options.length <= 2){
+    const ramos = [...new Set([
+      ...Object.keys(SOL_CATALOGO_BASE),
+      ...dbItems.map(r=>r.ramo)
+    ])].sort();
+    sel.innerHTML = '<option value="">— Todos los ramos —</option>' +
+      ramos.map(r=>`<option value="${r}">${r}</option>`).join('');
+    if(ramo) sel.value = ramo;
+  }
+
+  // Filtrar
+  let items = [...baseItems, ...dbItems].filter(it => {
+    const matchQ  = !q || (it.descripcion||'').toLowerCase().includes(q) || (it.categoria||'').toLowerCase().includes(q);
+    const matchR  = !ramo || it.ramo === ramo;
+    return matchQ && matchR;
+  });
+
+  if(!items.length){
+    wrap.innerHTML = '<div style="font-size:12px;color:var(--text-ter);padding:20px;text-align:center;">Sin resultados.</div>';
+    return;
+  }
+
+  // Agrupar por Ramo → Categoría
+  const byRamo = {};
+  items.forEach(it => {
+    const r = it.ramo||'General';
+    const c = it.categoria||'General';
+    if(!byRamo[r]) byRamo[r] = {};
+    if(!byRamo[r][c]) byRamo[r][c] = [];
+    byRamo[r][c].push(it);
+  });
+
+  let html = '';
+  Object.entries(byRamo).sort((a,b)=>a[0].localeCompare(b[0])).forEach(([ramo, cats]) => {
+    html += `<div style="margin-bottom:18px;">
+      <div style="font-size:12px;font-weight:700;color:var(--accent-lt);
+                  text-transform:uppercase;letter-spacing:.07em;
+                  border-bottom:2px solid var(--accent);padding-bottom:4px;margin-bottom:6px;">
+        ${ramo}
+      </div>`;
+    Object.entries(cats).sort((a,b)=>{
+      // Documentación General primero
+      if(a[0]==='Documentación General') return -1;
+      if(b[0]==='Documentación General') return 1;
+      return a[0].localeCompare(b[0]);
+    }).forEach(([cat, rows]) => {
+      html += `<div style="margin-bottom:8px;">
+        <div style="font-size:10px;font-weight:600;color:var(--text-sec);
+                    text-transform:uppercase;letter-spacing:.05em;
+                    padding:3px 8px;background:var(--surface2);
+                    border-radius:4px;margin-bottom:3px;">${cat}</div>`;
+      rows.forEach(it => {
+        const isBase = it._base;
+        html += `<div style="display:flex;align-items:flex-start;gap:8px;padding:5px 8px;
+                              border-bottom:1px solid var(--border);font-size:12px;">
+          <span style="flex:1;color:var(--text);">${it.descripcion}</span>
+          ${isBase
+            ? `<span style="font-size:9px;color:var(--text-ter);white-space:nowrap;padding-top:2px;">base</span>`
+            : `<div style="display:flex;gap:4px;flex-shrink:0;">
+                 <button class="btn btn-sm" style="padding:2px 7px;font-size:10px;"
+                   onclick="editarCatDoc(${it.id})">✏</button>
+                 <button class="btn btn-sm btn-danger" style="padding:2px 7px;font-size:10px;"
+                   onclick="eliminarCatDoc(${it.id})">✕</button>
+               </div>`
+          }
+        </div>`;
+      });
+      html += '</div>';
+    });
+    html += '</div>';
+  });
+
+  // Conteo
+  const total   = items.length;
+  const enBD    = items.filter(i=>!i._base).length;
+  const enBase  = items.filter(i=>i._base).length;
+  wrap.innerHTML = `
+    <div style="font-size:10px;color:var(--text-ter);margin-bottom:10px;">
+      ${total} ítems — ${enBase} del catálogo base (solo lectura) · ${enBD} personalizados (editables)
+    </div>` + html;
+}
+
+// ── Abrir modal nuevo ítem ────────────────────────────────────────────────
+// (abrirModal ya lo abre, solo necesitamos limpiar)
+function catDocPrepararNuevo(){
+  g('catdoc-modal-title').textContent = 'Nuevo ítem de catálogo';
+  g('catdoc-id').value = '';
+  g('catdoc-ramo').value = 'General';
+  g('catdoc-categoria').value = '';
+  g('catdoc-descripcion').value = '';
+  g('catdoc-orden').value = '0';
+  g('catdoc-ramo-nuevo-wrap').style.display = 'none';
+  g('catdoc-ramo').onchange = function(){
+    g('catdoc-ramo-nuevo-wrap').style.display = this.value === '__nuevo__' ? 'block' : 'none';
+  };
+}
+
+// ── Editar ítem existente ─────────────────────────────────────────────────
+function editarCatDoc(id){
+  const it = (data.sol_catalogo||[]).find(r=>r.id===id);
+  if(!it){ toast('Ítem no encontrado'); return; }
+  catDocPrepararNuevo();
+  g('catdoc-modal-title').textContent = 'Editar ítem de catálogo';
+  g('catdoc-id').value = it.id;
+  // Si el ramo existe en el select, seleccionarlo; si no, agregar opción
+  const sel = g('catdoc-ramo');
+  let found = false;
+  for(let i=0; i<sel.options.length; i++){
+    if(sel.options[i].value === it.ramo){ sel.value = it.ramo; found = true; break; }
+  }
+  if(!found){
+    const opt = document.createElement('option');
+    opt.value = opt.textContent = it.ramo;
+    sel.insertBefore(opt, sel.lastElementChild);
+    sel.value = it.ramo;
+  }
+  g('catdoc-categoria').value  = it.categoria||'';
+  g('catdoc-descripcion').value = it.descripcion||'';
+  g('catdoc-orden').value       = it.orden||0;
+  abrirModal('modal-catdoc');
+}
+
+// ── Guardar (insert o update) ─────────────────────────────────────────────
+async function guardarCatDoc(){
+  const id   = g('catdoc-id').value;
+  let   ramo = g('catdoc-ramo').value;
+  if(ramo === '__nuevo__') ramo = (g('catdoc-ramo-nuevo').value||'').trim();
+  const cat  = (g('catdoc-categoria').value||'').trim();
+  const desc = (g('catdoc-descripcion').value||'').trim();
+  const ord  = parseInt(g('catdoc-orden').value)||0;
+  if(!ramo){ toast('Selecciona o escribe el ramo'); return; }
+  if(!cat) { toast('Escribe la categoría'); return; }
+  if(!desc){ toast('Escribe la descripción del documento'); return; }
+
+  const payload = { ramo, categoria:cat, descripcion:desc, orden:ord };
+
+  if(id){
+    const {error} = await db.from('catalogo_documentos').update(payload).eq('id', parseInt(id));
+    if(error){ toast('Error: '+error.message); return; }
+    toast('Ítem actualizado');
+  } else {
+    const {error} = await db.from('catalogo_documentos').insert(payload);
+    if(error){ toast('Error: '+error.message); return; }
+    toast('Ítem agregado al catálogo');
+  }
+  cerrarModal('modal-catdoc');
+  await loadAll();
+  renderCatDoc();
+}
+
+// ── Eliminar ítem ─────────────────────────────────────────────────────────
+async function eliminarCatDoc(id){
+  if(!confirm('¿Eliminar este ítem del catálogo? No afecta solicitudes ya creadas.')) return;
+  const {error} = await db.from('catalogo_documentos').delete().eq('id', id);
+  if(error){ toast('Error: '+error.message); return; }
+  toast('Ítem eliminado');
+  await loadAll();
+  renderCatDoc();
 }
 
 </script>
