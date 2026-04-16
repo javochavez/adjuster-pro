@@ -3174,11 +3174,15 @@ async function doLogin(){
   const {data:d, error} = await db.auth.signInWithPassword({email, password:pass});
   btn.textContent='Ingresar'; btn.disabled=false;
   if(error){ errEl.textContent='Correo o contraseña incorrectos.'; return; }
-  // Verifica aprobación desde el JWT (claim inyectado por el hook)
-  const jwt    = d.session?.access_token ? JSON.parse(atob(d.session.access_token.split('.')[1])) : {};
-  const aprobado = jwt.aprobado === true;
-  if(!aprobado){ authMostrar('pending'); return; }
-  mostrarApp(d.user.email, jwt.app_role || '');
+  // Verifica aprobación consultando la tabla perfiles
+  const {data:perfil, error:errP} = await db
+    .from('perfiles')
+    .select('aprobado, rol')
+    .eq('id', d.user.id)
+    .single();
+  if(errP || !perfil){ errEl.textContent='No se pudo verificar el acceso. Intenta de nuevo.'; return; }
+  if(perfil.aprobado === true) mostrarApp(d.user.email, perfil.rol || '');
+  else authMostrar('pending');
 }
 
 async function doRegister(){
@@ -8523,10 +8527,13 @@ function switchMain(tab,btn){
 (async()=>{
   const {data:{session}} = await db.auth.getSession();
   if(session){
-    const jwt      = session.access_token ? JSON.parse(atob(session.access_token.split('.')[1])) : {};
-    const aprobado = jwt.aprobado === true;
-    if(aprobado) mostrarApp(session.user.email, jwt.app_role || '');
-    else         authMostrar('pending');
+    const {data:perfil, error:errP} = await db
+      .from('perfiles')
+      .select('aprobado, rol')
+      .eq('id', session.user.id)
+      .single();
+    if(perfil?.aprobado === true) mostrarApp(session.user.email, perfil.rol || '');
+    else                          authMostrar('pending');
   }
 })();
 
