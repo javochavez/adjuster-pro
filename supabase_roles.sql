@@ -1,7 +1,8 @@
 -- ══════════════════════════════════════════════════════════════════
 -- AdjusterPro — Sistema de Roles con Supabase Auth
 -- Ejecutar en: Supabase → SQL Editor → New query → Pegar y ejecutar
--- REQUIERE: haber ejecutado supabase_schema.sql previamente
+-- Nombres de tablas reales: siniestros, informes, pagos,
+--   bitacora_ajustador. FK en tablas hijas: id_siniestro.
 -- ══════════════════════════════════════════════════════════════════
 
 
@@ -31,8 +32,8 @@ create table if not exists public.solicitudes_aprobacion (
   created_at  timestamptz default now()
 );
 
--- 1c. Columna de ownership en casos (quién es el ajustador responsable)
-alter table public.casos
+-- 1c. Columna de ownership en siniestros (quién es el ajustador responsable)
+alter table public.siniestros
   add column if not exists ajustador_id uuid references auth.users(id);
 
 -- 1d. Habilitar RLS en tablas nuevas
@@ -92,57 +93,66 @@ $$;
 -- BLOQUE 3 — POLÍTICAS RLS
 -- ──────────────────────────────────────────────────────────────────
 
--- 3a. Eliminar políticas permisivas existentes
-drop policy if exists "acceso_total_casos"     on public.casos;
-drop policy if exists "acceso_total_informes"  on public.informes;
-drop policy if exists "acceso_total_pagos"     on public.pagos;
-drop policy if exists "acceso_total_bitacora"  on public.bitacora;
+-- 3a. Eliminar políticas permisivas existentes (si las hay)
+drop policy if exists "acceso_total_siniestros"      on public.siniestros;
+drop policy if exists "acceso_total_informes"        on public.informes;
+drop policy if exists "acceso_total_pagos"           on public.pagos;
+drop policy if exists "acceso_total_bitacora_ajustador" on public.bitacora_ajustador;
+-- Por si se ejecutó una versión anterior con nombres incorrectos:
+drop policy if exists "acceso_total_casos"           on public.siniestros;
+drop policy if exists "acceso_total_bitacora"        on public.bitacora_ajustador;
+
+-- 3b. Habilitar RLS en las tablas de negocio (idempotente)
+alter table public.siniestros        enable row level security;
+alter table public.informes          enable row level security;
+alter table public.pagos             enable row level security;
+alter table public.bitacora_ajustador enable row level security;
 
 
--- ── TABLA: casos ─────────────────────────────────────────────────
+-- ── TABLA: siniestros ─────────────────────────────────────────────
 
 -- SELECT
-create policy "casos_select_admin"
-  on public.casos for select
+create policy "siniestros_select_admin"
+  on public.siniestros for select
   using ( public.rol_actual() = 'admin' and public.esta_aprobado() );
 
-create policy "casos_select_ajustador"
-  on public.casos for select
+create policy "siniestros_select_ajustador"
+  on public.siniestros for select
   using ( public.rol_actual() = 'ajustador'
           and public.esta_aprobado()
           and ajustador_id = auth.uid() );
 
-create policy "casos_select_consultor"
-  on public.casos for select
+create policy "siniestros_select_consultor"
+  on public.siniestros for select
   using ( public.rol_actual() = 'consultor' and public.esta_aprobado() );
 
 -- INSERT
-create policy "casos_insert_admin"
-  on public.casos for insert
+create policy "siniestros_insert_admin"
+  on public.siniestros for insert
   with check ( public.rol_actual() = 'admin' and public.esta_aprobado() );
 
-create policy "casos_insert_ajustador"
-  on public.casos for insert
+create policy "siniestros_insert_ajustador"
+  on public.siniestros for insert
   with check ( public.rol_actual() = 'ajustador'
                and public.esta_aprobado()
                and ajustador_id = auth.uid() );
 
 -- UPDATE
-create policy "casos_update_admin"
-  on public.casos for update
+create policy "siniestros_update_admin"
+  on public.siniestros for update
   using  ( public.rol_actual() = 'admin' and public.esta_aprobado() )
   with check ( public.rol_actual() = 'admin' );
 
-create policy "casos_update_ajustador"
-  on public.casos for update
+create policy "siniestros_update_ajustador"
+  on public.siniestros for update
   using  ( public.rol_actual() = 'ajustador'
            and public.esta_aprobado()
            and ajustador_id = auth.uid() )
   with check ( ajustador_id = auth.uid() );
 
 -- DELETE
-create policy "casos_delete_admin"
-  on public.casos for delete
+create policy "siniestros_delete_admin"
+  on public.siniestros for delete
   using ( public.rol_actual() = 'admin' and public.esta_aprobado() );
 
 
@@ -158,9 +168,9 @@ create policy "informes_select_ajustador"
   using ( public.rol_actual() = 'ajustador'
           and public.esta_aprobado()
           and exists (
-            select 1 from public.casos
-             where casos.id = informes.caso_id
-               and casos.ajustador_id = auth.uid()
+            select 1 from public.siniestros
+             where siniestros.id = informes.id_siniestro
+               and siniestros.ajustador_id = auth.uid()
           ));
 
 create policy "informes_select_consultor"
@@ -177,9 +187,9 @@ create policy "informes_insert_ajustador"
   with check ( public.rol_actual() = 'ajustador'
                and public.esta_aprobado()
                and exists (
-                 select 1 from public.casos
-                  where casos.id = informes.caso_id
-                    and casos.ajustador_id = auth.uid()
+                 select 1 from public.siniestros
+                  where siniestros.id = informes.id_siniestro
+                    and siniestros.ajustador_id = auth.uid()
                ));
 
 -- UPDATE
@@ -192,9 +202,9 @@ create policy "informes_update_ajustador"
   using ( public.rol_actual() = 'ajustador'
           and public.esta_aprobado()
           and exists (
-            select 1 from public.casos
-             where casos.id = informes.caso_id
-               and casos.ajustador_id = auth.uid()
+            select 1 from public.siniestros
+             where siniestros.id = informes.id_siniestro
+               and siniestros.ajustador_id = auth.uid()
           ));
 
 -- DELETE
@@ -215,9 +225,9 @@ create policy "pagos_select_ajustador"
   using ( public.rol_actual() = 'ajustador'
           and public.esta_aprobado()
           and exists (
-            select 1 from public.casos
-             where casos.id = pagos.caso_id
-               and casos.ajustador_id = auth.uid()
+            select 1 from public.siniestros
+             where siniestros.id = pagos.id_siniestro
+               and siniestros.ajustador_id = auth.uid()
           ));
 
 create policy "pagos_select_consultor"
@@ -234,9 +244,9 @@ create policy "pagos_insert_ajustador"
   with check ( public.rol_actual() = 'ajustador'
                and public.esta_aprobado()
                and exists (
-                 select 1 from public.casos
-                  where casos.id = pagos.caso_id
-                    and casos.ajustador_id = auth.uid()
+                 select 1 from public.siniestros
+                  where siniestros.id = pagos.id_siniestro
+                    and siniestros.ajustador_id = auth.uid()
                ));
 
 -- UPDATE
@@ -249,9 +259,9 @@ create policy "pagos_update_ajustador"
   using ( public.rol_actual() = 'ajustador'
           and public.esta_aprobado()
           and exists (
-            select 1 from public.casos
-             where casos.id = pagos.caso_id
-               and casos.ajustador_id = auth.uid()
+            select 1 from public.siniestros
+             where siniestros.id = pagos.id_siniestro
+               and siniestros.ajustador_id = auth.uid()
           ));
 
 -- DELETE
@@ -260,50 +270,50 @@ create policy "pagos_delete_admin"
   using ( public.rol_actual() = 'admin' and public.esta_aprobado() );
 
 
--- ── TABLA: bitacora ───────────────────────────────────────────────
+-- ── TABLA: bitacora_ajustador ─────────────────────────────────────
 
 -- SELECT
-create policy "bitacora_select_admin"
-  on public.bitacora for select
+create policy "bitacora_ajustador_select_admin"
+  on public.bitacora_ajustador for select
   using ( public.rol_actual() = 'admin' and public.esta_aprobado() );
 
-create policy "bitacora_select_ajustador"
-  on public.bitacora for select
+create policy "bitacora_ajustador_select_ajustador"
+  on public.bitacora_ajustador for select
   using ( public.rol_actual() = 'ajustador'
           and public.esta_aprobado()
           and exists (
-            select 1 from public.casos
-             where casos.id = bitacora.caso_id
-               and casos.ajustador_id = auth.uid()
+            select 1 from public.siniestros
+             where siniestros.id = bitacora_ajustador.id_siniestro
+               and siniestros.ajustador_id = auth.uid()
           ));
 
-create policy "bitacora_select_consultor"
-  on public.bitacora for select
+create policy "bitacora_ajustador_select_consultor"
+  on public.bitacora_ajustador for select
   using ( public.rol_actual() = 'consultor' and public.esta_aprobado() );
 
 -- INSERT
-create policy "bitacora_insert_admin"
-  on public.bitacora for insert
+create policy "bitacora_ajustador_insert_admin"
+  on public.bitacora_ajustador for insert
   with check ( public.rol_actual() = 'admin' and public.esta_aprobado() );
 
-create policy "bitacora_insert_ajustador"
-  on public.bitacora for insert
+create policy "bitacora_ajustador_insert_ajustador"
+  on public.bitacora_ajustador for insert
   with check ( public.rol_actual() = 'ajustador'
                and public.esta_aprobado()
                and exists (
-                 select 1 from public.casos
-                  where casos.id = bitacora.caso_id
-                    and casos.ajustador_id = auth.uid()
+                 select 1 from public.siniestros
+                  where siniestros.id = bitacora_ajustador.id_siniestro
+                    and siniestros.ajustador_id = auth.uid()
                ));
 
 -- UPDATE
-create policy "bitacora_update_admin"
-  on public.bitacora for update
+create policy "bitacora_ajustador_update_admin"
+  on public.bitacora_ajustador for update
   using ( public.rol_actual() = 'admin' and public.esta_aprobado() );
 
 -- DELETE
-create policy "bitacora_delete_admin"
-  on public.bitacora for delete
+create policy "bitacora_ajustador_delete_admin"
+  on public.bitacora_ajustador for delete
   using ( public.rol_actual() = 'admin' and public.esta_aprobado() );
 
 
@@ -398,7 +408,7 @@ create trigger on_auth_user_created
 
 do $$
 declare
-  v_admin_email text := 'admin@ejemplo.com';  -- ← CAMBIAR antes de ejecutar
+  v_admin_email text := 'javier@chavez.mx';  -- ← CAMBIAR antes de ejecutar
   v_user_id     uuid;
 begin
   -- Busca el usuario por correo en auth.users
