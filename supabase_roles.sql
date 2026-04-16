@@ -22,6 +22,21 @@ create table if not exists public.perfiles (
   created_at    timestamptz default now()
 );
 
+-- 1a-fix. Si perfiles ya existía con columnas incompletas, añade las faltantes
+alter table public.perfiles add column if not exists nombre       text;
+alter table public.perfiles add column if not exists rol          text        not null default 'ajustador';
+alter table public.perfiles add column if not exists aprobado     boolean     not null default false;
+alter table public.perfiles add column if not exists aprobado_por uuid        references auth.users(id);
+alter table public.perfiles add column if not exists aprobado_at  timestamptz;
+alter table public.perfiles add column if not exists created_at   timestamptz default now();
+
+-- Asegura el constraint de rol (idempotente: falla silenciosamente si ya existe)
+do $$ begin
+  alter table public.perfiles
+    add constraint perfiles_rol_check check (rol in ('admin', 'ajustador', 'consultor'));
+exception when duplicate_object then null;
+end $$;
+
 -- 1b. Tokens one-time para aprobación por correo (expiran en 7 días)
 create table if not exists public.solicitudes_aprobacion (
   id          uuid        primary key default gen_random_uuid(),
@@ -31,6 +46,13 @@ create table if not exists public.solicitudes_aprobacion (
   expires_at  timestamptz not null default (now() + interval '7 days'),
   created_at  timestamptz default now()
 );
+
+-- 1b-fix. Si solicitudes_aprobacion ya existía con columnas incompletas
+alter table public.solicitudes_aprobacion add column if not exists user_id    uuid        not null references auth.users(id) on delete cascade;
+alter table public.solicitudes_aprobacion add column if not exists token      uuid        unique not null default gen_random_uuid();
+alter table public.solicitudes_aprobacion add column if not exists usado      boolean     not null default false;
+alter table public.solicitudes_aprobacion add column if not exists expires_at timestamptz not null default (now() + interval '7 days');
+alter table public.solicitudes_aprobacion add column if not exists created_at timestamptz default now();
 
 -- 1c. Columna de ownership en siniestros (quién es el ajustador responsable)
 alter table public.siniestros
