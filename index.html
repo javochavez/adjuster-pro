@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#1a1f2e">
 <link rel="manifest" href="/manifest.json">
 <title>AdjusterPro JChA — Gestión de Siniestros</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.46.2/dist/umd/supabase.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style><style>
@@ -3199,7 +3199,15 @@ async function doRegister(){
     options: { data: { nombre, rol } }
   });
   btn.textContent='Solicitar acceso'; btn.disabled=false;
-  if(error){ errEl.textContent = error.message || 'Error al registrar.'; return; }
+  if(error){
+    // 422 = email ya registrado; mostrar mensaje accionable en lugar del string crudo de Supabase
+    if(error.status === 422 || /already registered|already exists/i.test(error.message)){
+      errEl.textContent = 'Este correo ya tiene una cuenta. Inicia sesión o usa otro correo.';
+    } else {
+      errEl.textContent = error.message || 'Error al registrar. Intenta de nuevo.';
+    }
+    return;
+  }
   okEl.textContent = 'Solicitud enviada. El administrador recibirá un correo para aprobar tu acceso.';
   // Limpia campos
   ['r-nombre','r-email','r-pass','r-pass2'].forEach(id => { const el=g(id); if(el) el.value=''; });
