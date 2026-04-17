@@ -458,9 +458,12 @@ body.modo-lectura .readonly-hidden { display:none !important; }
 .sin-tab-btn:hover { color: var(--text) !important; }
 .sin-tab-btn.active { color: var(--text) !important; border-bottom-color: var(--accent-lt) !important; }
 .sin-tab-panel { box-sizing: border-box; }
+/* Acordeón dentro del modal-sin */
 .sin-acord-hd:hover { background: var(--surface) !important; }
 .sin-acord-hd.open { border-bottom-left-radius: 0 !important; border-bottom-right-radius: 0 !important; }
-.sin-acord-body { background: var(--bg2); border: 1px solid var(--border-md); border-top: none; border-bottom-left-radius: var(--rl); border-bottom-right-radius: var(--rl); padding: 10px 12px 8px !important; }
+.sin-acord-body { background: var(--bg2); border: 1px solid var(--border-md); border-top: none;
+  border-bottom-left-radius: var(--rl); border-bottom-right-radius: var(--rl);
+  padding: 10px 12px 8px !important; }
 .sin-acord-arrow.open { transform: rotate(90deg); }
 
 .rpt-wrap { background:#fff; border-radius:var(--r); padding:24px; color:#111; font-size:12px; line-height:1.6; }
@@ -1358,13 +1361,15 @@ body.modo-lectura .readonly-hidden { display:none !important; }
 <!-- Siniestro -->
 <div class="overlay" id="modal-sin">
 <div class="modal modal-lg">
-  <div class="modal-title" id="sin-modal-title">Nuevo expediente</div>
-<div style="padding:1rem 1.5rem 0.5rem;">
+  <div class="modal-title" id="sin-modal-title" style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+    <span id="sin-modal-title-text">Nuevo expediente</span>
+    <span id="s-modo-captura-lbl" style="font-size:10px;color:var(--text-ter);font-weight:400;letter-spacing:.04em;"></span>
+  </div>
 
+  <!-- ══ INPUTS OCULTOS DE COMPATIBILIDAD — NO TOCAR ══════════════════ -->
   <input type="hidden" id="s-id">
   <div id="seccion-atlas" style="display:none;"></div>
   <div id="seccion-no-gnp" style="display:none;"></div>
-
   <input type="hidden" id="s-giro">
   <input type="hidden" id="s-hora-ocurr">
   <input type="hidden" id="s-hora-asig">
@@ -1409,344 +1414,455 @@ body.modo-lectura .readonly-hidden { display:none !important; }
   <textarea id="s-desc-riesgo" style="display:none;"></textarea>
   <div id="s-estrategias-rte" class="rte-editor" contenteditable="true" style="display:none;"></div>
   <textarea id="s-estrategias" style="display:none;"></textarea>
-
-  <!-- ═══════ IDENTIFICACIÓN ═══════ -->
-  <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin:18px 0 8px;margin-bottom:8px;">Identificación</div>
-  <div class="form-grid">
-    <div class="fg"><label>Ref. AASA</label><input type="text" id="s-exp" placeholder="ej. GNPEML010870925, ATLJCA010740624"><span class="field-hint">Portada → Ref. ajustadora</span></div>
-    <div class="fg"><label>No. de siniestro</label><input type="text" id="s-numsin" placeholder="Llenar cuando se tenga"><span class="field-hint">Portada → No. Siniestro</span></div>
-    <div class="fg"><label>Clave ajustador (compañía)</label><input type="text" id="s-clave-ajust"><span class="field-hint">Portada → Clave ajustador (compañía)</span></div>
-    <div class="fg"><label>Funcionario asignador <span style="font-size:10px;color:var(--text-ter);font-weight:400;">(de la compañía)</span></label>
-      <select id="s-funcionario-dest" onchange="actualizarFuncionarioDest()">
-        <option value="">— Seleccionar del directorio —</option>
-      </select><span class="field-hint">Portada → AT´N: nombre y cargo</span></div>
-    <div class="fg"><label>Nombre del funcionario</label><input type="text" id="s-dest-nombre" placeholder="Se llena al seleccionar del directorio"><span class="field-hint">Portada → AT´N: nombre</span></div>
-    <div class="fg"><label>Cargo del funcionario</label><input type="text" id="s-dest-cargo" placeholder="ej. Jefe de Siniestros Daños"><span class="field-hint">Portada → AT´N: cargo</span></div>
-    <div class="fg"><label>Fecha del siniestro</label><input type="date" id="s-fsin"><span class="field-hint">Portada → Fecha de siniestro · §11 Cronología</span></div>
-    <div class="fg"><label>Fecha de asignación</label><input type="date" id="s-fasig"><span class="field-hint">§11 Cronología → Fecha asignación</span></div>
-    <div class="fg"><label>Fecha primera visita</label><input type="date" id="s-f1vis" onchange="if(g('s-inspeccion-narrativa')&&!g('s-inspeccion-narrativa').dataset.editado)generarTextoInspeccion()"><span class="field-hint">§4 Inspección → Fecha y hora de inspección · §11 Cronología</span></div>
-  </div>
-
-  <!-- ═══════ ASEGURADO / PÓLIZA ═══════ -->
-  <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin:14px 0 8px;">Paso 1 — Asegurado</div>
-  <div id="sin-asdo-search-wrap">
-    <div style="display:flex;gap:8px;align-items:flex-end;">
-      <div style="flex:1;">
-        <label style="font-size:12px;color:var(--text-sec);display:block;margin-bottom:4px;">Buscar asegurado por nombre o RFC</label>
-        <input type="text" id="sin-asdo-q" placeholder="Escriba para buscar…" oninput="buscarAseguradoSin()" autocomplete="off"
-          style="width:100%;padding:7px 10px;border:1px solid var(--border-md);border-radius:var(--r);background:var(--bg2);color:var(--text);font-size:13px;font-family:inherit;">
-      </div>
-      <button class="btn" type="button" onclick="toggleCrearAseguradoSin()" id="btn-crear-asdo-sin" style="white-space:nowrap;">+ Crear asegurado</button>
-    </div>
-    <div id="sin-asdo-results" style="margin-top:4px;"></div>
-    <input type="hidden" id="sin-asdo-sel-id">
-
-    <!-- Sub-formulario inline para crear asegurado -->
-    <div id="sin-asdo-form" style="display:none;margin-top:10px;padding:12px;background:var(--surface2);border:1px solid var(--border-md);border-radius:var(--rl);">
-      <div style="font-size:11px;font-weight:600;color:var(--accent-lt);margin-bottom:8px;">Nuevo asegurado</div>
-      <div class="form-grid">
-        <div class="fg full"><label>Nombre / Razón social</label><input type="text" id="sin-new-asdo-nombre" placeholder="Nombre completo o razón social"></div>
-        <div class="fg"><label>RFC</label><input type="text" id="sin-new-asdo-rfc" placeholder="RFC con homoclave"></div>
-        <div class="fg"><label>Tipo</label>
-          <select id="sin-new-asdo-tipo"><option value="moral">Persona moral</option><option value="fisica">Persona física</option></select></div>
-        <div class="fg"><label>Teléfono</label><input type="text" id="sin-new-asdo-tel"></div>
-        <div class="fg"><label>Correo</label><input type="text" id="sin-new-asdo-email"></div>
-        <div class="fg full"><label>Dirección</label><input type="text" id="sin-new-asdo-dir"></div>
-      </div>
-      <div style="display:flex;gap:8px;margin-top:8px;">
-        <button class="btn btn-primary btn-sm" type="button" onclick="guardarNuevoAseguradoSin()">Guardar asegurado</button>
-        <button class="btn btn-sm" type="button" onclick="cancelarCrearAseguradoSin()">Cancelar</button>
-      </div>
-    </div>
-
-    <!-- Asegurado seleccionado -->
-    <div id="sin-asdo-sel-display" style="display:none;margin-top:8px;padding:8px 12px;background:rgba(100,180,100,.08);border:1px solid rgba(100,180,100,.3);border-radius:var(--r);display:none;align-items:center;gap:10px;">
-      <span style="font-size:13px;font-weight:600;color:var(--text);" id="sin-asdo-sel-label"></span>
-      <button class="btn btn-sm" type="button" onclick="limpiarAseguradoSin()" style="margin-left:auto;">Cambiar</button>
-    </div>
-  </div>
-
-  <!-- ── PASO 2: PÓLIZA ─────────────────────────────────────────────── -->
-  <div id="sin-pol-step" style="display:none;">
-    <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin:14px 0 8px;">Paso 2 — Póliza</div>
-    <div style="display:flex;gap:8px;align-items:flex-end;">
-      <div style="flex:1;">
-        <label style="font-size:12px;color:var(--text-sec);display:block;margin-bottom:4px;">Buscar póliza por número</label>
-        <input type="text" id="sin-pol-q" placeholder="Escriba para buscar…" oninput="buscarPolizaSin()" autocomplete="off"
-          style="width:100%;padding:7px 10px;border:1px solid var(--border-md);border-radius:var(--r);background:var(--bg2);color:var(--text);font-size:13px;font-family:inherit;">
-      </div>
-      <button class="btn" type="button" onclick="toggleCrearPolizaSin()" id="btn-crear-pol-sin" style="white-space:nowrap;">+ Crear póliza</button>
-    </div>
-    <div id="sin-pol-results" style="margin-top:4px;"></div>
-    <input type="hidden" id="sin-pol-sel-id">
-
-    <!-- Sub-formulario inline para crear póliza -->
-    <div id="sin-pol-form" style="display:none;margin-top:10px;padding:12px;background:var(--surface2);border:1px solid var(--border-md);border-radius:var(--rl);">
-      <div style="font-size:11px;font-weight:600;color:var(--accent-lt);margin-bottom:8px;">Nueva póliza</div>
-      <div class="form-grid">
-        <div class="fg"><label>Número de póliza</label><input type="text" id="sin-new-pol-num" placeholder="Número de póliza"></div>
-        <div class="fg"><label>Compañía aseguradora</label>
-          <select id="sin-new-pol-aseg"><option value="">— Selecciona —</option></select></div>
-        <div class="fg"><label>Ramo</label>
-          <select id="sin-new-pol-ramo">
-            <option value="incendio">Incendio y líneas aliadas</option>
-            <option value="robo">Robo</option>
-            <option value="rc">Responsabilidad civil</option>
-            <option value="transporte">Transporte</option>
-            <option value="energia">Energía</option>
-            <option value="construccion">Construcción</option>
-            <option value="equipo_contratistas">Equipo de Contratistas</option>
-            <option value="interrupcion">Interrupción de negocios</option>
-            <option value="catastrofico">Catastrófico</option>
-          </select></div>
-        <div class="fg"><label>Subramo</label><input type="text" id="sin-new-pol-subramo" placeholder="ej. E.E., Incendio, Robo"></div>
-        <div class="fg"><label>Vigencia inicio</label><input type="date" id="sin-new-pol-vini"></div>
-        <div class="fg"><label>Vigencia fin</label><input type="date" id="sin-new-pol-vfin"></div>
-        <div class="fg"><label>Suma asegurada</label><input type="number" id="sin-new-pol-sa" placeholder="0.00"></div>
-        <div class="fg"><label>Moneda</label>
-          <select id="sin-new-pol-mon"><option value="MXN">MXN</option><option value="USD">USD</option><option value="EUR">EUR</option></select></div>
-        <div class="fg"><label>Agente</label><input type="text" id="sin-new-pol-agente"></div>
-        <div class="fg full"><label>Ubicación del riesgo</label><input type="text" id="sin-new-pol-ubic" placeholder="Dirección del riesgo asegurado"></div>
-      </div>
-      <div style="display:flex;gap:8px;margin-top:8px;">
-        <button class="btn btn-primary btn-sm" type="button" onclick="guardarNuevaPolizaSin()">Guardar póliza</button>
-        <button class="btn btn-sm" type="button" onclick="cancelarCrearPolizaSin()">Cancelar</button>
-      </div>
-    </div>
-
-    <!-- Póliza seleccionada -->
-    <div id="sin-pol-sel-display" style="display:none;margin-top:8px;padding:8px 12px;background:rgba(100,180,100,.08);border:1px solid rgba(100,180,100,.3);border-radius:var(--r);align-items:center;gap:10px;">
-      <span style="font-size:13px;font-weight:600;color:var(--text);" id="sin-pol-sel-label"></span>
-      <button class="btn btn-sm" type="button" onclick="limpiarPolizaSin()" style="margin-left:auto;">Cambiar</button>
-    </div>
-  </div>
-
   <!-- Selector de compañía oculto (mantiene compatibilidad con actualizarCamposAseg) -->
   <select id="s-aseg-direct" style="display:none;" onchange="actualizarCamposAseg()"></select>
   <!-- Selector de póliza oculto (compatibilidad con guardarSiniestro) -->
   <select id="s-poliza" style="display:none;"></select>
 
-  <!-- SECCIÓN GNP — visible solo cuando aseguradora.codigo_sistema = 'GNP' -->
-  <div id="seccion-gnp" style="display:none;">
-    <div style="font-size:10px;color:#ffcc80;text-transform:uppercase;letter-spacing:.07em;margin:18px 0 8px;border-top:1px solid rgba(255,204,128,.18);padding-top:14px;">Datos GNP</div>
-    <div class="form-grid">
-      <div class="fg"><label>No. Trámite GNP</label><input type="text" id="s-tramite-gnp-vis" placeholder="ej. SD00115817" oninput="g('s-tramite-gnp').value=this.value"><span class="field-hint">Portada → No. Trámite</span></div>
-      <div class="fg"><label>No. Siniestro GNP</label><input type="text" id="s-numsin-gnp" placeholder="ej. 0180203622" oninput="g('s-numsin').value=this.value"><span class="field-hint">Portada → No. Siniestro</span></div>
-      <div class="fg"><label>Clave ajustador GNP</label><input type="text" id="s-gnp-clave-ajust-vis" placeholder="ej. GNPJCA010970226" oninput="g('s-gnp-clave-ajust').value=this.value;g('s-clave-ajust').value=this.value"><span class="field-hint">Portada → Clave ajustador GNP · Referencia ajustadora</span></div>
-      <div class="fg"><label>Jefe de Depto. (GNP)</label><input type="text" id="s-gnp-jefe-vis" placeholder="ej. Rocío Rodríguez Nava" oninput="g('s-gnp-jefe').value=this.value"><span class="field-hint">Portada → Jefe Depto.</span></div>
-      <div class="fg"><label>Oficina GNP</label><input type="text" id="s-gnp-oficina-vis" placeholder="ej. Veracruz" oninput="g('s-gnp-oficina').value=this.value"><span class="field-hint">Portada → Oficina</span></div>
-      <div class="fg"><label>Giro del asegurado</label><input type="text" id="s-giro-vis" placeholder="ej. Fabricación de estructuras metálicas" oninput="g('s-giro').value=this.value"><span class="field-hint">Portada → Giro del asegurado</span></div>
-      <div class="fg"><label>Clave evento (catastrófico)</label><input type="text" id="s-clave-evento-vis" placeholder="ej. No aplica" oninput="g('s-clave-evento').value=this.value"><span class="field-hint">Portada → Clave evento (catastrófico)</span></div>
-    </div>
-    <div style="font-size:10px;color:#ffcc80;text-transform:uppercase;letter-spacing:.07em;margin:14px 0 8px;">Cronología GNP</div>
-    <div class="form-grid">
-      <div class="fg"><label>Hora ocurrencia</label><input type="time" id="s-hora-ocurr-vis" oninput="g('s-hora-ocurr').value=this.value"><span class="field-hint">§11 Cronología → Hora ocurrencia</span></div>
-      <div class="fg"><label>Hora asignación</label><input type="time" id="s-hora-asig-vis" oninput="g('s-hora-asig').value=this.value"><span class="field-hint">§11 Cronología → Hora asignación</span></div>
-      <div class="fg"><label>Fecha primer contacto</label><input type="date" id="s-f1cont-vis" oninput="g('s-f1cont').value=this.value"><span class="field-hint">§11 Cronología → Fecha 1er. contacto</span></div>
-      <div class="fg"><label>Hora primer contacto</label><input type="time" id="s-h1cont-vis" oninput="g('s-h1cont').value=this.value"><span class="field-hint">§11 Cronología → Hora 1er. contacto</span></div>
-      <div class="fg"><label>Hora primera visita</label><input type="time" id="s-h1vis-vis" oninput="g('s-h1vis').value=this.value"><span class="field-hint">§11 Cronología → Hora 1a. visita</span></div>
-    </div>
-    <div style="font-size:10px;color:#ffcc80;text-transform:uppercase;letter-spacing:.07em;margin:14px 0 8px;">Coaseguro / Reaseguro / Recuperación</div>
-    <div class="form-grid">
-      <div class="fg"><label>Coaseguro</label>
-        <select id="s-coaseguro-vis" onchange="g('s-coaseguro').value=this.value==='1'?'1':'0'"><span class="field-hint">§2 Coaseguro → SI / NO</span>
-          <option value="0">No</option><option value="1">Sí</option>
-        </select></div>
-      <div class="fg"><label>Reaseguro (cláusula control)</label>
-        <select id="s-reaseguro-vis" onchange="g('s-reaseguro').value=this.value==='1'?'1':'0'"><span class="field-hint">§3 Reaseguro → Cláusula control</span>
-          <option value="0">No</option><option value="1">Sí</option>
-        </select></div>
-      <div class="fg"><label>Corredor de reaseguro</label><input type="text" id="s-reas-corredor-vis" placeholder="Nombre del corredor" oninput="g('s-reas-corredor').value=this.value"><span class="field-hint">§3 Reaseguro → Corredor de reaseguro</span></div>
-      <div class="fg"><label>Recuperación</label>
-        <select id="s-recuperacion-vis" onchange="g('s-recuperacion').value=this.value"><span class="field-hint">§7 Recuperación → SI / NO</span>
-          <option value="0">No</option><option value="1">Sí</option>
-        </select></div>
-      <div class="fg"><label>Terceros responsables</label><input type="text" id="s-rec-terceros-vis" placeholder="N/A si no aplica" oninput="g('s-rec-terceros').value=this.value"><span class="field-hint">§7 Recuperación → Terceros responsables</span></div>
-      <div class="fg"><label>Intervención de autoridades</label>
-        <select id="s-autoridades-vis" onchange="g('s-autoridades').value=this.value"><span class="field-hint">§4 Inspección → Intervención de autoridades</span>
-          <option value="0">No</option><option value="1">Sí</option>
-        </select></div>
-    </div>
-  </div>
+  <!-- ══ PESTAÑAS DE NAVEGACIÓN ════════════════════════════════════════ -->
+  <div id="sin-tabs-nav" style="
+    display:flex; gap:2px; padding:0 1.5rem;
+    background:var(--bg2); border-bottom:1px solid var(--border-md);
+    overflow-x:auto; flex-shrink:0;
+  ">
+    <button class="sin-tab-btn active" data-tab="t1" onclick="sinTab('t1')" style="
+      background:transparent; border:none; border-bottom:2px solid var(--accent-lt);
+      color:var(--text); padding:10px 14px; font-size:12px; font-weight:600;
+      cursor:pointer; font-family:inherit; white-space:nowrap; transition:all .15s;
+    ">① Identificación</button>
+    <button class="sin-tab-btn" data-tab="t2" onclick="sinTab('t2')" style="
+      background:transparent; border:none; border-bottom:2px solid transparent;
+      color:var(--text-sec); padding:10px 14px; font-size:12px; font-weight:500;
+      cursor:pointer; font-family:inherit; white-space:nowrap; transition:all .15s;
+    ">② Asegurado & Póliza</button>
+    <button class="sin-tab-btn" data-tab="t3" onclick="sinTab('t3')" style="
+      background:transparent; border:none; border-bottom:2px solid transparent;
+      color:var(--text-sec); padding:10px 14px; font-size:12px; font-weight:500;
+      cursor:pointer; font-family:inherit; white-space:nowrap; transition:all .15s;
+    ">③ Siniestro & Inspección</button>
+    <button class="sin-tab-btn" data-tab="t4" onclick="sinTab('t4')" style="
+      background:transparent; border:none; border-bottom:2px solid transparent;
+      color:var(--text-sec); padding:10px 14px; font-size:12px; font-weight:500;
+      cursor:pointer; font-family:inherit; white-space:nowrap; transition:all .15s;
+    ">④ Informe</button>
+    <button class="sin-tab-btn" data-tab="t5" onclick="sinTab('t5')" style="
+      background:transparent; border:none; border-bottom:2px solid transparent;
+      color:var(--text-sec); padding:10px 14px; font-size:12px; font-weight:500;
+      cursor:pointer; font-family:inherit; white-space:nowrap; transition:all .15s;
+    ">⑤ Reserva & Cierre</button>
   </div>
 
-  <!-- ═══════ SINIESTRO ═══════ -->
+  <!-- ══════════════════════════════════════════════════════════════════
+       TAB 1 — IDENTIFICACIÓN & EXPEDIENTE
+  ══════════════════════════════════════════════════════════════════════ -->
+  <div id="sin-tab-t1" class="sin-tab-panel" style="padding:1rem 1.5rem 0.5rem;">
 
-  <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin:18px 0 8px;">Siniestro</div>
-  <div class="form-grid">
-
-    <div class="fg"><label>Tipo de siniestro</label><input type="text" id="s-tipo" placeholder="Incendio, robo, etc."><span class="field-hint">Lista expedientes · Informes genéricos</span></div>
-    <div class="fg"><label>Cobertura <span style="font-size:10px;color:var(--text-ter);font-weight:400;">(cobertura que aplica al siniestro)</span></label><input type="text" id="s-subramo" placeholder="ej. Rotura de Maquinaria, Incendio, Robo con violencia"><span class="field-hint">Portada → Subramo · §1 Estimación → Cobertura 1</span></div>
-    <div class="fg"><label>Causa</label>
-    <div class="ia-sugg-wrap">
-      <div style="display:flex;gap:4px;align-items:center;">
-        <input type="text" id="s-causa" style="flex:1;">
-        <button class="btn-ia-simple" onclick="iaSugerirCampo('causa')" title="Sugerir causa con IA">✦ IA</button>
-      </div>
-      <div class="ia-sugg-box" id="ia-sugg-causa">
-        <div style="font-size:10px;color:var(--text-ter);margin-bottom:4px;">Sugerencia IA — edita si es necesario:</div>
-        <input type="text" id="ia-sugg-causa-text"
-          style="width:100%;padding:5px 8px;border:1px solid rgba(16,163,127,.4);border-radius:4px;
-                 background:var(--bg2);color:var(--text);font-size:12px;font-family:inherit;
-                 box-sizing:border-box;margin-bottom:6px;"
-          placeholder="Generando sugerencia…">
-        <div class="ia-sugg-actions">
-          <button class="btn btn-primary btn-sm" onclick="iaAplicarCampo('causa')">↑ Aplicar</button>
-          <button class="btn btn-sm" onclick="iaCerrarSugg('causa')">Descartar</button>
+    <!-- Bloque primario: referencias y fechas clave -->
+    <div style="background:var(--surface2);border:1px solid var(--border-md);border-radius:var(--rl);padding:12px 14px;margin-bottom:12px;">
+      <div style="font-size:9px;color:var(--accent-lt);text-transform:uppercase;letter-spacing:.1em;font-weight:700;margin-bottom:10px;">Expediente</div>
+      <div class="form-grid">
+        <div class="fg">
+          <label>Ref. AASA</label>
+          <input type="text" id="s-exp" placeholder="ej. GNPEML010870925">
+          <span class="field-hint">Portada → Ref. ajustadora</span>
+        </div>
+        <div class="fg">
+          <label>No. de siniestro</label>
+          <input type="text" id="s-numsin" placeholder="Llenar cuando se tenga">
+          <span class="field-hint">Portada → No. Siniestro</span>
+        </div>
+        <div class="fg">
+          <label>Clave ajustador (compañía)</label>
+          <input type="text" id="s-clave-ajust">
+          <span class="field-hint">Portada → Clave ajustador</span>
+        </div>
+        <div class="fg">
+          <label>Estatus</label>
+          <select id="s-est">
+            <option value="asignado">Asignado</option>
+            <option value="inspeccion">En inspección</option>
+            <option value="informe">Elaborando informe</option>
+            <option value="documentando">Documentando</option>
+            <option value="cerrado">Cerrado</option>
+          </select>
         </div>
       </div>
     </div>
-    <span class="field-hint">Portada → Causa del siniestro</span></div>
-    <div class="fg"><label>Comentario de causa</label><div style="display:flex;gap:4px;align-items:center;">
-        <input type="text" id="s-causa-com" placeholder="ej. En análisis de causa" style="flex:1;">
-        <button class="btn-ia-simple" onclick="iaSugerirCampo('causa-com')" title="Sugerir comentario con IA">✦ IA</button>
-      </div>
-      <div class="ia-sugg-box" id="ia-sugg-causa-com">
-        <div style="font-size:10px;color:var(--text-ter);margin-bottom:4px;">Sugerencia IA — edita si es necesario:</div>
-        <input type="text" id="ia-sugg-causa-com-text"
-          style="width:100%;padding:5px 8px;border:1px solid rgba(16,163,127,.4);border-radius:4px;
-                 background:var(--bg2);color:var(--text);font-size:12px;font-family:inherit;
-                 box-sizing:border-box;margin-bottom:6px;"
-          placeholder="Generando sugerencia…">
-        <div class="ia-sugg-actions">
-          <button class="btn btn-primary btn-sm" onclick="iaAplicarCampo('causa-com')">↑ Aplicar</button>
-          <button class="btn btn-sm" onclick="iaCerrarSugg('causa-com')">Descartar</button>
-        </div>
-      </div>
-      <span class="field-hint">Portada → Comentario de la causa</span></div>
-    <div class="fg"><label>Riesgo afectado</label><div style="display:flex;gap:4px;align-items:center;">
-        <input type="text" id="s-riesgo" placeholder="ej. b) Corto Circuito" style="flex:1;">
-        <button class="btn-ia-simple" onclick="iaSugerirCampo('riesgo')" title="Clasificar riesgo con IA">✦ IA</button>
-      </div>
-      <div class="ia-sugg-box" id="ia-sugg-riesgo">
-        <div style="font-size:10px;color:var(--text-ter);margin-bottom:4px;">Sugerencia IA — edita si es necesario:</div>
-        <input type="text" id="ia-sugg-riesgo-text"
-          style="width:100%;padding:5px 8px;border:1px solid rgba(16,163,127,.4);border-radius:4px;
-                 background:var(--bg2);color:var(--text);font-size:12px;font-family:inherit;
-                 box-sizing:border-box;margin-bottom:6px;"
-          placeholder="Generando sugerencia…">
-        <div class="ia-sugg-actions">
-          <button class="btn btn-primary btn-sm" onclick="iaAplicarCampo('riesgo')">↑ Aplicar</button>
-          <button class="btn btn-sm" onclick="iaCerrarSugg('riesgo')">Descartar</button>
-        </div>
-      </div>
-      <span class="field-hint">Portada → Riesgo afectado</span></div>
-    <div class="fg"><label>Estatus</label>
-      <select id="s-est">
-        <option value="asignado">Asignado</option>
-        <option value="inspeccion">En inspección</option>
-        <option value="informe">Elaborando informe</option>
-        <option value="documentando">Documentando</option>
-        <option value="cerrado">Cerrado</option>
-      </select></div>
-    <div class="fg full"><label>Lugar del siniestro</label><input type="text" id="s-lugar-sin" placeholder="Zona específica dentro del inmueble asegurado"><span class="field-hint">§4 Inspección → Lugar del siniestro</span></div>
-    <div class="fg full"><label>Ubicación Afectada</label><input type="text" id="s-insp-dom" placeholder="Domicilio afectado"><span class="field-hint">§4 Inspección → Domicilio asegurado · Lugar de inspección</span></div>
-  </div>
 
-  <!-- ═══════ I. INTRODUCCIÓN ═══════ -->
-
-  <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin:18px 0 8px;">I. Introducción del Informe</div>
-  <div class="form-grid">
-
-  </div>
-  <div class="fg full" id="s-introduccion-wrap" style="overflow:visible;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-        <label style="margin-bottom:0;">Introducción del informe</label>
-      </div>
-      <div class="rte-wrap" style="resize:both;overflow:auto;">
-      <div class="rte-toolbar">
-          <button type="button" onclick="rteCmdSin('introduccion','bold')" title="Negrita"><strong>N</strong></button>
-          <button type="button" onclick="rteCmdSin('introduccion','italic')" title="Cursiva"><em>K</em></button>
-          <button type="button" onclick="rteCmdSin('introduccion','underline')" title="Subrayado"><u>S</u></button>
-          <span class="rte-sep"></span>
-          <button type="button" onclick="rteCmdSin('introduccion','insertUnorderedList')" title="Lista con viñetas">≡•</button>
-          <button type="button" onclick="rteCmdSin('introduccion','insertOrderedList')" title="Lista numerada">≡1</button>
-          <span class="rte-sep"></span>
-          <button type="button" onclick="rteCmdSin('introduccion','removeFormat')" title="Quitar formato">✕</button>
-          <span class="rte-sep"></span><button type="button" onclick="rteInsertarImagen('introduccion')" title="Insertar imagen del expediente" style="font-size:13px;">📷</button>
-          <span class="rte-sep"></span>
-          <span class="rte-fields-wrap">
-            <button type="button" class="rte-fields-btn" onclick="rteToggleFields(this,'introduccion')" title="Insertar dato del expediente">{}</button>
-          <span class="rte-sep"></span>
-          <button type="button" class="btn-ia" onclick="iaGenerarRte('introduccion','introduccion')" title="Generar con IA">✦ IA</button>
-            <div class="rte-fields-drop" id="rte-fields-introduccion"></div>
-          </span>
-          
+    <!-- Fechas operativas -->
+    <div style="background:var(--surface2);border:1px solid var(--border-md);border-radius:var(--rl);padding:12px 14px;margin-bottom:12px;">
+      <div style="font-size:9px;color:var(--accent-lt);text-transform:uppercase;letter-spacing:.1em;font-weight:700;margin-bottom:10px;">Cronología operativa</div>
+      <div class="form-grid">
+        <div class="fg">
+          <label>Fecha del siniestro</label>
+          <input type="date" id="s-fsin">
+          <span class="field-hint">Portada → Fecha de siniestro</span>
         </div>
-        <div id="s-introduccion-rte" class="rte-editor" contenteditable="true"
-          data-placeholder="Texto de apertura del informe: contexto, alcance del ajuste, propósito del documento..." oninput="syncRteSin('introduccion')"
-          style="min-height:160px;"></div>
-        <textarea id="s-introduccion" style="display:none;"></textarea>
+        <div class="fg">
+          <label>Fecha de asignación</label>
+          <input type="date" id="s-fasig">
+          <span class="field-hint">§11 Cronología → Fecha asignación</span>
+        </div>
+        <div class="fg">
+          <label>Fecha primera visita</label>
+          <input type="date" id="s-f1vis" onchange="if(g('s-inspeccion-narrativa')&&!g('s-inspeccion-narrativa').dataset.editado)generarTextoInspeccion()">
+          <span class="field-hint">§4 Inspección → Fecha y hora · §11 Cronología</span>
+        </div>
       </div>
     </div>
 
-  <!-- ═══════ II. EL ASEGURADO ═══════ -->
-
-  <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin:18px 0 8px;">II. El Asegurado</div>
-  <div class="form-grid">
-
-  </div>
-  <div class="fg full">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-        <label style="margin-bottom:0;">Descripción de los Bienes Afectados</label>
-      </div>
-      <div class="rte-wrap">
-      <div class="rte-toolbar">
-          <button type="button" onclick="rteCmdSin('desc','bold')" title="Negrita"><strong>N</strong></button>
-          <button type="button" onclick="rteCmdSin('desc','italic')" title="Cursiva"><em>K</em></button>
-          <button type="button" onclick="rteCmdSin('desc','underline')" title="Subrayado"><u>S</u></button>
-          <span class="rte-sep"></span>
-          <button type="button" onclick="rteCmdSin('desc','insertUnorderedList')" title="Lista con viñetas">≡•</button>
-          <button type="button" onclick="rteCmdSin('desc','insertOrderedList')" title="Lista numerada">≡1</button>
-          <span class="rte-sep"></span>
-          <button type="button" onclick="rteCmdSin('desc','removeFormat')" title="Quitar formato">✕</button>
-          <span class="rte-sep"></span><button type="button" onclick="rteInsertarImagen('desc')" title="Insertar imagen del expediente" style="font-size:13px;">📷</button>
-          <span class="rte-sep"></span>
-          <span class="rte-fields-wrap">
-            <button type="button" class="rte-fields-btn" onclick="rteToggleFields(this,'desc')" title="Insertar dato del expediente">{}</button>
-          <span class="rte-sep"></span>
-          <button type="button" class="btn-ia" onclick="iaGenerarRte('desc','desc')" title="Generar con IA">✦ IA</button>
-            <div class="rte-fields-drop" id="rte-fields-desc"></div>
-          </span>
-          
+    <!-- Funcionario asignador -->
+    <div style="background:var(--surface2);border:1px solid var(--border-md);border-radius:var(--rl);padding:12px 14px;margin-bottom:12px;">
+      <div style="font-size:9px;color:var(--accent-lt);text-transform:uppercase;letter-spacing:.1em;font-weight:700;margin-bottom:10px;">Funcionario asignador</div>
+      <div class="form-grid">
+        <div class="fg full">
+          <label>Seleccionar del directorio</label>
+          <select id="s-funcionario-dest" onchange="actualizarFuncionarioDest()">
+            <option value="">— Seleccionar del directorio —</option>
+          </select>
+          <span class="field-hint">Portada → AT´N: nombre y cargo</span>
         </div>
-        <div id="s-desc-rte" class="rte-editor" contenteditable="true"
-          data-placeholder="Cómo ocurrió el siniestro, circunstancias, descripción del evento..." oninput="syncRteSin('desc')"
-          style="min-height:70px;"></div>
-        <textarea id="s-desc" style="display:none;"></textarea>
+        <div class="fg">
+          <label>Nombre del funcionario</label>
+          <input type="text" id="s-dest-nombre" placeholder="Se llena al seleccionar del directorio">
+          <span class="field-hint">Portada → AT´N: nombre</span>
+        </div>
+        <div class="fg">
+          <label>Cargo del funcionario</label>
+          <input type="text" id="s-dest-cargo" placeholder="ej. Jefe de Siniestros Daños">
+          <span class="field-hint">Portada → AT´N: cargo</span>
+        </div>
       </div>
     </div>
 
-  <!-- ═══════ III. UBICACIÓN AFECTADA ═══════ -->
-
-  <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin:18px 0 8px;">III. Ubicación Afectada</div>
-  <div class="form-grid">
-
-    <div class="fg full"><label>Ubicación Afectada</label><input type="text" id="s-insp-dom" placeholder="Domicilio afectado"></div>
-  </div>
-
-
-  <!-- ═══════ IV. LOCALIZACIÓN ═══════ -->
-
-  <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin:18px 0 8px;">IV. Localización</div>
-  <div class="form-grid">
-
-  </div>
-  <div class="fg full">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-        <label style="margin-bottom:0;">Localización (Descripción e Imágenes)</label>
+    <!-- Sección GNP — visible solo cuando aseguradora.codigo_sistema = 'GNP' -->
+    <div id="seccion-gnp" style="display:none;">
+      <div style="background:rgba(255,204,128,.06);border:1px solid rgba(255,204,128,.2);border-radius:var(--rl);padding:12px 14px;margin-bottom:12px;">
+        <div style="font-size:9px;color:#ffcc80;text-transform:uppercase;letter-spacing:.1em;font-weight:700;margin-bottom:10px;">Datos GNP</div>
+        <div class="form-grid">
+          <div class="fg"><label>No. Trámite GNP</label><input type="text" id="s-tramite-gnp-vis" placeholder="ej. SD00115817" oninput="g('s-tramite-gnp').value=this.value"><span class="field-hint">Portada → No. Trámite</span></div>
+          <div class="fg"><label>No. Siniestro GNP</label><input type="text" id="s-numsin-gnp" placeholder="ej. 0180203622" oninput="g('s-numsin').value=this.value"><span class="field-hint">Portada → No. Siniestro</span></div>
+          <div class="fg"><label>Clave ajustador GNP</label><input type="text" id="s-gnp-clave-ajust-vis" placeholder="ej. GNPJCA010970226" oninput="g('s-gnp-clave-ajust').value=this.value;g('s-clave-ajust').value=this.value"><span class="field-hint">Portada → Clave ajustador GNP</span></div>
+          <div class="fg"><label>Jefe de Depto. (GNP)</label><input type="text" id="s-gnp-jefe-vis" placeholder="ej. Rocío Rodríguez Nava" oninput="g('s-gnp-jefe').value=this.value"><span class="field-hint">Portada → Jefe Depto.</span></div>
+          <div class="fg"><label>Oficina GNP</label><input type="text" id="s-gnp-oficina-vis" placeholder="ej. Veracruz" oninput="g('s-gnp-oficina').value=this.value"><span class="field-hint">Portada → Oficina</span></div>
+          <div class="fg"><label>Giro del asegurado</label><input type="text" id="s-giro-vis" placeholder="ej. Fabricación de estructuras metálicas" oninput="g('s-giro').value=this.value"><span class="field-hint">Portada → Giro del asegurado</span></div>
+          <div class="fg"><label>Clave evento (catastrófico)</label><input type="text" id="s-clave-evento-vis" placeholder="ej. No aplica" oninput="g('s-clave-evento').value=this.value"><span class="field-hint">Portada → Clave evento</span></div>
+        </div>
+        <div style="font-size:9px;color:#ffcc80;text-transform:uppercase;letter-spacing:.1em;font-weight:700;margin:12px 0 10px;">Cronología GNP</div>
+        <div class="form-grid">
+          <div class="fg"><label>Hora ocurrencia</label><input type="time" id="s-hora-ocurr-vis" oninput="g('s-hora-ocurr').value=this.value"><span class="field-hint">§11 Cronología → Hora ocurrencia</span></div>
+          <div class="fg"><label>Hora asignación</label><input type="time" id="s-hora-asig-vis" oninput="g('s-hora-asig').value=this.value"><span class="field-hint">§11 Cronología → Hora asignación</span></div>
+          <div class="fg"><label>Fecha primer contacto</label><input type="date" id="s-f1cont-vis" oninput="g('s-f1cont').value=this.value"><span class="field-hint">§11 Cronología → Fecha 1er. contacto</span></div>
+          <div class="fg"><label>Hora primer contacto</label><input type="time" id="s-h1cont-vis" oninput="g('s-h1cont').value=this.value"><span class="field-hint">§11 Cronología → Hora 1er. contacto</span></div>
+          <div class="fg"><label>Hora primera visita</label><input type="time" id="s-h1vis-vis" oninput="g('s-h1vis').value=this.value"><span class="field-hint">§11 Cronología → Hora 1a. visita</span></div>
+        </div>
+        <div style="font-size:9px;color:#ffcc80;text-transform:uppercase;letter-spacing:.1em;font-weight:700;margin:12px 0 10px;">Coaseguro / Reaseguro / Recuperación</div>
+        <div class="form-grid">
+          <div class="fg"><label>Coaseguro</label>
+            <select id="s-coaseguro-vis" onchange="g('s-coaseguro').value=this.value==='1'?'1':'0'">
+              <option value="0">No</option><option value="1">Sí</option>
+            </select><span class="field-hint">§2 Coaseguro → SI / NO</span></div>
+          <div class="fg"><label>Reaseguro (cláusula control)</label>
+            <select id="s-reaseguro-vis" onchange="g('s-reaseguro').value=this.value==='1'?'1':'0'">
+              <option value="0">No</option><option value="1">Sí</option>
+            </select><span class="field-hint">§3 Reaseguro → Cláusula control</span></div>
+          <div class="fg"><label>Corredor de reaseguro</label><input type="text" id="s-reas-corredor-vis" placeholder="Nombre del corredor" oninput="g('s-reas-corredor').value=this.value"><span class="field-hint">§3 Reaseguro → Corredor</span></div>
+          <div class="fg"><label>Recuperación</label>
+            <select id="s-recuperacion-vis" onchange="g('s-recuperacion').value=this.value">
+              <option value="0">No</option><option value="1">Sí</option>
+            </select><span class="field-hint">§7 Recuperación → SI / NO</span></div>
+          <div class="fg"><label>Terceros responsables</label><input type="text" id="s-rec-terceros-vis" placeholder="N/A si no aplica" oninput="g('s-rec-terceros').value=this.value"><span class="field-hint">§7 Recuperación → Terceros responsables</span></div>
+          <div class="fg"><label>Intervención de autoridades</label>
+            <select id="s-autoridades-vis" onchange="g('s-autoridades').value=this.value">
+              <option value="0">No</option><option value="1">Sí</option>
+            </select><span class="field-hint">§4 Inspección → Autoridades</span></div>
+        </div>
       </div>
+    </div>
+
+  </div><!-- /sin-tab-t1 -->
+
+  <!-- ══════════════════════════════════════════════════════════════════
+       TAB 2 — ASEGURADO & PÓLIZA
+  ══════════════════════════════════════════════════════════════════════ -->
+  <div id="sin-tab-t2" class="sin-tab-panel" style="display:none;padding:1rem 1.5rem 0.5rem;">
+
+    <!-- Asegurado -->
+    <div style="background:var(--surface2);border:1px solid var(--border-md);border-radius:var(--rl);padding:12px 14px;margin-bottom:12px;">
+      <div style="font-size:9px;color:var(--accent-lt);text-transform:uppercase;letter-spacing:.1em;font-weight:700;margin-bottom:10px;">Asegurado</div>
+      <div id="sin-asdo-search-wrap">
+        <div style="display:flex;gap:8px;align-items:flex-end;">
+          <div style="flex:1;">
+            <label style="font-size:10px;color:var(--text-sec);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:4px;">Buscar por nombre o RFC</label>
+            <input type="text" id="sin-asdo-q" placeholder="Escriba para buscar…" oninput="buscarAseguradoSin()" autocomplete="off"
+              style="width:100%;padding:7px 10px;border:1px solid var(--border-md);border-radius:var(--r);background:var(--bg2);color:var(--text);font-size:13px;font-family:inherit;">
+          </div>
+          <button class="btn" type="button" onclick="toggleCrearAseguradoSin()" id="btn-crear-asdo-sin" style="white-space:nowrap;">+ Crear asegurado</button>
+        </div>
+        <div id="sin-asdo-results" style="margin-top:4px;"></div>
+        <input type="hidden" id="sin-asdo-sel-id">
+
+        <!-- Sub-formulario inline para crear asegurado -->
+        <div id="sin-asdo-form" style="display:none;margin-top:10px;padding:12px;background:var(--surface2);border:1px solid var(--border-md);border-radius:var(--rl);">
+          <div style="font-size:11px;font-weight:600;color:var(--accent-lt);margin-bottom:8px;">Nuevo asegurado</div>
+          <div class="form-grid">
+            <div class="fg full"><label>Nombre / Razón social</label><input type="text" id="sin-new-asdo-nombre" placeholder="Nombre completo o razón social"></div>
+            <div class="fg"><label>RFC</label><input type="text" id="sin-new-asdo-rfc" placeholder="RFC con homoclave"></div>
+            <div class="fg"><label>Tipo</label>
+              <select id="sin-new-asdo-tipo"><option value="moral">Persona moral</option><option value="fisica">Persona física</option></select></div>
+            <div class="fg"><label>Teléfono</label><input type="text" id="sin-new-asdo-tel"></div>
+            <div class="fg"><label>Correo</label><input type="text" id="sin-new-asdo-email"></div>
+            <div class="fg full"><label>Dirección</label><input type="text" id="sin-new-asdo-dir"></div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:8px;">
+            <button class="btn btn-primary btn-sm" type="button" onclick="guardarNuevoAseguradoSin()">Guardar asegurado</button>
+            <button class="btn btn-sm" type="button" onclick="cancelarCrearAseguradoSin()">Cancelar</button>
+          </div>
+        </div>
+
+        <!-- Asegurado seleccionado -->
+        <div id="sin-asdo-sel-display" style="display:none;margin-top:8px;padding:8px 12px;background:rgba(100,180,100,.08);border:1px solid rgba(100,180,100,.3);border-radius:var(--r);align-items:center;gap:10px;">
+          <span style="font-size:13px;font-weight:600;color:var(--text);" id="sin-asdo-sel-label"></span>
+          <button class="btn btn-sm" type="button" onclick="limpiarAseguradoSin()" style="margin-left:auto;">Cambiar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Póliza -->
+    <div id="sin-pol-step" style="display:none;">
+      <div style="background:var(--surface2);border:1px solid var(--border-md);border-radius:var(--rl);padding:12px 14px;margin-bottom:12px;">
+        <div style="font-size:9px;color:var(--accent-lt);text-transform:uppercase;letter-spacing:.1em;font-weight:700;margin-bottom:10px;">Póliza</div>
+        <div style="display:flex;gap:8px;align-items:flex-end;">
+          <div style="flex:1;">
+            <label style="font-size:10px;color:var(--text-sec);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:4px;">Buscar por número de póliza</label>
+            <input type="text" id="sin-pol-q" placeholder="Escriba para buscar…" oninput="buscarPolizaSin()" autocomplete="off"
+              style="width:100%;padding:7px 10px;border:1px solid var(--border-md);border-radius:var(--r);background:var(--bg2);color:var(--text);font-size:13px;font-family:inherit;">
+          </div>
+          <button class="btn" type="button" onclick="toggleCrearPolizaSin()" id="btn-crear-pol-sin" style="white-space:nowrap;">+ Crear póliza</button>
+        </div>
+        <div id="sin-pol-results" style="margin-top:4px;"></div>
+        <input type="hidden" id="sin-pol-sel-id">
+
+        <!-- Sub-formulario inline para crear póliza -->
+        <div id="sin-pol-form" style="display:none;margin-top:10px;padding:12px;background:var(--surface2);border:1px solid var(--border-md);border-radius:var(--rl);">
+          <div style="font-size:11px;font-weight:600;color:var(--accent-lt);margin-bottom:8px;">Nueva póliza</div>
+          <div class="form-grid">
+            <div class="fg"><label>Número de póliza</label><input type="text" id="sin-new-pol-num" placeholder="Número de póliza"></div>
+            <div class="fg"><label>Compañía aseguradora</label>
+              <select id="sin-new-pol-aseg"><option value="">— Selecciona —</option></select></div>
+            <div class="fg"><label>Ramo</label>
+              <select id="sin-new-pol-ramo">
+                <option value="incendio">Incendio y líneas aliadas</option>
+                <option value="robo">Robo</option>
+                <option value="rc">Responsabilidad civil</option>
+                <option value="transporte">Transporte</option>
+                <option value="energia">Energía</option>
+                <option value="construccion">Construcción</option>
+                <option value="equipo_contratistas">Equipo de Contratistas</option>
+                <option value="interrupcion">Interrupción de negocios</option>
+                <option value="catastrofico">Catastrófico</option>
+              </select></div>
+            <div class="fg"><label>Subramo</label><input type="text" id="sin-new-pol-subramo" placeholder="ej. E.E., Incendio, Robo"></div>
+            <div class="fg"><label>Vigencia inicio</label><input type="date" id="sin-new-pol-vini"></div>
+            <div class="fg"><label>Vigencia fin</label><input type="date" id="sin-new-pol-vfin"></div>
+            <div class="fg"><label>Suma asegurada</label><input type="number" id="sin-new-pol-sa" placeholder="0.00"></div>
+            <div class="fg"><label>Moneda</label>
+              <select id="sin-new-pol-mon"><option value="MXN">MXN</option><option value="USD">USD</option><option value="EUR">EUR</option></select></div>
+            <div class="fg"><label>Agente</label><input type="text" id="sin-new-pol-agente"></div>
+            <div class="fg full"><label>Ubicación del riesgo</label><input type="text" id="sin-new-pol-ubic" placeholder="Dirección del riesgo asegurado"></div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:8px;">
+            <button class="btn btn-primary btn-sm" type="button" onclick="guardarNuevaPolizaSin()">Guardar póliza</button>
+            <button class="btn btn-sm" type="button" onclick="cancelarCrearPolizaSin()">Cancelar</button>
+          </div>
+        </div>
+
+        <!-- Póliza seleccionada -->
+        <div id="sin-pol-sel-display" style="display:none;margin-top:8px;padding:8px 12px;background:rgba(100,180,100,.08);border:1px solid rgba(100,180,100,.3);border-radius:var(--r);align-items:center;gap:10px;">
+          <span style="font-size:13px;font-weight:600;color:var(--text);" id="sin-pol-sel-label"></span>
+          <button class="btn btn-sm" type="button" onclick="limpiarPolizaSin()" style="margin-left:auto;">Cambiar</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /sin-tab-t2 -->
+
+  <!-- ══════════════════════════════════════════════════════════════════
+       TAB 3 — SINIESTRO & INSPECCIÓN
+  ══════════════════════════════════════════════════════════════════════ -->
+  <div id="sin-tab-t3" class="sin-tab-panel" style="display:none;padding:1rem 1.5rem 0.5rem;">
+
+    <!-- Siniestro: causa, tipo, lugar -->
+    <div style="background:var(--surface2);border:1px solid var(--border-md);border-radius:var(--rl);padding:12px 14px;margin-bottom:12px;">
+      <div style="font-size:9px;color:var(--accent-lt);text-transform:uppercase;letter-spacing:.1em;font-weight:700;margin-bottom:10px;">Caracterización del siniestro</div>
+      <div class="form-grid">
+        <div class="fg">
+          <label>Tipo de siniestro</label>
+          <input type="text" id="s-tipo" placeholder="Incendio, robo, daño eléctrico…">
+          <span class="field-hint">Lista expedientes · Informes genéricos</span>
+        </div>
+        <div class="fg">
+          <label>Cobertura aplicable</label>
+          <input type="text" id="s-subramo" placeholder="ej. Rotura de Maquinaria, Incendio">
+          <span class="field-hint">Portada → Subramo · §1 Estimación → Cobertura 1</span>
+        </div>
+        <div class="fg">
+          <label>Causa</label>
+          <div class="ia-sugg-wrap">
+            <div style="display:flex;gap:4px;align-items:center;">
+              <input type="text" id="s-causa" style="flex:1;">
+              <button class="btn-ia-simple" onclick="iaSugerirCampo('causa')" title="Sugerir causa con IA">✦ IA</button>
+            </div>
+            <div class="ia-sugg-box" id="ia-sugg-causa">
+              <div style="font-size:10px;color:var(--text-ter);margin-bottom:4px;">Sugerencia IA — edita si es necesario:</div>
+              <input type="text" id="ia-sugg-causa-text"
+                style="width:100%;padding:5px 8px;border:1px solid rgba(16,163,127,.4);border-radius:4px;background:var(--bg2);color:var(--text);font-size:12px;font-family:inherit;box-sizing:border-box;margin-bottom:6px;"
+                placeholder="Generando sugerencia…">
+              <div class="ia-sugg-actions">
+                <button class="btn btn-primary btn-sm" onclick="iaAplicarCampo('causa')">↑ Aplicar</button>
+                <button class="btn btn-sm" onclick="iaCerrarSugg('causa')">Descartar</button>
+              </div>
+            </div>
+          </div>
+          <span class="field-hint">Portada → Causa del siniestro</span>
+        </div>
+        <div class="fg">
+          <label>Comentario de causa</label>
+          <div style="display:flex;gap:4px;align-items:center;">
+            <input type="text" id="s-causa-com" placeholder="ej. En análisis de causa" style="flex:1;">
+            <button class="btn-ia-simple" onclick="iaSugerirCampo('causa-com')" title="Sugerir comentario con IA">✦ IA</button>
+          </div>
+          <div class="ia-sugg-box" id="ia-sugg-causa-com">
+            <div style="font-size:10px;color:var(--text-ter);margin-bottom:4px;">Sugerencia IA — edita si es necesario:</div>
+            <input type="text" id="ia-sugg-causa-com-text"
+              style="width:100%;padding:5px 8px;border:1px solid rgba(16,163,127,.4);border-radius:4px;background:var(--bg2);color:var(--text);font-size:12px;font-family:inherit;box-sizing:border-box;margin-bottom:6px;"
+              placeholder="Generando sugerencia…">
+            <div class="ia-sugg-actions">
+              <button class="btn btn-primary btn-sm" onclick="iaAplicarCampo('causa-com')">↑ Aplicar</button>
+              <button class="btn btn-sm" onclick="iaCerrarSugg('causa-com')">Descartar</button>
+            </div>
+          </div>
+          <span class="field-hint">Portada → Comentario de la causa</span>
+        </div>
+        <div class="fg">
+          <label>Riesgo afectado</label>
+          <div style="display:flex;gap:4px;align-items:center;">
+            <input type="text" id="s-riesgo" placeholder="ej. b) Corto Circuito" style="flex:1;">
+            <button class="btn-ia-simple" onclick="iaSugerirCampo('riesgo')" title="Clasificar riesgo con IA">✦ IA</button>
+          </div>
+          <div class="ia-sugg-box" id="ia-sugg-riesgo">
+            <div style="font-size:10px;color:var(--text-ter);margin-bottom:4px;">Sugerencia IA — edita si es necesario:</div>
+            <input type="text" id="ia-sugg-riesgo-text"
+              style="width:100%;padding:5px 8px;border:1px solid rgba(16,163,127,.4);border-radius:4px;background:var(--bg2);color:var(--text);font-size:12px;font-family:inherit;box-sizing:border-box;margin-bottom:6px;"
+              placeholder="Generando sugerencia…">
+            <div class="ia-sugg-actions">
+              <button class="btn btn-primary btn-sm" onclick="iaAplicarCampo('riesgo')">↑ Aplicar</button>
+              <button class="btn btn-sm" onclick="iaCerrarSugg('riesgo')">Descartar</button>
+            </div>
+          </div>
+          <span class="field-hint">Portada → Riesgo afectado</span>
+        </div>
+        <div class="fg full">
+          <label>Lugar del siniestro</label>
+          <input type="text" id="s-lugar-sin" placeholder="Zona específica dentro del inmueble asegurado">
+          <span class="field-hint">§4 Inspección → Lugar del siniestro</span>
+        </div>
+        <div class="fg full">
+          <label>Domicilio / Ubicación afectada</label>
+          <input type="text" id="s-insp-dom" placeholder="Domicilio afectado">
+          <span class="field-hint">§4 Inspección → Domicilio asegurado · Lugar de inspección</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Inspección: persona, cargo, tel -->
+    <div style="background:var(--surface2);border:1px solid var(--border-md);border-radius:var(--rl);padding:12px 14px;margin-bottom:12px;">
+      <div style="font-size:9px;color:var(--accent-lt);text-transform:uppercase;letter-spacing:.1em;font-weight:700;margin-bottom:10px;">Inspección</div>
+      <div class="form-grid">
+        <div class="fg"><label>Persona entrevistada</label><input type="text" id="s-insp-persona"><span class="field-hint">§4 Inspección → Persona entrevistada</span></div>
+        <div class="fg"><label>Cargo</label><input type="text" id="s-insp-cargo"><span class="field-hint">§4 Inspección → Puesto y/o cargo</span></div>
+        <div class="fg"><label>Teléfono</label><input type="text" id="s-insp-tel"><span class="field-hint">§4 Inspección → Teléfono</span></div>
+      </div>
+
+      <div style="margin-top:10px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+          <label style="font-size:10px;color:var(--text-sec);text-transform:uppercase;letter-spacing:.06em;margin-bottom:0;">Narrativa de inspección</label>
+        </div>
+        <div class="rte-wrap">
+          <div class="rte-toolbar">
+            <button type="button" onclick="rteCmdSin('inspeccion-narrativa','bold')" title="Negrita"><strong>N</strong></button>
+            <button type="button" onclick="rteCmdSin('inspeccion-narrativa','italic')" title="Cursiva"><em>K</em></button>
+            <button type="button" onclick="rteCmdSin('inspeccion-narrativa','underline')" title="Subrayado"><u>S</u></button>
+            <span class="rte-sep"></span>
+            <button type="button" onclick="rteCmdSin('inspeccion-narrativa','insertUnorderedList')" title="Lista con viñetas">≡•</button>
+            <button type="button" onclick="rteCmdSin('inspeccion-narrativa','insertOrderedList')" title="Lista numerada">≡1</button>
+            <span class="rte-sep"></span>
+            <button type="button" onclick="rteCmdSin('inspeccion-narrativa','removeFormat')" title="Quitar formato">✕</button>
+            <span class="rte-sep"></span>
+            <button type="button" onclick="rteInsertarImagen('inspeccion-narrativa')" title="Insertar imagen del expediente" style="font-size:13px;">📷</button>
+            <span class="rte-sep"></span>
+            <span class="rte-fields-wrap">
+              <button type="button" class="rte-fields-btn" onclick="rteToggleFields(this,'inspeccion-narrativa')" title="Insertar dato del expediente">{}</button>
+              <span class="rte-sep"></span>
+              <button type="button" class="btn-ia" onclick="iaGenerarRte('inspeccion-narrativa','inspeccion')" title="Generar con IA">✦ IA</button>
+              <div class="rte-fields-drop" id="rte-fields-inspeccion-narrativa"></div>
+            </span>
+            <span class="rte-sep"></span>
+            <button type="button" class="btn btn-sm" onclick="generarTextoInspeccion()" title="Genera el texto usando fecha, domicilio y persona entrevistada" style="font-size:11px;">✦ Generar texto</button>
+          </div>
+          <div id="s-inspeccion-narrativa-rte" class="rte-editor" contenteditable="true"
+            data-placeholder="Capture la fecha de primera visita y el domicilio inspeccionado, luego use ✦ Generar texto..." oninput="syncRteSin('inspeccion-narrativa');this.dataset.editado='1'"
+            style="min-height:100px;"></div>
+          <textarea id="s-inspeccion-narrativa" style="display:none;"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Narración de hechos -->
+    <div style="background:var(--surface2);border:1px solid var(--border-md);border-radius:var(--rl);padding:12px 14px;margin-bottom:12px;">
+      <div style="font-size:9px;color:var(--accent-lt);text-transform:uppercase;letter-spacing:.1em;font-weight:700;margin-bottom:10px;">Narración de los hechos</div>
       <div class="rte-wrap">
         <div class="rte-toolbar">
-          <button type="button" onclick="rteCmdSin('localizacion','bold')"               title="Negrita"><strong>N</strong></button>
-          <button type="button" onclick="rteCmdSin('localizacion','italic')"             title="Cursiva"><em>K</em></button>
-          <button type="button" onclick="rteCmdSin('localizacion','underline')"          title="Subrayado"><u>S</u></button>
+          <button type="button" onclick="rteCmdSin('narracion','bold')" title="Negrita"><strong>N</strong></button>
+          <button type="button" onclick="rteCmdSin('narracion','italic')" title="Cursiva"><em>K</em></button>
+          <button type="button" onclick="rteCmdSin('narracion','underline')" title="Subrayado"><u>S</u></button>
+          <span class="rte-sep"></span>
+          <button type="button" onclick="rteCmdSin('narracion','insertUnorderedList')" title="Lista">≡•</button>
+          <button type="button" onclick="rteCmdSin('narracion','insertOrderedList')" title="Lista numerada">≡1</button>
+          <button type="button" onclick="rteCmdSin('narracion','removeFormat')" title="Quitar formato">✕</button>
+          <span class="rte-sep"></span>
+          <button type="button" onclick="rteInsertarImagen('narracion')" title="Insertar imagen del expediente" style="font-size:13px;">📷</button>
+          <span class="rte-sep"></span>
+          <span class="rte-fields-wrap">
+            <button type="button" class="rte-fields-btn" onclick="rteToggleFields(this,'narracion')" title="Insertar dato del expediente">{}</button>
+            <span class="rte-sep"></span>
+            <button type="button" class="btn-ia" onclick="iaGenerarRte('narracion','narracion')" title="Generar con IA">✦ IA</button>
+            <div class="rte-fields-drop" id="rte-fields-narracion"></div>
+          </span>
+        </div>
+        <div id="s-narracion-rte" class="rte-editor" contenteditable="true"
+          data-placeholder="Narrar cronológicamente los hechos del siniestro: fecha, causa, circunstancias, personas involucradas, daños inmediatos observados."
+          style="min-height:160px;"
+          oninput="syncRteSin('narracion')"></div>
+        <textarea id="s-narracion" style="display:none;"></textarea>
+      </div>
+    </div>
+
+    <!-- Localización -->
+    <div style="background:var(--surface2);border:1px solid var(--border-md);border-radius:var(--rl);padding:12px 14px;margin-bottom:4px;">
+      <div style="font-size:9px;color:var(--accent-lt);text-transform:uppercase;letter-spacing:.1em;font-weight:700;margin-bottom:10px;">Localización</div>
+      <div class="rte-wrap">
+        <div class="rte-toolbar">
+          <button type="button" onclick="rteCmdSin('localizacion','bold')" title="Negrita"><strong>N</strong></button>
+          <button type="button" onclick="rteCmdSin('localizacion','italic')" title="Cursiva"><em>K</em></button>
+          <button type="button" onclick="rteCmdSin('localizacion','underline')" title="Subrayado"><u>S</u></button>
           <span class="rte-sep"></span>
           <button type="button" onclick="rteCmdSin('localizacion','insertUnorderedList')" title="Lista con viñetas">≡•</button>
-          <button type="button" onclick="rteCmdSin('localizacion','insertOrderedList')"   title="Lista numerada">≡1</button>
+          <button type="button" onclick="rteCmdSin('localizacion','insertOrderedList')" title="Lista numerada">≡1</button>
           <span class="rte-sep"></span>
-          <button type="button" onclick="rteCmdSin('localizacion','removeFormat')"       title="Quitar formato">✕</button>
-          <span class="rte-sep"></span><button type="button" onclick="rteInsertarImagen('localizacion')" title="Insertar imagen" style="font-size:13px;">📷</button>
+          <button type="button" onclick="rteCmdSin('localizacion','removeFormat')" title="Quitar formato">✕</button>
+          <span class="rte-sep"></span>
+          <button type="button" onclick="rteInsertarImagen('localizacion')" title="Insertar imagen" style="font-size:13px;">📷</button>
           <span class="rte-sep"></span>
           <span class="rte-fields-wrap">
             <button type="button" class="rte-fields-btn" onclick="rteToggleFields(this,'localizacion')" title="Insertar dato del expediente">{}</button>
@@ -1755,431 +1871,479 @@ body.modo-lectura .readonly-hidden { display:none !important; }
         </div>
         <div id="s-localizacion-rte" class="rte-editor" contenteditable="true"
           data-placeholder="Agregar datos de localización, vista satelital, detalles relevantes de localización del domicilio asegurado."
-          oninput="syncRteSin('localizacion')" style="min-height:140px;"></div>
+          oninput="syncRteSin('localizacion')" style="min-height:100px;"></div>
         <textarea id="s-localizacion" style="display:none;"></textarea>
       </div>
     </div>
 
+  </div><!-- /sin-tab-t3 -->
 
-  <!-- ═══════ IV.5 NARRACIÓN DE LOS HECHOS ═══════ -->
-  <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin:18px 0 8px;">IV.5. Narración de los Hechos</div>
-  <div class="form-grid">
-  </div>
-  <div class="fg full" id="s-narracion-wrap" style="overflow:visible;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-        <label style="margin-bottom:0;">Narración de los Hechos</label>
+  <!-- ══════════════════════════════════════════════════════════════════
+       TAB 4 — INFORME
+  ══════════════════════════════════════════════════════════════════════ -->
+  <div id="sin-tab-t4" class="sin-tab-panel" style="display:none;padding:1rem 1.5rem 0.5rem;">
+
+    <!-- I. Introducción -->
+    <div class="sin-acord" style="margin-bottom:8px;">
+      <div class="sin-acord-hd" onclick="sinAcord(this)" style="
+        display:flex;align-items:center;justify-content:space-between;
+        background:var(--surface2);border:1px solid var(--border-md);
+        border-radius:var(--rl);padding:9px 12px;cursor:pointer;
+        font-size:11px;font-weight:700;color:var(--text);
+        letter-spacing:.02em;user-select:none;
+      ">
+        <span>I. Introducción del informe</span>
+        <span class="sin-acord-arrow" style="font-size:9px;color:var(--text-ter);transition:transform .2s;">▶</span>
       </div>
-      <div class="rte-wrap">
-      <div class="rte-toolbar">
-          <button type="button" onclick="rteCmdSin('narracion','bold')" title="Negrita"><strong>N</strong></button>
-          <button type="button" onclick="rteCmdSin('narracion','italic')" title="Cursiva"><em>K</em></button>
-          <button type="button" onclick="rteCmdSin('narracion','underline')" title="Subrayado"><u>S</u></button>
-          <span class="rte-sep"></span>
-          <button type="button" onclick="rteCmdSin('narracion','insertUnorderedList')" title="Lista">≡•</button>
-          <button type="button" onclick="rteCmdSin('narracion','insertOrderedList')" title="Lista numerada">≡1</button>
-          <button type="button" onclick="rteCmdSin('narracion','removeFormat')" title="Quitar formato">✕</button>
-          <span class="rte-sep"></span><button type="button" onclick="rteInsertarImagen('narracion')" title="Insertar imagen del expediente" style="font-size:13px;">📷</button>
-          <span class="rte-sep"></span>
-          <span class="rte-fields-wrap">
-            <button type="button" class="rte-fields-btn" onclick="rteToggleFields(this,'narracion')" title="Insertar dato del expediente">{}</button>
-          <span class="rte-sep"></span>
-          <button type="button" class="btn-ia" onclick="iaGenerarRte('narracion','narracion')" title="Generar con IA">✦ IA</button>
-            <div class="rte-fields-drop" id="rte-fields-narracion"></div>
-          </span>
-          
+      <div class="sin-acord-body" style="display:none;padding:10px 0 4px;">
+        <div id="s-introduccion-wrap" style="overflow:visible;">
+          <div class="rte-wrap" style="resize:both;overflow:auto;">
+            <div class="rte-toolbar">
+              <button type="button" onclick="rteCmdSin('introduccion','bold')" title="Negrita"><strong>N</strong></button>
+              <button type="button" onclick="rteCmdSin('introduccion','italic')" title="Cursiva"><em>K</em></button>
+              <button type="button" onclick="rteCmdSin('introduccion','underline')" title="Subrayado"><u>S</u></button>
+              <span class="rte-sep"></span>
+              <button type="button" onclick="rteCmdSin('introduccion','insertUnorderedList')" title="Lista con viñetas">≡•</button>
+              <button type="button" onclick="rteCmdSin('introduccion','insertOrderedList')" title="Lista numerada">≡1</button>
+              <span class="rte-sep"></span>
+              <button type="button" onclick="rteCmdSin('introduccion','removeFormat')" title="Quitar formato">✕</button>
+              <span class="rte-sep"></span>
+              <button type="button" onclick="rteInsertarImagen('introduccion')" title="Insertar imagen del expediente" style="font-size:13px;">📷</button>
+              <span class="rte-sep"></span>
+              <span class="rte-fields-wrap">
+                <button type="button" class="rte-fields-btn" onclick="rteToggleFields(this,'introduccion')" title="Insertar dato del expediente">{}</button>
+                <span class="rte-sep"></span>
+                <button type="button" class="btn-ia" onclick="iaGenerarRte('introduccion','introduccion')" title="Generar con IA">✦ IA</button>
+                <div class="rte-fields-drop" id="rte-fields-introduccion"></div>
+              </span>
+            </div>
+            <div id="s-introduccion-rte" class="rte-editor" contenteditable="true"
+              data-placeholder="Texto de apertura del informe: contexto, alcance del ajuste, propósito del documento..." oninput="syncRteSin('introduccion')"
+              style="min-height:160px;"></div>
+            <textarea id="s-introduccion" style="display:none;"></textarea>
+          </div>
         </div>
-        <div id="s-narracion-rte" class="rte-editor" contenteditable="true"
-          data-placeholder="Narrar cronológicamente los hechos del siniestro: fecha, causa, circunstancias, personas involucradas, daños inmediatos observados."
-          style="min-height:160px;"
-          oninput="syncRteSin('narracion')"></div>
-        <textarea id="s-narracion" style="display:none;"></textarea>
-      </div>
-  </div>
-
-  <!-- ═══════ V. INSPECCIÓN ═══════ -->
-
-  <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin:18px 0 8px;">V. Inspección</div>
-  <div class="form-grid">
-
-    <div class="fg"><label>Persona entrevistada</label><input type="text" id="s-insp-persona"><span class="field-hint">§4 Inspección → Persona entrevistada</span></div>
-    <div class="fg"><label>Cargo</label><input type="text" id="s-insp-cargo"><span class="field-hint">§4 Inspección → Puesto y/o cargo</span></div>
-    <div class="fg"><label>Teléfono</label><input type="text" id="s-insp-tel"><span class="field-hint">§4 Inspección → Teléfono</span></div>
-  </div>
-
-  <div class="fg full">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-        <label style="margin-bottom:0;">Inspección del siniestro</label>
-      </div>
-      <div class="rte-wrap">
-      <div class="rte-toolbar">
-          <button type="button" onclick="rteCmdSin('inspeccion-narrativa','bold')" title="Negrita"><strong>N</strong></button>
-          <button type="button" onclick="rteCmdSin('inspeccion-narrativa','italic')" title="Cursiva"><em>K</em></button>
-          <button type="button" onclick="rteCmdSin('inspeccion-narrativa','underline')" title="Subrayado"><u>S</u></button>
-          <span class="rte-sep"></span>
-          <button type="button" onclick="rteCmdSin('inspeccion-narrativa','insertUnorderedList')" title="Lista con viñetas">≡•</button>
-          <button type="button" onclick="rteCmdSin('inspeccion-narrativa','insertOrderedList')" title="Lista numerada">≡1</button>
-          <span class="rte-sep"></span>
-          <button type="button" onclick="rteCmdSin('inspeccion-narrativa','removeFormat')" title="Quitar formato">✕</button>
-          <span class="rte-sep"></span><button type="button" onclick="rteInsertarImagen('inspeccion-narrativa')" title="Insertar imagen del expediente" style="font-size:13px;">📷</button>
-          <span class="rte-sep"></span>
-          <span class="rte-fields-wrap">
-            <button type="button" class="rte-fields-btn" onclick="rteToggleFields(this,'inspeccion-narrativa')" title="Insertar dato del expediente">{}</button>
-          <span class="rte-sep"></span>
-          <button type="button" class="btn-ia" onclick="iaGenerarRte('inspeccion-narrativa','inspeccion')" title="Generar con IA">✦ IA</button>
-            <div class="rte-fields-drop" id="rte-fields-inspeccion-narrativa"></div>
-          </span>
-          <span class="rte-sep"></span><button type="button" class="btn btn-sm" onclick="generarTextoInspeccion()" title="Genera el texto usando fecha, domicilio y persona entrevistada" style="font-size:11px;">✦ Generar texto</button>
-        </div>
-        <div id="s-inspeccion-narrativa-rte" class="rte-editor" contenteditable="true"
-          data-placeholder="Capture la fecha de primera visita y el domicilio inspeccionado, luego use ✦ Generar texto..." oninput="syncRteSin('inspeccion-narrativa');this.dataset.editado='1'"
-          style="min-height:100px;"></div>
-        <textarea id="s-inspeccion-narrativa" style="display:none;"></textarea>
       </div>
     </div>
 
-  <!-- ═══════ VI. DESCRIPCIÓN DE BIENES AFECTADOS ═══════ -->
-
-  <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin:18px 0 8px;">VI. Descripción de los Bienes Afectados</div>
-  <div class="form-grid">
-
-  </div>
-  <div class="fg full">
-      <label>Bienes amparados <span style="font-size:10px;color:var(--text-ter);font-weight:400;">(bienes de la póliza relevantes a este siniestro)</span></label>
-      <div class="rte-wrap">
-        <div class="rte-toolbar">
-          <button type="button" onclick="rteCmdSin('bienes-amparados','bold')"        title="Negrita"><strong>N</strong></button>
-          <button type="button" onclick="rteCmdSin('bienes-amparados','italic')"      title="Cursiva"><em>K</em></button>
-          <button type="button" onclick="rteCmdSin('bienes-amparados','underline')"   title="Subrayado"><u>S</u></button>
-          <span class="rte-sep"></span>
-          <button type="button" onclick="rteCmdSin('bienes-amparados','insertUnorderedList')" title="Lista con viñetas">≡•</button>
-          <button type="button" onclick="rteCmdSin('bienes-amparados','insertOrderedList')"   title="Lista numerada">≡1</button>
-          <span class="rte-sep"></span>
-          <button type="button" onclick="rteCmdSin('bienes-amparados','removeFormat')" title="Quitar formato">✕</button>
-          <span class="rte-sep"></span><button type="button" onclick="rteInsertarImagen('bienes-amparados')" title="Insertar imagen del expediente" style="font-size:13px;">📷</button>
-          <span class="rte-sep"></span>
-          <span class="rte-fields-wrap">
-            <button type="button" class="rte-fields-btn" onclick="rteToggleFields(this,'bienes-amparados')" title="Insertar dato del expediente">{}</button>
-            <div class="rte-fields-drop" id="rte-fields-bienes-amparados"></div>
-          </span>
+    <!-- II. El Asegurado / Bienes afectados -->
+    <div class="sin-acord" style="margin-bottom:8px;">
+      <div class="sin-acord-hd" onclick="sinAcord(this)" style="
+        display:flex;align-items:center;justify-content:space-between;
+        background:var(--surface2);border:1px solid var(--border-md);
+        border-radius:var(--rl);padding:9px 12px;cursor:pointer;
+        font-size:11px;font-weight:700;color:var(--text);
+        letter-spacing:.02em;user-select:none;
+      ">
+        <span>II. El Asegurado — Descripción de bienes afectados</span>
+        <span class="sin-acord-arrow" style="font-size:9px;color:var(--text-ter);transition:transform .2s;">▶</span>
+      </div>
+      <div class="sin-acord-body" style="display:none;padding:10px 0 4px;">
+        <div class="rte-wrap">
+          <div class="rte-toolbar">
+            <button type="button" onclick="rteCmdSin('desc','bold')" title="Negrita"><strong>N</strong></button>
+            <button type="button" onclick="rteCmdSin('desc','italic')" title="Cursiva"><em>K</em></button>
+            <button type="button" onclick="rteCmdSin('desc','underline')" title="Subrayado"><u>S</u></button>
+            <span class="rte-sep"></span>
+            <button type="button" onclick="rteCmdSin('desc','insertUnorderedList')" title="Lista con viñetas">≡•</button>
+            <button type="button" onclick="rteCmdSin('desc','insertOrderedList')" title="Lista numerada">≡1</button>
+            <span class="rte-sep"></span>
+            <button type="button" onclick="rteCmdSin('desc','removeFormat')" title="Quitar formato">✕</button>
+            <span class="rte-sep"></span>
+            <button type="button" onclick="rteInsertarImagen('desc')" title="Insertar imagen del expediente" style="font-size:13px;">📷</button>
+            <span class="rte-sep"></span>
+            <span class="rte-fields-wrap">
+              <button type="button" class="rte-fields-btn" onclick="rteToggleFields(this,'desc')" title="Insertar dato del expediente">{}</button>
+              <span class="rte-sep"></span>
+              <button type="button" class="btn-ia" onclick="iaGenerarRte('desc','desc')" title="Generar con IA">✦ IA</button>
+              <div class="rte-fields-drop" id="rte-fields-desc"></div>
+            </span>
+          </div>
+          <div id="s-desc-rte" class="rte-editor" contenteditable="true"
+            data-placeholder="Cómo ocurrió el siniestro, circunstancias, descripción del evento..." oninput="syncRteSin('desc')"
+            style="min-height:70px;"></div>
+          <textarea id="s-desc" style="display:none;"></textarea>
         </div>
-        <div id="s-bienes-amparados-rte" class="rte-editor" contenteditable="true"
-          data-placeholder="Descripción de los bienes que ampara la póliza para este siniestro específico..."
-          oninput="syncRteSin('bienes-amparados')"></div>
-        <textarea id="s-bienes-amparados" style="display:none;"></textarea>
-      </div>
-    </div>
-  
-
-  <!-- ═══════ VII. PÓLIZA ═══════ -->
-
-  <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin:18px 0 8px;">VII. Póliza</div>
-  <div class="form-grid">
-
-  </div>
-  <div class="fg full">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-        <label style="margin-bottom:0;">Riesgos Cubiertos
-          <span style="font-size:10px;color:var(--text-ter);font-weight:400;">— riesgos de la póliza aplicables a este siniestro</span>
-        </label>
-      </div>
-      <div class="rte-wrap">
-        <div class="rte-toolbar">
-          <button type="button" onclick="rteCmdSin('riesgos-cubiertos','bold')"               title="Negrita"><strong>N</strong></button>
-          <button type="button" onclick="rteCmdSin('riesgos-cubiertos','italic')"             title="Cursiva"><em>K</em></button>
-          <button type="button" onclick="rteCmdSin('riesgos-cubiertos','underline')"          title="Subrayado"><u>S</u></button>
-          <span class="rte-sep"></span>
-          <button type="button" onclick="rteCmdSin('riesgos-cubiertos','insertUnorderedList')" title="Lista con viñetas">≡•</button>
-          <button type="button" onclick="rteCmdSin('riesgos-cubiertos','insertOrderedList')"   title="Lista numerada">≡1</button>
-          <span class="rte-sep"></span>
-          <button type="button" onclick="rteCmdSin('riesgos-cubiertos','removeFormat')"       title="Quitar formato">✕</button>
-          <span class="rte-sep"></span><button type="button" onclick="rteInsertarImagen('riesgos-cubiertos')" title="Insertar imagen" style="font-size:13px;">📷</button>
-          <span class="rte-sep"></span>
-          <span class="rte-fields-wrap">
-            <button type="button" class="rte-fields-btn" onclick="rteToggleFields(this,'riesgos-cubiertos')" title="Insertar dato del expediente">{}</button>
-            <div class="rte-fields-drop" id="rte-fields-riesgos-cubiertos"></div>
-          </span>
-        </div>
-        <div id="s-riesgos-cubiertos-rte" class="rte-editor" contenteditable="true"
-          data-placeholder="Lista de riesgos cubiertos por la póliza que aplican a este siniestro (ej. a) Incendio, b) Rayo, c) Explosión, d) Cobertura Adicional...)..."
-          oninput="syncRteSin('riesgos-cubiertos')" style="min-height:80px;"></div>
-        <textarea id="s-riesgos-cubiertos" style="display:none;"></textarea>
-      </div>
-    </div>
-  <div class="fg full">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-        <label style="margin-bottom:0;">Límite máximo de responsabilidad
-          <span style="font-size:10px;color:var(--text-ter);font-weight:400;">— editable, se guarda en la póliza</span>
-        </label>
-      </div>
-      <div class="rte-wrap">
-        <div class="rte-toolbar">
-          <button type="button" onclick="rteCmdSinLim('bold')"               title="Negrita"><strong>N</strong></button>
-          <button type="button" onclick="rteCmdSinLim('italic')"             title="Cursiva"><em>K</em></button>
-          <button type="button" onclick="rteCmdSinLim('underline')"          title="Subrayado"><u>S</u></button>
-          <span class="rte-sep"></span>
-          <button type="button" onclick="rteCmdSinLim('insertUnorderedList')" title="Lista con viñetas">≡•</button>
-          <button type="button" onclick="rteCmdSinLim('insertOrderedList')"   title="Lista numerada">≡1</button>
-          <span class="rte-sep"></span>
-          <button type="button" onclick="rteCmdSinLim('removeFormat')"       title="Quitar formato">✕</button>
-        </div>
-        <div id="sin-lim-texto-rte" class="rte-editor" contenteditable="true"
-          data-placeholder="Límite máximo de responsabilidad según póliza..."
-          oninput="syncSinLimTexto()" style="min-height:70px;"></div>
-        <textarea id="sin-lim-texto" style="display:none;"></textarea>
       </div>
     </div>
 
-  <!-- ═══════ VIII. NATURALEZA Y ALCANCE DE LOS DAÑOS ═══════ -->
-
-  <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin:18px 0 8px;">VIII. Naturaleza y Alcance de los Daños</div>
-  <div class="form-grid">
-
-  </div>
-  <div class="fg full">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-        <label style="margin-bottom:0;">Naturaleza y Alcance de los Daños</label>
+    <!-- VI. Bienes amparados -->
+    <div class="sin-acord" style="margin-bottom:8px;">
+      <div class="sin-acord-hd" onclick="sinAcord(this)" style="
+        display:flex;align-items:center;justify-content:space-between;
+        background:var(--surface2);border:1px solid var(--border-md);
+        border-radius:var(--rl);padding:9px 12px;cursor:pointer;
+        font-size:11px;font-weight:700;color:var(--text);
+        letter-spacing:.02em;user-select:none;
+      ">
+        <span>VI. Bienes amparados por la póliza</span>
+        <span class="sin-acord-arrow" style="font-size:9px;color:var(--text-ter);transition:transform .2s;">▶</span>
       </div>
-      <div class="rte-wrap">
-        <div class="rte-toolbar">
-          <button type="button" onclick="rteCmdSin('naturaleza-alcance','bold')"               title="Negrita"><strong>N</strong></button>
-          <button type="button" onclick="rteCmdSin('naturaleza-alcance','italic')"             title="Cursiva"><em>K</em></button>
-          <button type="button" onclick="rteCmdSin('naturaleza-alcance','underline')"          title="Subrayado"><u>S</u></button>
-          <span class="rte-sep"></span>
-          <button type="button" onclick="rteCmdSin('naturaleza-alcance','insertUnorderedList')" title="Lista con viñetas">≡•</button>
-          <button type="button" onclick="rteCmdSin('naturaleza-alcance','insertOrderedList')"   title="Lista numerada">≡1</button>
-          <span class="rte-sep"></span>
-          <button type="button" onclick="rteCmdSin('naturaleza-alcance','removeFormat')"       title="Quitar formato">✕</button>
-          <span class="rte-sep"></span><button type="button" onclick="rteInsertarImagen('naturaleza-alcance')" title="Insertar imagen" style="font-size:13px;">📷</button>
-          <span class="rte-sep"></span>
-          <span class="rte-fields-wrap">
-            <button type="button" class="rte-fields-btn" onclick="rteToggleFields(this,'naturaleza-alcance')" title="Insertar dato del expediente">{}</button>
-          <span class="rte-sep"></span>
-          <button type="button" class="btn-ia" onclick="iaGenerarRte('naturaleza-alcance','naturaleza')" title="Generar con IA">✦ IA</button>
-            <div class="rte-fields-drop" id="rte-fields-naturaleza-alcance"></div>
-          </span>
+      <div class="sin-acord-body" style="display:none;padding:10px 0 4px;">
+        <div class="rte-wrap">
+          <div class="rte-toolbar">
+            <button type="button" onclick="rteCmdSin('bienes-amparados','bold')" title="Negrita"><strong>N</strong></button>
+            <button type="button" onclick="rteCmdSin('bienes-amparados','italic')" title="Cursiva"><em>K</em></button>
+            <button type="button" onclick="rteCmdSin('bienes-amparados','underline')" title="Subrayado"><u>S</u></button>
+            <span class="rte-sep"></span>
+            <button type="button" onclick="rteCmdSin('bienes-amparados','insertUnorderedList')" title="Lista con viñetas">≡•</button>
+            <button type="button" onclick="rteCmdSin('bienes-amparados','insertOrderedList')" title="Lista numerada">≡1</button>
+            <span class="rte-sep"></span>
+            <button type="button" onclick="rteCmdSin('bienes-amparados','removeFormat')" title="Quitar formato">✕</button>
+            <span class="rte-sep"></span>
+            <button type="button" onclick="rteInsertarImagen('bienes-amparados')" title="Insertar imagen del expediente" style="font-size:13px;">📷</button>
+            <span class="rte-sep"></span>
+            <span class="rte-fields-wrap">
+              <button type="button" class="rte-fields-btn" onclick="rteToggleFields(this,'bienes-amparados')" title="Insertar dato del expediente">{}</button>
+              <div class="rte-fields-drop" id="rte-fields-bienes-amparados"></div>
+            </span>
+          </div>
+          <div id="s-bienes-amparados-rte" class="rte-editor" contenteditable="true"
+            data-placeholder="Descripción de los bienes que ampara la póliza para este siniestro específico..."
+            oninput="syncRteSin('bienes-amparados')"></div>
+          <textarea id="s-bienes-amparados" style="display:none;"></textarea>
         </div>
-        <div id="s-naturaleza-alcance-rte" class="rte-editor" contenteditable="true"
-          data-placeholder="Describir: 1) Naturaleza del daño — tipo de daño ocurrido (mecánico, eléctrico, por agua, por fuego, por impacto, corrosión, etc.). 2) Alcance del daño — extensión de la afectación (daño total o parcial, porcentaje estimado afectado, número de equipos o áreas involucradas, si el daño es reparable o implica sustitución). Ejemplo: Daño eléctrico por sobretensión en tablero principal, con afectación parcial estimada en 40% de la instalación eléctrica del piso 2. Los equipos de cómputo presentan daño total no reparable."
-          oninput="syncRteSin('naturaleza-alcance')" style="min-height:120px;"></div>
-        <textarea id="s-naturaleza-alcance" style="display:none;"></textarea>
       </div>
     </div>
 
-  <!-- ═══════ IX. PROCEDENCIA ═══════ -->
-
-  <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin:18px 0 8px;">IX. Procedencia</div>
-  <div class="form-grid">
-
-    <div class="fg"><label>Procedencia del reclamo</label>
-      <select id="s-procedencia">
-        <option value="procedente">Procedente</option>
-        <option value="por_determinar">Por determinar</option>
-        <option value="improcedente">Improcedente</option>
-      </select></div>
-  </div>
-
-  <div class="fg full"><label>Fundamento de procedencia</label><textarea id="s-fundamento" style="min-height:55px;" placeholder="ej. La póliza ampara el equipo afectado contra el riesgo acaecido."></textarea></div>
-
-  <!-- ═══════ X. RESERVA / XI. RECLAMACIÓN / CONSIDERANDOS ═══════ -->
-
-  <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin:18px 0 8px;">X. Reserva — Reclamación del Asegurado</div>
-  <div class="form-grid">
-
-  </div>
-  <div class="fg full">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-        <label style="margin-bottom:0;">Reclamación del Asegurado</label>
+    <!-- VII. Póliza — riesgos cubiertos + límite máximo -->
+    <div class="sin-acord" style="margin-bottom:8px;">
+      <div class="sin-acord-hd" onclick="sinAcord(this)" style="
+        display:flex;align-items:center;justify-content:space-between;
+        background:var(--surface2);border:1px solid var(--border-md);
+        border-radius:var(--rl);padding:9px 12px;cursor:pointer;
+        font-size:11px;font-weight:700;color:var(--text);
+        letter-spacing:.02em;user-select:none;
+      ">
+        <span>VII. Póliza — Riesgos cubiertos & Límite máximo de responsabilidad</span>
+        <span class="sin-acord-arrow" style="font-size:9px;color:var(--text-ter);transition:transform .2s;">▶</span>
       </div>
-      <div class="rte-wrap">
-        <div class="rte-toolbar">
-          <button type="button" onclick="rteCmdSin('reclamacion','bold')" title="Negrita"><strong>N</strong></button>
-          <button type="button" onclick="rteCmdSin('reclamacion','italic')" title="Cursiva"><em>K</em></button>
-          <button type="button" onclick="rteCmdSin('reclamacion','underline')" title="Subrayado"><u>S</u></button>
-          <span class="rte-sep"></span>
-          <button type="button" onclick="rteCmdSin('reclamacion','insertUnorderedList')" title="Lista con viñetas">≡•</button>
-          <button type="button" onclick="rteCmdSin('reclamacion','insertOrderedList')" title="Lista numerada">≡1</button>
-          <span class="rte-sep"></span>
-          <button type="button" onclick="rteCmdSin('reclamacion','removeFormat')" title="Quitar formato">✕</button>
-          <span class="rte-sep"></span><button type="button" onclick="rteInsertarImagen('reclamacion')" title="Insertar imagen" style="font-size:13px;">📷</button>
-          <span class="rte-sep"></span>
-          <span class="rte-fields-wrap">
-            <button type="button" class="rte-fields-btn" onclick="rteToggleFields(this,'reclamacion')" title="Insertar dato del expediente">{}</button>
-            <div class="rte-fields-drop" id="rte-fields-reclamacion"></div>
-          </span>
+      <div class="sin-acord-body" style="display:none;padding:10px 0 4px;">
+        <div style="font-size:10px;color:var(--text-sec);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">Riesgos cubiertos</div>
+        <div class="rte-wrap" style="margin-bottom:12px;">
+          <div class="rte-toolbar">
+            <button type="button" onclick="rteCmdSin('riesgos-cubiertos','bold')" title="Negrita"><strong>N</strong></button>
+            <button type="button" onclick="rteCmdSin('riesgos-cubiertos','italic')" title="Cursiva"><em>K</em></button>
+            <button type="button" onclick="rteCmdSin('riesgos-cubiertos','underline')" title="Subrayado"><u>S</u></button>
+            <span class="rte-sep"></span>
+            <button type="button" onclick="rteCmdSin('riesgos-cubiertos','insertUnorderedList')" title="Lista con viñetas">≡•</button>
+            <button type="button" onclick="rteCmdSin('riesgos-cubiertos','insertOrderedList')" title="Lista numerada">≡1</button>
+            <span class="rte-sep"></span>
+            <button type="button" onclick="rteCmdSin('riesgos-cubiertos','removeFormat')" title="Quitar formato">✕</button>
+            <span class="rte-sep"></span>
+            <button type="button" onclick="rteInsertarImagen('riesgos-cubiertos')" title="Insertar imagen" style="font-size:13px;">📷</button>
+            <span class="rte-sep"></span>
+            <span class="rte-fields-wrap">
+              <button type="button" class="rte-fields-btn" onclick="rteToggleFields(this,'riesgos-cubiertos')" title="Insertar dato del expediente">{}</button>
+              <div class="rte-fields-drop" id="rte-fields-riesgos-cubiertos"></div>
+            </span>
+          </div>
+          <div id="s-riesgos-cubiertos-rte" class="rte-editor" contenteditable="true"
+            data-placeholder="Lista de riesgos cubiertos por la póliza que aplican a este siniestro (ej. a) Incendio, b) Rayo, c) Explosión...)..."
+            oninput="syncRteSin('riesgos-cubiertos')" style="min-height:80px;"></div>
+          <textarea id="s-riesgos-cubiertos" style="display:none;"></textarea>
         </div>
-        <div id="s-reclamacion-rte" class="rte-editor" contenteditable="true"
-          data-placeholder="Por el momento el Asegurado no ha presentado su formal reclamación a la compañía de Seguros, sin embargo, estamos en proceso de recepción de documentos, mismos que están siendo analizados."
-          oninput="syncRteSin('reclamacion')" style="min-height:90px;"></div>
-        <textarea id="s-reclamacion" style="display:none;"></textarea>
-      </div>
-    </div>
-  <div class="fg full">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-        <label style="margin-bottom:0;">Considerandos</label>
-      </div>
-      <div class="rte-wrap">
-        <div class="rte-toolbar">
-          <button type="button" onclick="rteCmdSin('considerandos','bold')" title="Negrita"><strong>N</strong></button>
-          <button type="button" onclick="rteCmdSin('considerandos','italic')" title="Cursiva"><em>K</em></button>
-          <button type="button" onclick="rteCmdSin('considerandos','underline')" title="Subrayado"><u>S</u></button>
-          <span class="rte-sep"></span>
-          <button type="button" onclick="rteCmdSin('considerandos','insertUnorderedList')" title="Lista con viñetas">≡•</button>
-          <button type="button" onclick="rteCmdSin('considerandos','insertOrderedList')" title="Lista numerada">≡1</button>
-          <span class="rte-sep"></span>
-          <button type="button" onclick="rteCmdSin('considerandos','removeFormat')" title="Quitar formato">✕</button>
-          <span class="rte-sep"></span><button type="button" onclick="rteInsertarImagen('considerandos')" title="Insertar imagen" style="font-size:13px;">📷</button>
-          <span class="rte-sep"></span>
-          <span class="rte-fields-wrap">
-            <button type="button" class="rte-fields-btn" onclick="rteToggleFields(this,'considerandos')" title="Insertar dato del expediente">{}</button>
-          <span class="rte-sep"></span>
-          <button type="button" class="btn-ia" onclick="iaGenerarRte('considerandos','considerandos')" title="Generar con IA">✦ IA</button>
-            <div class="rte-fields-drop" id="rte-fields-considerandos"></div>
-          </span>
+        <div style="font-size:10px;color:var(--text-sec);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">Límite máximo de responsabilidad</div>
+        <div class="rte-wrap">
+          <div class="rte-toolbar">
+            <button type="button" onclick="rteCmdSinLim('bold')" title="Negrita"><strong>N</strong></button>
+            <button type="button" onclick="rteCmdSinLim('italic')" title="Cursiva"><em>K</em></button>
+            <button type="button" onclick="rteCmdSinLim('underline')" title="Subrayado"><u>S</u></button>
+            <span class="rte-sep"></span>
+            <button type="button" onclick="rteCmdSinLim('insertUnorderedList')" title="Lista con viñetas">≡•</button>
+            <button type="button" onclick="rteCmdSinLim('insertOrderedList')" title="Lista numerada">≡1</button>
+            <span class="rte-sep"></span>
+            <button type="button" onclick="rteCmdSinLim('removeFormat')" title="Quitar formato">✕</button>
+          </div>
+          <div id="sin-lim-texto-rte" class="rte-editor" contenteditable="true"
+            data-placeholder="Límite máximo de responsabilidad según póliza..."
+            oninput="syncSinLimTexto()" style="min-height:70px;"></div>
+          <textarea id="sin-lim-texto" style="display:none;"></textarea>
         </div>
-        <div id="s-considerandos-rte" class="rte-editor" contenteditable="true"
-          data-placeholder="Señalar las consideraciones necesarias para la reserva o ajuste final: bases de valuación de los daños, Valor a Riesgo, Bajo Seguro, Deducibles, Coaseguros y cualquier situación relevante para la reserva o ajuste final."
-          oninput="syncRteSin('considerandos')" style="min-height:120px;"></div>
-        <textarea id="s-considerandos" style="display:none;"></textarea>
       </div>
     </div>
 
-  <!-- ═══════ XI.2 RESERVA ACTUAL — Estimación de Pérdida ═══════ -->
+    <!-- VIII. Naturaleza y alcance de los daños -->
+    <div class="sin-acord" style="margin-bottom:4px;">
+      <div class="sin-acord-hd" onclick="sinAcord(this)" style="
+        display:flex;align-items:center;justify-content:space-between;
+        background:var(--surface2);border:1px solid var(--border-md);
+        border-radius:var(--rl);padding:9px 12px;cursor:pointer;
+        font-size:11px;font-weight:700;color:var(--text);
+        letter-spacing:.02em;user-select:none;
+      ">
+        <span>VIII. Naturaleza y alcance de los daños</span>
+        <span class="sin-acord-arrow" style="font-size:9px;color:var(--text-ter);transition:transform .2s;">▶</span>
+      </div>
+      <div class="sin-acord-body" style="display:none;padding:10px 0 4px;">
+        <div class="rte-wrap">
+          <div class="rte-toolbar">
+            <button type="button" onclick="rteCmdSin('naturaleza-alcance','bold')" title="Negrita"><strong>N</strong></button>
+            <button type="button" onclick="rteCmdSin('naturaleza-alcance','italic')" title="Cursiva"><em>K</em></button>
+            <button type="button" onclick="rteCmdSin('naturaleza-alcance','underline')" title="Subrayado"><u>S</u></button>
+            <span class="rte-sep"></span>
+            <button type="button" onclick="rteCmdSin('naturaleza-alcance','insertUnorderedList')" title="Lista con viñetas">≡•</button>
+            <button type="button" onclick="rteCmdSin('naturaleza-alcance','insertOrderedList')" title="Lista numerada">≡1</button>
+            <span class="rte-sep"></span>
+            <button type="button" onclick="rteCmdSin('naturaleza-alcance','removeFormat')" title="Quitar formato">✕</button>
+            <span class="rte-sep"></span>
+            <button type="button" onclick="rteInsertarImagen('naturaleza-alcance')" title="Insertar imagen" style="font-size:13px;">📷</button>
+            <span class="rte-sep"></span>
+            <span class="rte-fields-wrap">
+              <button type="button" class="rte-fields-btn" onclick="rteToggleFields(this,'naturaleza-alcance')" title="Insertar dato del expediente">{}</button>
+              <span class="rte-sep"></span>
+              <button type="button" class="btn-ia" onclick="iaGenerarRte('naturaleza-alcance','naturaleza')" title="Generar con IA">✦ IA</button>
+              <div class="rte-fields-drop" id="rte-fields-naturaleza-alcance"></div>
+            </span>
+          </div>
+          <div id="s-naturaleza-alcance-rte" class="rte-editor" contenteditable="true"
+            data-placeholder="Describir: 1) Naturaleza del daño — tipo (mecánico, eléctrico, por agua, por fuego, impacto, corrosión). 2) Alcance — extensión de la afectación, porcentaje estimado, equipos o áreas involucradas, reparable o sustitución."
+            oninput="syncRteSin('naturaleza-alcance')" style="min-height:120px;"></div>
+          <textarea id="s-naturaleza-alcance" style="display:none;"></textarea>
+        </div>
+      </div>
+    </div>
 
-  <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin:18px 0 8px;">XI.2 Reserva Actual</div>
-  <div class="form-grid">
+  </div><!-- /sin-tab-t4 -->
 
-  </div>
-  
-    <div class="fg full">
-      <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">Estimación de Pérdida Actualizada</div>
+  <!-- ══════════════════════════════════════════════════════════════════
+       TAB 5 — RESERVA & CIERRE
+  ══════════════════════════════════════════════════════════════════════ -->
+  <div id="sin-tab-t5" class="sin-tab-panel" style="display:none;padding:1rem 1.5rem 0.5rem;">
+
+    <!-- IX. Procedencia -->
+    <div style="background:var(--surface2);border:1px solid var(--border-md);border-radius:var(--rl);padding:12px 14px;margin-bottom:12px;">
+      <div style="font-size:9px;color:var(--accent-lt);text-transform:uppercase;letter-spacing:.1em;font-weight:700;margin-bottom:10px;">IX. Procedencia del reclamo</div>
+      <div class="form-grid">
+        <div class="fg">
+          <label>Dictamen</label>
+          <select id="s-procedencia">
+            <option value="procedente">Procedente</option>
+            <option value="por_determinar">Por determinar</option>
+            <option value="improcedente">Improcedente</option>
+          </select>
+        </div>
+        <div class="fg full">
+          <label>Fundamento</label>
+          <textarea id="s-fundamento" style="min-height:55px;" placeholder="ej. La póliza ampara el equipo afectado contra el riesgo acaecido."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- X. Reserva — Reclamación + Considerandos -->
+    <div class="sin-acord" style="margin-bottom:8px;">
+      <div class="sin-acord-hd" onclick="sinAcord(this)" style="
+        display:flex;align-items:center;justify-content:space-between;
+        background:var(--surface2);border:1px solid var(--border-md);
+        border-radius:var(--rl);padding:9px 12px;cursor:pointer;
+        font-size:11px;font-weight:700;color:var(--text);
+        letter-spacing:.02em;user-select:none;
+      ">
+        <span>X. Reclamación del asegurado & Considerandos</span>
+        <span class="sin-acord-arrow" style="font-size:9px;color:var(--text-ter);transition:transform .2s;">▶</span>
+      </div>
+      <div class="sin-acord-body" style="display:none;padding:10px 0 4px;">
+        <div style="font-size:10px;color:var(--text-sec);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">Reclamación del asegurado</div>
+        <div class="rte-wrap" style="margin-bottom:12px;">
+          <div class="rte-toolbar">
+            <button type="button" onclick="rteCmdSin('reclamacion','bold')" title="Negrita"><strong>N</strong></button>
+            <button type="button" onclick="rteCmdSin('reclamacion','italic')" title="Cursiva"><em>K</em></button>
+            <button type="button" onclick="rteCmdSin('reclamacion','underline')" title="Subrayado"><u>S</u></button>
+            <span class="rte-sep"></span>
+            <button type="button" onclick="rteCmdSin('reclamacion','insertUnorderedList')" title="Lista con viñetas">≡•</button>
+            <button type="button" onclick="rteCmdSin('reclamacion','insertOrderedList')" title="Lista numerada">≡1</button>
+            <span class="rte-sep"></span>
+            <button type="button" onclick="rteCmdSin('reclamacion','removeFormat')" title="Quitar formato">✕</button>
+            <span class="rte-sep"></span>
+            <button type="button" onclick="rteInsertarImagen('reclamacion')" title="Insertar imagen" style="font-size:13px;">📷</button>
+            <span class="rte-sep"></span>
+            <span class="rte-fields-wrap">
+              <button type="button" class="rte-fields-btn" onclick="rteToggleFields(this,'reclamacion')" title="Insertar dato del expediente">{}</button>
+              <div class="rte-fields-drop" id="rte-fields-reclamacion"></div>
+            </span>
+          </div>
+          <div id="s-reclamacion-rte" class="rte-editor" contenteditable="true"
+            data-placeholder="Por el momento el Asegurado no ha presentado su formal reclamación a la compañía de Seguros, sin embargo, estamos en proceso de recepción de documentos, mismos que están siendo analizados."
+            oninput="syncRteSin('reclamacion')" style="min-height:90px;"></div>
+          <textarea id="s-reclamacion" style="display:none;"></textarea>
+        </div>
+        <div style="font-size:10px;color:var(--text-sec);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">Considerandos</div>
+        <div class="rte-wrap">
+          <div class="rte-toolbar">
+            <button type="button" onclick="rteCmdSin('considerandos','bold')" title="Negrita"><strong>N</strong></button>
+            <button type="button" onclick="rteCmdSin('considerandos','italic')" title="Cursiva"><em>K</em></button>
+            <button type="button" onclick="rteCmdSin('considerandos','underline')" title="Subrayado"><u>S</u></button>
+            <span class="rte-sep"></span>
+            <button type="button" onclick="rteCmdSin('considerandos','insertUnorderedList')" title="Lista con viñetas">≡•</button>
+            <button type="button" onclick="rteCmdSin('considerandos','insertOrderedList')" title="Lista numerada">≡1</button>
+            <span class="rte-sep"></span>
+            <button type="button" onclick="rteCmdSin('considerandos','removeFormat')" title="Quitar formato">✕</button>
+            <span class="rte-sep"></span>
+            <button type="button" onclick="rteInsertarImagen('considerandos')" title="Insertar imagen" style="font-size:13px;">📷</button>
+            <span class="rte-sep"></span>
+            <span class="rte-fields-wrap">
+              <button type="button" class="rte-fields-btn" onclick="rteToggleFields(this,'considerandos')" title="Insertar dato del expediente">{}</button>
+              <span class="rte-sep"></span>
+              <button type="button" class="btn-ia" onclick="iaGenerarRte('considerandos','considerandos')" title="Generar con IA">✦ IA</button>
+              <div class="rte-fields-drop" id="rte-fields-considerandos"></div>
+            </span>
+          </div>
+          <div id="s-considerandos-rte" class="rte-editor" contenteditable="true"
+            data-placeholder="Señalar las consideraciones necesarias para la reserva o ajuste final: bases de valuación de los daños, Valor a Riesgo, Bajo Seguro, Deducibles, Coaseguros y cualquier situación relevante para la reserva o ajuste final."
+            oninput="syncRteSin('considerandos')" style="min-height:120px;"></div>
+          <textarea id="s-considerandos" style="display:none;"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- XI.2 Reserva actual — Estimación de pérdida -->
+    <div style="background:var(--surface2);border:1px solid var(--border-md);border-radius:var(--rl);padding:12px 14px;margin-bottom:12px;">
+      <div style="font-size:9px;color:var(--accent-lt);text-transform:uppercase;letter-spacing:.1em;font-weight:700;margin-bottom:10px;">XI.2 Reserva actual — Estimación de pérdida</div>
       <div id="sin-estimacion-grid" class="grid-dark-wrap" style="overflow-x:auto;border-radius:4px;"></div>
-    </div
+    </div>
 
-  <!-- ═══════ XII. SALVAMENTO ═══════ -->
-
-  <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin:18px 0 8px;">XII. Salvamento</div>
-  <div class="form-grid">
-
-    <div class="fg"><label>Salvamento</label>
-      <select id="s-salvamento"><option value="por_determinar">Por determinar</option><option value="si">Sí</option><option value="no">No</option></select><span class="field-hint">§6 Salvamento → SI / NO / Por determinar</span></div>
-    <div class="fg"><label>Valor estimado salvamento</label><input type="number" id="s-salv-valor" placeholder="0.00"><span class="field-hint">§6 Salvamento → Valor estimado de los bienes</span></div>
-  </div>
-
-  <div class="fg full">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-        <label style="margin-bottom:0;">Detalle de Salvamento y Ubicación</label>
+    <!-- XII. Salvamento -->
+    <div class="sin-acord" style="margin-bottom:8px;">
+      <div class="sin-acord-hd" onclick="sinAcord(this)" style="
+        display:flex;align-items:center;justify-content:space-between;
+        background:var(--surface2);border:1px solid var(--border-md);
+        border-radius:var(--rl);padding:9px 12px;cursor:pointer;
+        font-size:11px;font-weight:700;color:var(--text);
+        letter-spacing:.02em;user-select:none;
+      ">
+        <span>XII. Salvamento</span>
+        <span class="sin-acord-arrow" style="font-size:9px;color:var(--text-ter);transition:transform .2s;">▶</span>
       </div>
-      <div class="rte-wrap">
-        <div class="rte-toolbar">
-          <button type="button" onclick="rteCmdSin('salv-det','bold')" title="Negrita"><strong>N</strong></button>
-          <button type="button" onclick="rteCmdSin('salv-det','italic')" title="Cursiva"><em>K</em></button>
-          <button type="button" onclick="rteCmdSin('salv-det','underline')" title="Subrayado"><u>S</u></button>
-          <span class="rte-sep"></span>
-          <button type="button" onclick="rteCmdSin('salv-det','insertUnorderedList')" title="Lista con viñetas">≡•</button>
-          <button type="button" onclick="rteCmdSin('salv-det','insertOrderedList')" title="Lista numerada">≡1</button>
-          <span class="rte-sep"></span>
-          <button type="button" onclick="rteCmdSin('salv-det','removeFormat')" title="Quitar formato">✕</button>
-          <span class="rte-sep"></span><button type="button" onclick="rteInsertarImagen('salv-det')" title="Insertar imagen" style="font-size:13px;">📷</button>
-          <span class="rte-sep"></span>
-          <span class="rte-fields-wrap">
-            <button type="button" class="rte-fields-btn" onclick="rteToggleFields(this,'salv-det')" title="Insertar dato del expediente">{}</button>
-          <span class="rte-sep"></span>
-          <button type="button" class="btn-ia" onclick="iaGenerarRte('salv-det','salvamento')" title="Generar con IA">✦ IA</button>
-            <div class="rte-fields-drop" id="rte-fields-salv-det"></div>
-          </span>
+      <div class="sin-acord-body" style="display:none;padding:10px 0 4px;">
+        <div class="form-grid" style="margin-bottom:10px;">
+          <div class="fg"><label>Salvamento</label>
+            <select id="s-salvamento"><option value="por_determinar">Por determinar</option><option value="si">Sí</option><option value="no">No</option></select>
+            <span class="field-hint">§6 Salvamento → SI / NO / Por determinar</span></div>
+          <div class="fg"><label>Valor estimado salvamento</label>
+            <input type="number" id="s-salv-valor" placeholder="0.00">
+            <span class="field-hint">§6 Salvamento → Valor estimado de los bienes</span></div>
         </div>
-        <div id="s-salv-det-rte" class="rte-editor" contenteditable="true"
-          data-placeholder="Describir los bienes susceptibles de salvamento: tipo de bien, estado actual, ubicación física donde se encuentran, quién los custodia, valor estimado de recuperación y acciones tomadas o programadas para su disposición."
-          oninput="syncRteSin('salv-det')" style="min-height:90px;"></div>
-        <textarea id="s-salv-det" style="display:none;"></textarea>
+        <div class="rte-wrap">
+          <div class="rte-toolbar">
+            <button type="button" onclick="rteCmdSin('salv-det','bold')" title="Negrita"><strong>N</strong></button>
+            <button type="button" onclick="rteCmdSin('salv-det','italic')" title="Cursiva"><em>K</em></button>
+            <button type="button" onclick="rteCmdSin('salv-det','underline')" title="Subrayado"><u>S</u></button>
+            <span class="rte-sep"></span>
+            <button type="button" onclick="rteCmdSin('salv-det','insertUnorderedList')" title="Lista con viñetas">≡•</button>
+            <button type="button" onclick="rteCmdSin('salv-det','insertOrderedList')" title="Lista numerada">≡1</button>
+            <span class="rte-sep"></span>
+            <button type="button" onclick="rteCmdSin('salv-det','removeFormat')" title="Quitar formato">✕</button>
+            <span class="rte-sep"></span>
+            <button type="button" onclick="rteInsertarImagen('salv-det')" title="Insertar imagen" style="font-size:13px;">📷</button>
+            <span class="rte-sep"></span>
+            <span class="rte-fields-wrap">
+              <button type="button" class="rte-fields-btn" onclick="rteToggleFields(this,'salv-det')" title="Insertar dato del expediente">{}</button>
+              <span class="rte-sep"></span>
+              <button type="button" class="btn-ia" onclick="iaGenerarRte('salv-det','salvamento')" title="Generar con IA">✦ IA</button>
+              <div class="rte-fields-drop" id="rte-fields-salv-det"></div>
+            </span>
+          </div>
+          <div id="s-salv-det-rte" class="rte-editor" contenteditable="true"
+            data-placeholder="Describir los bienes susceptibles de salvamento: tipo de bien, estado actual, ubicación física, quién los custodia, valor estimado de recuperación y acciones tomadas o programadas para su disposición."
+            oninput="syncRteSin('salv-det')" style="min-height:90px;"></div>
+          <textarea id="s-salv-det" style="display:none;"></textarea>
+        </div>
       </div>
     </div>
 
-  <!-- ═══════ XIII. ACTIVIDADES POR REALIZAR ═══════ -->
-
-  <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin:18px 0 8px;">XIII. Actividades por Realizar</div>
-  <div class="form-grid">
-
-  </div>
-  <div class="fg full">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-        <label style="margin-bottom:0;">Actividades a realizar</label>
+    <!-- XIII. Actividades por realizar -->
+    <div class="sin-acord" style="margin-bottom:8px;">
+      <div class="sin-acord-hd" onclick="sinAcord(this)" style="
+        display:flex;align-items:center;justify-content:space-between;
+        background:var(--surface2);border:1px solid var(--border-md);
+        border-radius:var(--rl);padding:9px 12px;cursor:pointer;
+        font-size:11px;font-weight:700;color:var(--text);
+        letter-spacing:.02em;user-select:none;
+      ">
+        <span>XIII. Actividades por realizar</span>
+        <span class="sin-acord-arrow" style="font-size:9px;color:var(--text-ter);transition:transform .2s;">▶</span>
       </div>
-      <div class="rte-wrap">
-      <div class="rte-toolbar">
-          <button type="button" onclick="rteCmdSin('actividades','bold')" title="Negrita"><strong>N</strong></button>
-          <button type="button" onclick="rteCmdSin('actividades','italic')" title="Cursiva"><em>K</em></button>
-          <button type="button" onclick="rteCmdSin('actividades','underline')" title="Subrayado"><u>S</u></button>
-          <span class="rte-sep"></span>
-          <button type="button" onclick="rteCmdSin('actividades','insertUnorderedList')" title="Lista con viñetas">≡•</button>
-          <button type="button" onclick="rteCmdSin('actividades','insertOrderedList')" title="Lista numerada">≡1</button>
-          <span class="rte-sep"></span>
-          <button type="button" onclick="rteCmdSin('actividades','removeFormat')" title="Quitar formato">✕</button>
-          <span class="rte-sep"></span><button type="button" onclick="rteInsertarImagen('actividades')" title="Insertar imagen del expediente" style="font-size:13px;">📷</button>
-          <span class="rte-sep"></span>
-          <span class="rte-fields-wrap">
-            <button type="button" class="rte-fields-btn" onclick="rteToggleFields(this,'actividades')" title="Insertar dato del expediente">{}</button>
-          <span class="rte-sep"></span>
-          <button type="button" class="btn-ia" onclick="iaGenerarRte('actividades','actividades')" title="Generar con IA">✦ IA</button>
-            <div class="rte-fields-drop" id="rte-fields-actividades"></div>
-          </span>
+      <div class="sin-acord-body" style="display:none;padding:10px 0 4px;">
+        <div class="rte-wrap">
+          <div class="rte-toolbar">
+            <button type="button" onclick="rteCmdSin('actividades','bold')" title="Negrita"><strong>N</strong></button>
+            <button type="button" onclick="rteCmdSin('actividades','italic')" title="Cursiva"><em>K</em></button>
+            <button type="button" onclick="rteCmdSin('actividades','underline')" title="Subrayado"><u>S</u></button>
+            <span class="rte-sep"></span>
+            <button type="button" onclick="rteCmdSin('actividades','insertUnorderedList')" title="Lista con viñetas">≡•</button>
+            <button type="button" onclick="rteCmdSin('actividades','insertOrderedList')" title="Lista numerada">≡1</button>
+            <span class="rte-sep"></span>
+            <button type="button" onclick="rteCmdSin('actividades','removeFormat')" title="Quitar formato">✕</button>
+            <span class="rte-sep"></span>
+            <button type="button" onclick="rteInsertarImagen('actividades')" title="Insertar imagen del expediente" style="font-size:13px;">📷</button>
+            <span class="rte-sep"></span>
+            <span class="rte-fields-wrap">
+              <button type="button" class="rte-fields-btn" onclick="rteToggleFields(this,'actividades')" title="Insertar dato del expediente">{}</button>
+              <span class="rte-sep"></span>
+              <button type="button" class="btn-ia" onclick="iaGenerarRte('actividades','actividades')" title="Generar con IA">✦ IA</button>
+              <div class="rte-fields-drop" id="rte-fields-actividades"></div>
+            </span>
+          </div>
+          <div id="s-actividades-rte" class="rte-editor" contenteditable="true"
+            data-placeholder="Tareas pendientes concretas, visitas programadas, gestiones en proceso..."
+            oninput="syncRteSin('actividades')" style="min-height:80px;"></div>
+          <textarea id="s-actividades" style="display:none;"></textarea>
         </div>
-        <div id="s-actividades-rte" class="rte-editor" contenteditable="true"
-          data-placeholder="Tareas pendientes concretas, visitas programadas, gestiones en proceso..."
-          oninput="syncRteSin('actividades')" style="min-height:80px;"></div>
-        <textarea id="s-actividades" style="display:none;"></textarea>
       </div>
     </div>
 
-  <!-- ═══════ XIV. COMENTARIOS / OBSERVACIONES ═══════ -->
-
-  <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin:18px 0 8px;">XIV. Comentarios</div>
-  <div class="form-grid">
-
-  </div>
-  <div class="fg full">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-        <label style="margin-bottom:0;">Observaciones</label>
+    <!-- XIV. Observaciones + Notas internas -->
+    <div class="sin-acord" style="margin-bottom:4px;">
+      <div class="sin-acord-hd" onclick="sinAcord(this)" style="
+        display:flex;align-items:center;justify-content:space-between;
+        background:var(--surface2);border:1px solid var(--border-md);
+        border-radius:var(--rl);padding:9px 12px;cursor:pointer;
+        font-size:11px;font-weight:700;color:var(--text);
+        letter-spacing:.02em;user-select:none;
+      ">
+        <span>XIV. Observaciones & Notas internas</span>
+        <span class="sin-acord-arrow" style="font-size:9px;color:var(--text-ter);transition:transform .2s;">▶</span>
       </div>
-      <div class="rte-wrap">
-      <div class="rte-toolbar">
-          <button type="button" onclick="rteCmdSin('observaciones','bold')" title="Negrita"><strong>N</strong></button>
-          <button type="button" onclick="rteCmdSin('observaciones','italic')" title="Cursiva"><em>K</em></button>
-          <button type="button" onclick="rteCmdSin('observaciones','underline')" title="Subrayado"><u>S</u></button>
-          <span class="rte-sep"></span>
-          <button type="button" onclick="rteCmdSin('observaciones','insertUnorderedList')" title="Lista con viñetas">≡•</button>
-          <button type="button" onclick="rteCmdSin('observaciones','insertOrderedList')" title="Lista numerada">≡1</button>
-          <span class="rte-sep"></span>
-          <button type="button" onclick="rteCmdSin('observaciones','removeFormat')" title="Quitar formato">✕</button>
-          <span class="rte-sep"></span><button type="button" onclick="rteInsertarImagen('observaciones')" title="Insertar imagen del expediente" style="font-size:13px;">📷</button>
-          <span class="rte-sep"></span>
-          <span class="rte-fields-wrap">
-            <button type="button" class="rte-fields-btn" onclick="rteToggleFields(this,'observaciones')" title="Insertar dato del expediente">{}</button>
-          <span class="rte-sep"></span>
-          <button type="button" class="btn-ia" onclick="iaGenerarRte('observaciones','observaciones')" title="Generar con IA">✦ IA</button>
-            <div class="rte-fields-drop" id="rte-fields-observaciones"></div>
-          </span>
+      <div class="sin-acord-body" style="display:none;padding:10px 0 4px;">
+        <div style="font-size:10px;color:var(--text-sec);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">Observaciones</div>
+        <div class="rte-wrap" style="margin-bottom:12px;">
+          <div class="rte-toolbar">
+            <button type="button" onclick="rteCmdSin('observaciones','bold')" title="Negrita"><strong>N</strong></button>
+            <button type="button" onclick="rteCmdSin('observaciones','italic')" title="Cursiva"><em>K</em></button>
+            <button type="button" onclick="rteCmdSin('observaciones','underline')" title="Subrayado"><u>S</u></button>
+            <span class="rte-sep"></span>
+            <button type="button" onclick="rteCmdSin('observaciones','insertUnorderedList')" title="Lista con viñetas">≡•</button>
+            <button type="button" onclick="rteCmdSin('observaciones','insertOrderedList')" title="Lista numerada">≡1</button>
+            <span class="rte-sep"></span>
+            <button type="button" onclick="rteCmdSin('observaciones','removeFormat')" title="Quitar formato">✕</button>
+            <span class="rte-sep"></span>
+            <button type="button" onclick="rteInsertarImagen('observaciones')" title="Insertar imagen del expediente" style="font-size:13px;">📷</button>
+            <span class="rte-sep"></span>
+            <span class="rte-fields-wrap">
+              <button type="button" class="rte-fields-btn" onclick="rteToggleFields(this,'observaciones')" title="Insertar dato del expediente">{}</button>
+              <span class="rte-sep"></span>
+              <button type="button" class="btn-ia" onclick="iaGenerarRte('observaciones','observaciones')" title="Generar con IA">✦ IA</button>
+              <div class="rte-fields-drop" id="rte-fields-observaciones"></div>
+            </span>
+          </div>
+          <div id="s-observaciones-rte" class="rte-editor" contenteditable="true"
+            data-placeholder="Comentarios técnicos, notas al informe, aspectos a destacar, reservas técnicas..."
+            oninput="syncRteSin('observaciones')" style="min-height:90px;"></div>
+          <textarea id="s-observaciones" style="display:none;"></textarea>
         </div>
-        <div id="s-observaciones-rte" class="rte-editor" contenteditable="true"
-          data-placeholder="Comentarios técnicos, notas al informe, aspectos a destacar, reservas técnicas..."
-          oninput="syncRteSin('observaciones')" style="min-height:90px;"></div>
-        <textarea id="s-observaciones" style="display:none;"></textarea>
+        <div style="font-size:10px;color:var(--text-sec);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">Notas internas</div>
+        <textarea id="s-notas" style="min-height:50px;width:100%;padding:7px 9px;font-size:12px;border:1px solid var(--border-md);border-radius:var(--r);background:var(--bg2);color:var(--text);font-family:inherit;resize:vertical;box-sizing:border-box;"></textarea>
       </div>
     </div>
 
-  <!-- ═══════ NOTAS INTERNAS ═══════ -->
-  <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.07em;margin:18px 0 8px;">Notas internas</div>
-  <div class="form-grid">
-    <div class="fg full"><label>Notas internas</label><textarea id="s-notas" style="min-height:50px;"></textarea></div>
-  </div>
+  </div><!-- /sin-tab-t5 -->
 
-</div>
-<div class="modal-footer">
-    <div id="s-modo-captura-lbl" style="font-size:11px;color:var(--text-ter);align-self:center;"></div>
+  <div class="modal-footer">
     <button class="btn" onclick="cerrarModal('modal-sin')">Cancelar</button>
     <button class="btn btn-primary" onclick="guardarSiniestro()">Guardar</button>
   </div>
 </div></div>
+
 
 <!-- Póliza -->
 <div class="overlay" id="modal-pol">
@@ -11300,6 +11464,43 @@ async function eliminarCatDoc(id){
   await loadAll();
   renderCatDoc();
 }
+
+// ══════════════════════════════════════════════════════════════════════════
+// MODAL-SIN — TABS Y ACORDEONES
+// ══════════════════════════════════════════════════════════════════════════
+
+function sinTab(id) {
+  document.querySelectorAll('.sin-tab-panel').forEach(p => p.style.display = 'none');
+  const panel = g('sin-tab-' + id);
+  if (panel) panel.style.display = 'block';
+  document.querySelectorAll('.sin-tab-btn').forEach(b => {
+    const active = b.dataset.tab === id;
+    b.style.borderBottomColor = active ? 'var(--accent-lt)' : 'transparent';
+    b.style.color = active ? 'var(--text)' : 'var(--text-sec)';
+    b.style.fontWeight = active ? '600' : '500';
+    if (active) b.classList.add('active'); else b.classList.remove('active');
+  });
+  const ov = g('modal-sin');
+  if (ov) ov.scrollTop = 0;
+}
+
+function sinAcord(hd) {
+  const body = hd.nextElementSibling;
+  const arrow = hd.querySelector('.sin-acord-arrow');
+  const isOpen = body.style.display === 'block';
+  body.style.display = isOpen ? 'none' : 'block';
+  if (arrow) arrow.style.transform = isOpen ? '' : 'rotate(90deg)';
+  hd.classList.toggle('open', !isOpen);
+}
+
+(function patchAbrirModalSin() {
+  const _orig = window.abrirModal;
+  if (typeof _orig !== 'function') { setTimeout(patchAbrirModalSin, 200); return; }
+  window.abrirModal = function(id) {
+    _orig(id);
+    if (id === 'modal-sin') { requestAnimationFrame(() => sinTab('t1')); }
+  };
+})();
 
 </script>
 </body>
