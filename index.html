@@ -453,6 +453,16 @@ body.modo-lectura .readonly-hidden { display:none !important; }
 .rte-editor ul,.rte-editor ol { padding-left:20px; }
 .rte-editor strong { font-weight:700; }
 
+/* ── MODAL-SIN TABS ─────────────────────────────────────────────────── */
+.sin-tab-btn { transition: color .15s, border-color .15s; }
+.sin-tab-btn:hover { color: var(--text) !important; }
+.sin-tab-btn.active { color: var(--text) !important; border-bottom-color: var(--accent-lt) !important; }
+.sin-tab-panel { box-sizing: border-box; }
+.sin-acord-hd:hover { background: var(--surface) !important; }
+.sin-acord-hd.open { border-bottom-left-radius: 0 !important; border-bottom-right-radius: 0 !important; }
+.sin-acord-body { background: var(--bg2); border: 1px solid var(--border-md); border-top: none; border-bottom-left-radius: var(--rl); border-bottom-right-radius: var(--rl); padding: 10px 12px 8px !important; }
+.sin-acord-arrow.open { transform: rotate(90deg); }
+
 .rpt-wrap { background:#fff; border-radius:var(--r); padding:24px; color:#111; font-size:12px; line-height:1.6; }
 .rpt-header { display:flex; justify-content:space-between; align-items:flex-start; padding-bottom:10px; border-bottom:2px solid #1558b0; margin-bottom:14px; }
 .rpt-logo { max-height:55px; max-width:150px; object-fit:contain; }
