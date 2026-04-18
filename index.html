@@ -853,7 +853,7 @@ body.modo-lectura .readonly-hidden { display:none !important; }
             <div style="font-size:11px;color:var(--text-sec);margin-top:2px;" id="user-menu-rol">—</div>
           </div>
           <div style="padding:4px 0;">
-            <button onclick="userMenuToggle();abrirModal('modal-perfil')" style="width:100%;text-align:left;padding:9px 14px;background:none;border:none;color:var(--text);font-size:12px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:8px;">
+            <button onclick="userMenuToggle();abrirModal('modal-perfil');setTimeout(verificarDriveConectado,200);" style="width:100%;text-align:left;padding:9px 14px;background:none;border:none;color:var(--text);font-size:12px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:8px;">
               👤 Mi perfil
             </button>
             <button onclick="userMenuToggle();abrirModal('modal-cambiar-pass')" style="width:100%;text-align:left;padding:9px 14px;background:none;border:none;color:var(--text);font-size:12px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:8px;">
