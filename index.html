@@ -5503,6 +5503,7 @@ function renderTC(){
 
 /* ── MODALS ── */
 function abrirModal(id){
+  if(id==='modal-perfil') setTimeout(verificarDriveConectado, 100);
   const today=new Date().toISOString().slice(0,10);
   const nowTime=new Date().toTimeString().slice(0,5);
   if(id==='modal-res'||id==='modal-pago'||id==='modal-viat'||id==='modal-act'||id==='modal-doc'){
@@ -5659,7 +5660,6 @@ function abrirModal(id){
       }
     }
   }
-  if(id === 'modal-perfil') verificarDriveConectado();
   g(id).classList.add('open');
   // Reset scroll position after render
   setTimeout(()=>{
