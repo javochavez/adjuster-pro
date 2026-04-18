@@ -2796,7 +2796,7 @@ body.modo-lectura .readonly-hidden { display:none !important; }
   <input type="hidden" id="pg-id">
   <div class="form-grid">
     <div class="fg full"><label>Tipo de pago</label>
-      <select id="pg-tipo">
+      <select id="pg-tipo" onchange="pgTipoChange()">
         <option value="indemnizacion">Indemnización al asegurado</option>
         <option value="honorarios_ajustador">Honorarios del ajustador</option>
         <option value="viaticos">Viáticos y gastos</option>
@@ -2804,6 +2804,7 @@ body.modo-lectura .readonly-hidden { display:none !important; }
         <option value="gastos_legales">Gastos legales</option>
         <option value="salvamento">Salvamento / recuperos</option>
       </select></div>
+    <div class="fg full" id="pg-neta-ref" style="display:none;"><label>Cantidad Indemnizable Neta</label><input type="text" id="pg-neta-val" readonly style="background:var(--bg-card);font-weight:600;color:var(--primary);"></div>
     <div class="fg full"><label>Beneficiario</label><input type="text" id="pg-benef"></div>
     <div class="fg"><label>Monto</label><input type="number" id="pg-monto" placeholder="0.00"></div>
     <div class="fg"><label>Moneda</label>
@@ -4328,12 +4329,39 @@ function renderAlertas(){
   renderSolicitudesAlertas();
 }
 
+function pgTipoChange(){
+  const tipo=v('pg-tipo');
+  const refDiv=g('pg-neta-ref');
+  if(!refDiv) return;
+  if(tipo==='indemnizacion'){
+    refDiv.style.display='';
+    const neta=reservaVigente(window.__currentSin&&window.__currentSin.id);
+    const el=g('pg-neta-val'); if(el) el.value=fmtMXN(neta);
+  } else {
+    refDiv.style.display='none';
+  }
+}
+
 function reservaVigente(sinId){
   const byConcepto={};
   data.res.filter(r=>r.id_siniestro===sinId).forEach(r=>{
     if(!byConcepto[r.concepto]||r.id>byConcepto[r.concepto].id) byConcepto[r.concepto]=r;
   });
-  return Object.values(byConcepto).reduce((a,r)=>a+toMXN(r.monto,r.moneda,r.tipo_cambio_mxn),0);
+  return Object.values(byConcepto).reduce((a,r)=>{
+    const bruta      = r.monto||0;
+    const ajuste     = r.depreciacion_pct||0;
+    const subtotalAj = bruta - ajuste;
+    const bajo       = r.monto_bajo_seguro||0;
+    const perdidaAj  = subtotalAj - bajo;
+    const ded        = r.deducible||0;
+    const subtotal2  = perdidaAj - ded;
+    const coasPct    = r.coaseguro_pct||0;
+    const coas       = r.monto_coaseguro||(subtotal2*(coasPct/100));
+    const neta       = subtotal2 - coas;
+    const tc         = r.tipo_cambio_mxn||1;
+    const moneda     = r.moneda||'MXN';
+    return a + (moneda==='MXN' ? neta : neta*tc);
+  },0);
 }
 
 /* ── SINIESTROS ── */
@@ -4472,6 +4500,27 @@ function renderDetalle(){
   </div>
   <div id="t-pag" class="tab-pane">
     <div class="toolbar"><button class="btn btn-primary" onclick="abrirModal('modal-pago')">+ Nuevo pago</button></div>
+    ${(()=>{
+      const neta=reservaVigente(s.id);
+      const pagados=(data.pag||[]).filter(p=>p.id_siniestro===s.id&&p.tipo==='indemnizacion').reduce((a,p)=>{
+        const m=p.monto||0; const tc=p.tipo_cambio_mxn||1; return a+((p.moneda||'MXN')==='MXN'?m:m*tc);
+      },0);
+      const balance=neta-pagados;
+      return `<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:10px;">
+        <div class="kpi-card" style="flex:1;min-width:160px;">
+          <div class="kpi-label">Cantidad Indemnizable Neta</div>
+          <div class="kpi-val" style="color:var(--primary);">${fmtMXN(neta)}</div>
+        </div>
+        <div class="kpi-card" style="flex:1;min-width:160px;">
+          <div class="kpi-label">Pagos Indemnización</div>
+          <div class="kpi-val" style="color:var(--danger);">${fmtMXN(pagados)}</div>
+        </div>
+        <div class="kpi-card" style="flex:1;min-width:160px;">
+          <div class="kpi-label">Balance Actual</div>
+          <div class="kpi-val" style="color:${balance>=0?'var(--success)':'var(--danger)'};">${fmtMXN(balance)}</div>
+        </div>
+      </div>`;
+    })()}
     <div class="tbl-wrap"><table><thead><tr><th>Tipo</th><th>Beneficiario</th><th>Monto</th><th>Moneda</th><th>Base MXN</th><th>Fecha</th><th></th></tr></thead>
     <tbody>${renderSubTable(data.pag.filter(p=>p.id_siniestro===s.id),'pago',['tipo','beneficiario','monto','moneda','monto_base_mxn','fecha'])}</tbody></table></div>
   </div>
