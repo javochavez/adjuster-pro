@@ -728,3 +728,13 @@ export function editarSiniestro(id){
     }, 100);
   });
 }
+
+export function buildCoberturaTableHTML(a,b){ return window.buildCoberturaTableHTML ? window.buildCoberturaTableHTML(a,b) : ''; }
+export function reservaVigente(id){ return window.reservaVigente ? window.reservaVigente(id) : 0; }
+export function renderSiniestros(){ return window.renderSiniestros ? window.renderSiniestros() : undefined; }
+export function renderDash(){ return window.renderDash ? window.renderDash() : undefined; }
+export function renderTodoGrid(a,b){ return window.renderTodoGrid ? window.renderTodoGrid(a,b) : undefined; }
+export function renderGrafGallery(id){ return window.renderGrafGallery ? window.renderGrafGallery(id) : undefined; }
+export function previsualizarReporte(){ return window.previsualizarReporte ? window.previsualizarReporte() : undefined; }
+export function seleccionarPolizaSin(a,b){ return window.seleccionarPolizaSin ? window.seleccionarPolizaSin(a,b) : undefined; }
+export function resetBuscadorSinModal(){ return window.resetBuscadorSinModal ? window.resetBuscadorSinModal() : undefined; }
