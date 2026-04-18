@@ -11899,120 +11899,124 @@ async function solGenerarWord(){
 // ══════════════════════════════════════════════════════════════════════════
 
 function renderCatDoc(){
-  const wrap  = g('catdoc-body');
+  const wrap = g('catdoc-body');
   if(!wrap) return;
-  const q     = (g('catdoc-search')?.value||'').toLowerCase();
-  const ramo  = g('catdoc-filtro-ramo')?.value||'';
+  const q    = (g('catdoc-search')?.value||'').toLowerCase();
+  const ramo = g('catdoc-filtro-ramo')?.value||'';
 
-  // Combinar catálogo base (del JS) + BD
   const baseItems = [];
   Object.entries(SOL_CATALOGO_BASE).forEach(([r, items]) =>
     items.forEach(it => baseItems.push({_base:true, ramo:r, categoria:it.cat, descripcion:it.desc}))
   );
   const dbItems = (data.sol_catalogo||[]).map(r=>({...r, _base:false}));
 
-  // Poblar selector de ramos
   const sel = g('catdoc-filtro-ramo');
   if(sel && sel.options.length <= 2){
-    const ramos = [...new Set([
-      ...Object.keys(SOL_CATALOGO_BASE),
-      ...dbItems.map(r=>r.ramo)
-    ])].sort();
+    const ramos = [...new Set([...Object.keys(SOL_CATALOGO_BASE),...dbItems.map(r=>r.ramo)])].sort();
     sel.innerHTML = '<option value="">— Todos los ramos —</option>' +
       ramos.map(r=>`<option value="${r}">${r}</option>`).join('');
     if(ramo) sel.value = ramo;
   }
 
-  // Filtrar
-  let items = [...baseItems, ...dbItems].filter(it => {
-    const matchQ  = !q || (it.descripcion||'').toLowerCase().includes(q) || (it.categoria||'').toLowerCase().includes(q);
-    const matchR  = !ramo || it.ramo === ramo;
+  let items = [...baseItems,...dbItems].filter(it=>{
+    const matchQ = !q||(it.descripcion||'').toLowerCase().includes(q)||(it.categoria||'').toLowerCase().includes(q);
+    const matchR = !ramo||it.ramo===ramo;
     return matchQ && matchR;
   });
 
+  wrap.innerHTML = '';
+
   if(!items.length){
-    wrap.innerHTML = '<div style="font-size:12px;color:var(--text-ter);padding:20px;text-align:center;">Sin resultados.</div>';
+    const empty = document.createElement('div');
+    empty.style.cssText = 'font-size:12px;color:var(--text-ter);padding:20px;text-align:center;';
+    empty.textContent = 'Sin resultados.';
+    wrap.appendChild(empty);
     return;
   }
 
-  // Agrupar por Ramo → Categoría
+  const total  = items.length;
+  const enBD   = items.filter(i=>!i._base).length;
+  const enBase = items.filter(i=>i._base).length;
+  const info = document.createElement('div');
+  info.style.cssText = 'font-size:10px;color:var(--text-ter);margin-bottom:10px;';
+  info.textContent = `${total} ítems — ${enBase} del catálogo base (solo lectura) · ${enBD} personalizados (editables)`;
+  wrap.appendChild(info);
+
   const byRamo = {};
-  items.forEach(it => {
+  items.forEach(it=>{
     const r = it.ramo||'General';
     const c = it.categoria||'General';
-    if(!byRamo[r]) byRamo[r] = {};
-    if(!byRamo[r][c]) byRamo[r][c] = [];
+    if(!byRamo[r]) byRamo[r]={};
+    if(!byRamo[r][c]) byRamo[r][c]=[];
     byRamo[r][c].push(it);
   });
 
-  let html = '';
-  Object.entries(byRamo).sort((a,b)=>a[0].localeCompare(b[0])).forEach(([ramo, cats]) => {
-    html += `<div style="margin-bottom:18px;">
-      <div style="font-size:12px;font-weight:700;color:var(--accent-lt);
-                  text-transform:uppercase;letter-spacing:.07em;
-                  border-bottom:2px solid var(--accent);padding-bottom:4px;margin-bottom:6px;">
-        ${ramo}
-      </div>`;
+  Object.entries(byRamo).sort((a,b)=>a[0].localeCompare(b[0])).forEach(([ramoKey, cats])=>{
+    const ramoDiv = document.createElement('div');
+    ramoDiv.style.marginBottom = '18px';
+
+    const ramoLbl = document.createElement('div');
+    ramoLbl.style.cssText = 'font-size:12px;font-weight:700;color:var(--accent-lt);text-transform:uppercase;letter-spacing:.07em;border-bottom:2px solid var(--accent);padding-bottom:4px;margin-bottom:6px;';
+    ramoLbl.textContent = ramoKey;
+    ramoDiv.appendChild(ramoLbl);
+
     Object.entries(cats).sort((a,b)=>{
-      // Documentación General primero
       if(a[0]==='Documentación General') return -1;
       if(b[0]==='Documentación General') return 1;
       return a[0].localeCompare(b[0]);
-    }).forEach(([cat, rows]) => {
-      html += `<div style="margin-bottom:8px;">
-        <div style="font-size:10px;font-weight:600;color:var(--text-sec);
-                    text-transform:uppercase;letter-spacing:.05em;
-                    padding:3px 8px;background:var(--surface2);
-                    border-radius:4px;margin-bottom:3px;">${cat}</div>`;
-      rows.forEach(it => {
-        const isBase = it._base;
+    }).forEach(([cat, rows])=>{
+      const catDiv = document.createElement('div');
+      catDiv.style.marginBottom = '8px';
+
+      const catLbl = document.createElement('div');
+      catLbl.style.cssText = 'font-size:10px;font-weight:600;color:var(--text-sec);text-transform:uppercase;letter-spacing:.05em;padding:3px 8px;background:var(--surface2);border-radius:4px;margin-bottom:3px;';
+      catLbl.textContent = cat;
+      catDiv.appendChild(catLbl);
+
+      rows.forEach(it=>{
         const row = document.createElement('div');
-        row.style.cssText = 'display:flex;align-items:flex-start;gap:8px;padding:5px 8px;border-bottom:1px solid var(--border);font-size:12px;';
+        row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:5px 8px;border-bottom:1px solid var(--border);font-size:12px;';
+
         const desc = document.createElement('span');
         desc.style.cssText = 'flex:1;color:var(--text);';
         desc.textContent = it.descripcion;
         row.appendChild(desc);
-        if(isBase){
+
+        if(it._base){
           const btn = document.createElement('button');
           btn.className = 'btn btn-sm';
           btn.style.cssText = 'padding:2px 7px;font-size:10px;white-space:nowrap;color:var(--accent-lt);border-color:var(--accent);flex-shrink:0;';
           btn.textContent = '↑ Promover';
-          btn.addEventListener('click', () => catDocPromover(it.ramo, it.categoria, it.descripcion));
+          const _ramo = it.ramo, _cat = it.categoria, _desc = it.descripcion;
+          btn.addEventListener('click', function(){ catDocPromover(_ramo, _cat, _desc); });
           row.appendChild(btn);
         } else {
           const acts = document.createElement('div');
           acts.style.cssText = 'display:flex;gap:4px;flex-shrink:0;';
+
           const btnEdit = document.createElement('button');
           btnEdit.className = 'btn btn-sm';
           btnEdit.style.cssText = 'padding:2px 7px;font-size:10px;';
           btnEdit.textContent = '✏';
-          btnEdit.addEventListener('click', () => editarCatDoc(it.id));
+          const _id = it.id;
+          btnEdit.addEventListener('click', function(){ editarCatDoc(_id); });
+
           const btnDel = document.createElement('button');
           btnDel.className = 'btn btn-sm btn-danger';
           btnDel.style.cssText = 'padding:2px 7px;font-size:10px;';
           btnDel.textContent = '✕';
-          btnDel.addEventListener('click', () => eliminarCatDoc(it.id));
+          btnDel.addEventListener('click', function(){ eliminarCatDoc(_id); });
+
           acts.appendChild(btnEdit);
           acts.appendChild(btnDel);
           row.appendChild(acts);
         }
-        // Agregar fila al DOM directamente en lugar de html string
-        // Necesitamos cambiar la estrategia: acumular elementos DOM
-        html += row.outerHTML;
+        catDiv.appendChild(row);
       });
-      html += '</div>';
+      ramoDiv.appendChild(catDiv);
     });
-    html += '</div>';
+    wrap.appendChild(ramoDiv);
   });
-
-  // Conteo
-  const total   = items.length;
-  const enBD    = items.filter(i=>!i._base).length;
-  const enBase  = items.filter(i=>i._base).length;
-  wrap.innerHTML = `
-    <div style="font-size:10px;color:var(--text-ter);margin-bottom:10px;">
-      ${total} ítems — ${enBase} del catálogo base (solo lectura) · ${enBD} personalizados (editables)
-    </div>` + html;
 }
 
 // ── Abrir modal nuevo ítem ────────────────────────────────────────────────
