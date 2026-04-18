@@ -2348,170 +2348,233 @@ body.modo-lectura .readonly-hidden { display:none !important; }
 
 <!-- Póliza -->
 <div class="overlay" id="modal-pol">
-<div class="modal modal-lg">
+<div class="modal modal-lg" style="max-width:860px;">
   <div class="modal-title" id="pol-modal-title">Nueva póliza</div>
   <input type="hidden" id="p-id">
-  <div class="form-grid">
-    <div class="fg"><label>Número de póliza</label><input type="text" id="p-num" placeholder="POL-2026-001"></div>
-    <div class="fg"><label>Ramo</label>
-      <select id="p-ramo" onchange="toggleRamoOtro()">
-        <option value="incendio">Incendio y líneas aliadas</option>
-        <option value="robo">Robo</option>
-        <option value="rc">Responsabilidad civil</option>
-        <option value="transporte">Transporte</option>
-        <option value="energia">Energía</option>
-        <option value="construccion">Construcción y montaje</option>
-        <option value="equipo_contratistas">Equipo de Contratistas</option>
-        <option value="interrupcion">Interrupción de negocios</option>
-        <option value="catastrofico">Catastrófico</option>
-        <option value="diversos">Diversos</option>
-        <option value="__otro__">Otro (especificar)…</option>
-      </select></div>
-    <div class="fg" id="ramo-otro-wrap" style="display:none;">
-      <label>Especificar ramo</label>
-      <input type="text" id="p-ramo-otro" placeholder="Nombre del ramo">
-    </div>
-    <div class="fg full"><label>Tipo de seguro</label><input type="text" id="p-tipo-seguro" placeholder="ej. Seguro de Daños Múltiple Empresarial / Todo Riesgo Incendio"></div>
-    <div class="fg"><label>Subramo</label><input type="text" id="p-subramo" placeholder="ej. Rotura de Maquinaria"></div>
-    <div class="fg"><label>Aseguradora</label><select id="p-aseg"></select></div>
-    <div class="fg"><label>Asegurado</label><select id="p-asdo"></select></div>
-    <div class="fg"><label>Oficina aseguradora</label><input type="text" id="p-oficina" placeholder="ej. Veracruz"></div>
-    <div class="fg"><label>Agente</label><input type="text" id="p-agente" placeholder="Nombre del agente"></div>
-    <div class="fg"><label>Vigencia inicio</label><input type="date" id="p-vini"></div>
-    <div class="fg"><label>Vigencia fin</label><input type="date" id="p-vfin"></div>
 
-    <!-- ── GRID DE COBERTURAS / SUMAS ASEGURADAS ── -->
-    <div style="grid-column:1/-1;margin-top:6px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-        <label style="font-size:12px;font-weight:600;color:var(--text);">Coberturas y Sumas Aseguradas</label>
-        <button type="button" class="btn btn-sm btn-primary" onclick="agregarFilaCobertura()">+ Agregar cobertura</button>
-      </div>
-      <div style="border:1px solid var(--border-md);border-radius:var(--r);overflow:hidden;">
-        <table style="width:100%;border-collapse:collapse;font-size:12px;">
-          <thead>
-            <tr style="background:var(--surface2);">
-              <th style="padding:6px 10px;text-align:left;color:var(--text-sec);font-weight:600;border-bottom:1px solid var(--border-md);">Cobertura / Concepto</th>
-              <th style="padding:6px 10px;text-align:left;color:var(--text-sec);font-weight:600;border-bottom:1px solid var(--border-md);width:110px;">Moneda</th>
-              <th style="padding:6px 10px;text-align:right;color:var(--text-sec);font-weight:600;border-bottom:1px solid var(--border-md);width:160px;">Suma Asegurada</th>
-              <th style="padding:6px 10px;text-align:left;color:var(--text-sec);font-weight:600;border-bottom:1px solid var(--border-md);width:220px;">Deducible</th>
-              <th style="padding:6px 10px;text-align:center;color:var(--text-sec);font-weight:600;border-bottom:1px solid var(--border-md);width:90px;">Coaseg. %</th>
-              <th style="padding:6px 10px;border-bottom:1px solid var(--border-md);width:36px;"></th>
-            </tr>
-          </thead>
-          <tbody id="pol-cob-tbody"></tbody>
-          <tfoot>
-            <tr id="pol-cob-total-row" style="display:none;background:var(--surface2);">
-              <td colspan="4" style="padding:6px 10px;font-weight:700;color:var(--text);border-top:2px solid var(--border-hi);">TOTAL</td>
-              <td style="padding:6px 10px;text-align:right;font-weight:700;color:var(--accent-lt);border-top:2px solid var(--border-hi);" id="pol-cob-total"></td>
-              <td style="border-top:2px solid var(--border-hi);"></td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>
-    </div>
-
-    <div class="fg"><label>Moneda principal</label>
-      <select id="p-mon"><option value="MXN">MXN</option><option value="USD">USD</option><option value="EUR">EUR</option></select></div>
-    <div class="fg"><label>Tipo de cambio</label><input type="number" id="p-tc" value="1" step="0.01"></div>
-    <input type="hidden" id="p-suma">
-    <input type="hidden" id="p-lim-max">
-    <input type="hidden" id="p-lim-mon" value="MXN">
-
-    <div class="fg full">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-        <label style="margin-bottom:0;">Límite máximo de responsabilidad
-          <span style="font-size:10px;color:var(--text-ter);font-weight:400;">(texto enriquecido)</span>
-        </label>
-      </div>
-      <div class="rte-wrap">
-        <div class="rte-toolbar">
-          <button type="button" onclick="rteCmdPolLim('bold')"               title="Negrita"><strong>N</strong></button>
-          <button type="button" onclick="rteCmdPolLim('italic')"             title="Cursiva"><em>K</em></button>
-          <button type="button" onclick="rteCmdPolLim('underline')"          title="Subrayado"><u>S</u></button>
-          <span class="rte-sep"></span>
-          <button type="button" onclick="rteCmdPolLim('insertUnorderedList')" title="Lista con viñetas">≡•</button>
-          <button type="button" onclick="rteCmdPolLim('insertOrderedList')"   title="Lista numerada">≡1</button>
-          <span class="rte-sep"></span>
-          <button type="button" onclick="rteCmdPolLim('removeFormat')"       title="Quitar formato">✕</button>
-        </div>
-        <div id="p-lim-texto-rte" class="rte-editor" contenteditable="true"
-          data-placeholder="ej. USD 500,000 por evento, con límite agregado anual de USD 2,000,000. Sujeto a deducible del 2% sobre el valor del daño, mínimo USD 5,000. No aplica para daños catastróficos."
-          oninput="syncPolLimTexto()" style="min-height:80px;"></div>
-        <textarea id="p-lim-texto" style="display:none;"></textarea>
-      </div>
-    </div>
-
-    <div style="grid-column:1/-1;font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.06em;margin-top:6px;">Valores declarados totales (póliza)</div>
-    <div class="fg"><label>Edificio total</label><input type="number" id="p-val-tot-edif" placeholder="0.00"></div>
-    <div class="fg"><label>Contenidos total</label><input type="number" id="p-val-tot-cont" placeholder="0.00"></div>
-
-    <div style="grid-column:1/-1;font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.06em;margin-top:6px;">Valores declarados ubicación afectada</div>
-    <div class="fg"><label>Edificio ubicación</label><input type="number" id="p-val-ubic-edif" placeholder="0.00"></div>
-    <div class="fg"><label>Contenidos ubicación</label><input type="number" id="p-val-ubic-cont" placeholder="0.00"></div>
-    <div class="fg"><label>Existencias ubicación</label><input type="number" id="p-val-ubic-exist" placeholder="0.00"></div>
-    <div class="fg"></div>
-
-    <div style="grid-column:1/-1;font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.06em;margin-top:6px;">Domicilios</div>
-    <div class="fg full"><label>Domicilio legal del asegurado</label><input type="text" id="p-dom-legal" placeholder="Domicilio fiscal según póliza"></div>
-    <div class="fg full"><label>Ubicación del riesgo asegurado</label><input type="text" id="p-ubic-riesgo" placeholder="Ubicación física donde está el riesgo"></div>
-
-    <div class="fg full">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-        <label style="margin-bottom:0;">Giro del Asegurado
-          <span style="font-size:10px;color:var(--text-ter);font-weight:400;">— según póliza</span>
-        </label>
-      </div>
-      <div class="rte-wrap">
-        <div class="rte-toolbar">
-          <button type="button" onclick="rteCmdPolGiro('bold')"               title="Negrita"><strong>N</strong></button>
-          <button type="button" onclick="rteCmdPolGiro('italic')"             title="Cursiva"><em>K</em></button>
-          <button type="button" onclick="rteCmdPolGiro('underline')"          title="Subrayado"><u>S</u></button>
-          <span class="rte-sep"></span>
-          <button type="button" onclick="rteCmdPolGiro('insertUnorderedList')" title="Lista con viñetas">≡•</button>
-          <button type="button" onclick="rteCmdPolGiro('insertOrderedList')"   title="Lista numerada">≡1</button>
-          <span class="rte-sep"></span>
-          <button type="button" onclick="rteCmdPolGiro('removeFormat')"       title="Quitar formato">✕</button>
-        </div>
-        <div id="p-giro-aseg-rte" class="rte-editor" contenteditable="true"
-          data-placeholder="Giro comercial o actividad principal del Asegurado de acuerdo a la póliza (ej. Industria manufacturera de plásticos, Comercio al por menor de abarrotes, Servicios de transporte de carga)..."
-          oninput="syncPolGiroAseg()" style="min-height:70px;"></div>
-        <textarea id="p-giro-aseg" style="display:none;"></textarea>
-      </div>
-    </div>
-
-    <div class="fg full">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-        <label style="margin-bottom:0;">Descripción del Asegurado
-          <span style="font-size:10px;color:var(--text-ter);font-weight:400;">
-            — Breve historia, giro, a qué se dedica, características relevantes del riesgo
-          </span>
-        </label>
-      </div>
-      <div class="rte-wrap">
-        <div class="rte-toolbar">
-          <button type="button" onclick="rteCmdPol2('bold')"               title="Negrita"><strong>N</strong></button>
-          <button type="button" onclick="rteCmdPol2('italic')"             title="Cursiva"><em>K</em></button>
-          <button type="button" onclick="rteCmdPol2('underline')"          title="Subrayado"><u>S</u></button>
-          <span class="rte-sep"></span>
-          <button type="button" onclick="rteCmdPol2('insertUnorderedList')" title="Lista con viñetas">≡•</button>
-          <button type="button" onclick="rteCmdPol2('insertOrderedList')"   title="Lista numerada">≡1</button>
-          <span class="rte-sep"></span>
-          <button type="button" onclick="rteCmdPol2('removeFormat')"       title="Quitar formato">✕</button>
-        </div>
-        <div id="p-desc-aseg-rte" class="rte-editor" contenteditable="true"
-          data-placeholder="Describa brevemente al Asegurado: historia de la empresa o persona, giro comercial o actividad principal, antigüedad, características del riesgo asegurado, contexto relevante para el ajuste..."
-          oninput="syncPolDescAseg()" style="min-height:100px;"></div>
-        <textarea id="p-desc-aseg" style="display:none;"></textarea>
-      </div>
-    </div>
-    <div class="fg full"><label>Interés asegurado</label><textarea id="p-interes" style="min-height:70px;" placeholder="Descripción del interés asegurado según póliza..."></textarea></div>
-
-    <div class="fg full"><label>Condiciones especiales aplicables</label><textarea id="p-condiciones" style="min-height:80px;" placeholder="Cláusulas y condiciones especiales de la póliza..."></textarea></div>
-    <div class="fg full"><label>Notas</label><textarea id="p-notas"></textarea></div>
+  <!-- Tabs -->
+  <div style="display:flex;gap:0;border-bottom:2px solid var(--border-md);padding:0 1.5rem;background:var(--surface);">
+    <button type="button" class="pol-tab-btn active" id="pol-tab-btn-0" onclick="polSwitchTab(0)"
+      style="padding:10px 18px;background:none;border:none;border-bottom:2px solid var(--accent-lt);color:var(--accent-lt);font-weight:600;font-size:13px;cursor:pointer;margin-bottom:-2px;font-family:inherit;">
+      ① Identificación
+    </button>
+    <button type="button" class="pol-tab-btn" id="pol-tab-btn-1" onclick="polSwitchTab(1)"
+      style="padding:10px 18px;background:none;border:none;border-bottom:2px solid transparent;color:var(--text-sec);font-weight:500;font-size:13px;cursor:pointer;margin-bottom:-2px;font-family:inherit;">
+      ② Vigencia y Valores
+    </button>
+    <button type="button" class="pol-tab-btn" id="pol-tab-btn-2" onclick="polSwitchTab(2)"
+      style="padding:10px 18px;background:none;border:none;border-bottom:2px solid transparent;color:var(--text-sec);font-weight:500;font-size:13px;cursor:pointer;margin-bottom:-2px;font-family:inherit;">
+      ③ Coberturas
+    </button>
+    <button type="button" class="pol-tab-btn" id="pol-tab-btn-3" onclick="polSwitchTab(3)"
+      style="padding:10px 18px;background:none;border:none;border-bottom:2px solid transparent;color:var(--text-sec);font-weight:500;font-size:13px;cursor:pointer;margin-bottom:-2px;font-family:inherit;">
+      ④ Texto y Notas
+    </button>
   </div>
+
+  <!-- Pestaña 0: Identificación -->
+  <div id="pol-tab-0" class="pol-tab-pane" style="padding:1.2rem 1.5rem;overflow-y:auto;max-height:65vh;">
+    <div class="form-grid">
+      <div class="fg"><label>Número de póliza</label><input type="text" id="p-num" placeholder="POL-2026-001"></div>
+      <div class="fg"><label>Ramo</label>
+        <select id="p-ramo" onchange="toggleRamoOtro()">
+          <option value="incendio">Incendio y líneas aliadas</option>
+          <option value="robo">Robo</option>
+          <option value="rc">Responsabilidad civil</option>
+          <option value="transporte">Transporte</option>
+          <option value="energia">Energía</option>
+          <option value="construccion">Construcción y montaje</option>
+          <option value="equipo_contratistas">Equipo de Contratistas</option>
+          <option value="interrupcion">Interrupción de negocios</option>
+          <option value="catastrofico">Catastrófico</option>
+          <option value="diversos">Diversos</option>
+          <option value="__otro__">Otro (especificar)…</option>
+        </select>
+      </div>
+      <div class="fg" id="ramo-otro-wrap" style="display:none;">
+        <label>Especificar ramo</label>
+        <input type="text" id="p-ramo-otro" placeholder="Nombre del ramo">
+      </div>
+      <div class="fg full"><label>Tipo de seguro</label>
+        <input type="text" id="p-tipo-seguro" placeholder="ej. Seguro de Daños Múltiple Empresarial / Todo Riesgo Incendio">
+      </div>
+      <div class="fg"><label>Subramo</label>
+        <input type="text" id="p-subramo" placeholder="ej. Rotura de Maquinaria">
+      </div>
+      <div class="fg"><label>Aseguradora</label><select id="p-aseg"></select></div>
+      <div class="fg"><label>Asegurado</label><select id="p-asdo"></select></div>
+      <div class="fg"><label>Oficina aseguradora</label>
+        <input type="text" id="p-oficina" placeholder="ej. Veracruz">
+      </div>
+      <div class="fg"><label>Agente</label>
+        <input type="text" id="p-agente" placeholder="Nombre del agente">
+      </div>
+    </div>
+    <div style="display:flex;justify-content:flex-end;margin-top:16px;">
+      <button type="button" class="btn btn-primary" onclick="polSwitchTab(1)">Siguiente → Vigencia y Valores</button>
+    </div>
+  </div>
+
+  <!-- Pestaña 1: Vigencia y Valores -->
+  <div id="pol-tab-1" class="pol-tab-pane" style="display:none;padding:1.2rem 1.5rem;overflow-y:auto;max-height:65vh;">
+    <div class="form-grid">
+      <div class="fg"><label>Vigencia inicio</label><input type="date" id="p-vini"></div>
+      <div class="fg"><label>Vigencia fin</label><input type="date" id="p-vfin"></div>
+      <div class="fg"><label>Moneda principal</label>
+        <select id="p-mon"><option value="MXN">MXN</option><option value="USD">USD</option><option value="EUR">EUR</option></select>
+      </div>
+      <div class="fg"><label>Tipo de cambio</label>
+        <input type="number" id="p-tc" value="1" step="0.01">
+      </div>
+      <input type="hidden" id="p-suma">
+      <input type="hidden" id="p-lim-max">
+      <input type="hidden" id="p-lim-mon" value="MXN">
+
+      <div style="grid-column:1/-1;font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.06em;margin-top:4px;">Valores declarados totales</div>
+      <div class="fg"><label>Valor total edificio</label>
+        <input type="number" id="p-val-tot-edif" placeholder="0.00" step="0.01">
+      </div>
+      <div class="fg"><label>Valor total contenidos</label>
+        <input type="number" id="p-val-tot-cont" placeholder="0.00" step="0.01">
+      </div>
+
+      <div style="grid-column:1/-1;font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.06em;margin-top:4px;">Valores en ubicación del riesgo</div>
+      <div class="fg"><label>Valor edificio en ubicación</label>
+        <input type="number" id="p-val-ubic-edif" placeholder="0.00" step="0.01">
+      </div>
+      <div class="fg"><label>Valor contenidos en ubicación</label>
+        <input type="number" id="p-val-ubic-cont" placeholder="0.00" step="0.01">
+      </div>
+      <div class="fg"><label>Valor existencias en ubicación</label>
+        <input type="number" id="p-val-ubic-exist" placeholder="0.00" step="0.01">
+      </div>
+
+      <div style="grid-column:1/-1;font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.06em;margin-top:4px;">Ubicaciones</div>
+      <div class="fg full"><label>Domicilio legal del asegurado</label>
+        <input type="text" id="p-dom-legal" placeholder="Domicilio fiscal / legal">
+      </div>
+      <div class="fg full"><label>Ubicación del riesgo</label>
+        <input type="text" id="p-ubic-riesgo" placeholder="Dirección del riesgo asegurado">
+      </div>
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-top:16px;">
+      <button type="button" class="btn" onclick="polSwitchTab(0)">← Identificación</button>
+      <button type="button" class="btn btn-primary" onclick="polSwitchTab(2)">Siguiente → Coberturas</button>
+    </div>
+  </div>
+
+  <!-- Pestaña 2: Coberturas -->
+  <div id="pol-tab-2" class="pol-tab-pane" style="display:none;padding:1.2rem 1.5rem;overflow-y:auto;max-height:65vh;">
+    <div style="font-size:12px;color:var(--text-sec);margin-bottom:12px;line-height:1.5;">
+      Registra cada cobertura con su suma asegurada, deducible y porcentaje de coaseguro. El total se calcula automáticamente.
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+      <span style="font-size:12px;font-weight:600;color:var(--text);">Coberturas y Sumas Aseguradas</span>
+      <button type="button" class="btn btn-sm btn-primary" onclick="agregarFilaCobertura()">+ Agregar cobertura</button>
+    </div>
+    <div style="border:1px solid var(--border-md);border-radius:var(--r);overflow:hidden;">
+      <table style="width:100%;border-collapse:collapse;font-size:12px;">
+        <thead>
+          <tr style="background:var(--surface2);">
+            <th style="padding:8px 10px;text-align:left;color:var(--text-sec);font-weight:600;border-bottom:1px solid var(--border-md);">Cobertura / Concepto</th>
+            <th style="padding:8px 10px;text-align:left;color:var(--text-sec);font-weight:600;border-bottom:1px solid var(--border-md);width:90px;">Moneda</th>
+            <th style="padding:8px 10px;text-align:right;color:var(--text-sec);font-weight:600;border-bottom:1px solid var(--border-md);width:150px;">Suma Asegurada</th>
+            <th style="padding:8px 10px;text-align:left;color:var(--text-sec);font-weight:600;border-bottom:1px solid var(--border-md);width:200px;">Deducible</th>
+            <th style="padding:8px 10px;text-align:center;color:var(--text-sec);font-weight:600;border-bottom:1px solid var(--border-md);width:80px;">Coaseg.%</th>
+            <th style="padding:8px 10px;border-bottom:1px solid var(--border-md);width:36px;"></th>
+          </tr>
+        </thead>
+        <tbody id="pol-cob-tbody"></tbody>
+        <tfoot>
+          <tr id="pol-cob-total-row" style="display:none;background:var(--surface2);">
+            <td colspan="2" style="padding:8px 10px;font-weight:700;color:var(--text);border-top:2px solid var(--border-hi);">TOTAL</td>
+            <td style="padding:8px 10px;text-align:right;font-weight:700;color:var(--accent-lt);border-top:2px solid var(--border-hi);" id="pol-cob-total"></td>
+            <td colspan="3" style="border-top:2px solid var(--border-hi);"></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-top:16px;">
+      <button type="button" class="btn" onclick="polSwitchTab(1)">← Vigencia y Valores</button>
+      <button type="button" class="btn btn-primary" onclick="polSwitchTab(3)">Siguiente → Texto y Notas</button>
+    </div>
+  </div>
+
+  <!-- Pestaña 3: Texto y Notas -->
+  <div id="pol-tab-3" class="pol-tab-pane" style="display:none;padding:1.2rem 1.5rem;overflow-y:auto;max-height:65vh;">
+    <div class="form-grid">
+      <div class="fg full">
+        <label>Giro del asegurado</label>
+        <div class="rte-wrap">
+          <div class="rte-toolbar">
+            <button type="button" onclick="rteCmdPolGiro('bold')"><strong>N</strong></button>
+            <button type="button" onclick="rteCmdPolGiro('italic')"><em>K</em></button>
+            <button type="button" onclick="rteCmdPolGiro('underline')"><u>S</u></button>
+            <span class="rte-sep"></span>
+            <button type="button" onclick="rteCmdPolGiro('removeFormat')">✕</button>
+          </div>
+          <div id="p-giro-aseg-rte" class="rte-editor" contenteditable="true"
+            data-placeholder="Descripción del giro o actividad del asegurado..."
+            oninput="syncPolGiro()" style="min-height:70px;"></div>
+          <textarea id="p-giro-aseg" style="display:none;"></textarea>
+        </div>
+      </div>
+
+      <div class="fg full">
+        <label>Descripción del asegurado</label>
+        <div class="rte-wrap">
+          <div class="rte-toolbar">
+            <button type="button" onclick="rteCmdPolDesc('bold')"><strong>N</strong></button>
+            <button type="button" onclick="rteCmdPolDesc('italic')"><em>K</em></button>
+            <button type="button" onclick="rteCmdPolDesc('underline')"><u>S</u></button>
+            <span class="rte-sep"></span>
+            <button type="button" onclick="rteCmdPolDesc('removeFormat')">✕</button>
+          </div>
+          <div id="p-desc-aseg-rte" class="rte-editor" contenteditable="true"
+            data-placeholder="Descripción general del asegurado, sus instalaciones y actividades..."
+            oninput="syncPolDesc()" style="min-height:70px;"></div>
+          <textarea id="p-desc-aseg" style="display:none;"></textarea>
+        </div>
+      </div>
+
+      <div class="fg full">
+        <label>Límite máximo de responsabilidad</label>
+        <div class="rte-wrap">
+          <div class="rte-toolbar">
+            <button type="button" onclick="rteCmdPolLim('bold')"><strong>N</strong></button>
+            <button type="button" onclick="rteCmdPolLim('italic')"><em>K</em></button>
+            <button type="button" onclick="rteCmdPolLim('underline')"><u>S</u></button>
+            <span class="rte-sep"></span>
+            <button type="button" onclick="rteCmdPolLim('insertUnorderedList')">≡•</button>
+            <button type="button" onclick="rteCmdPolLim('insertOrderedList')">≡1</button>
+            <span class="rte-sep"></span>
+            <button type="button" onclick="rteCmdPolLim('removeFormat')">✕</button>
+          </div>
+          <div id="p-lim-texto-rte" class="rte-editor" contenteditable="true"
+            data-placeholder="ej. USD 500,000 por evento, con límite agregado anual de USD 2,000,000..."
+            oninput="syncPolLim()" style="min-height:80px;"></div>
+          <textarea id="p-lim-texto" style="display:none;"></textarea>
+        </div>
+      </div>
+
+      <div class="fg full"><label>Interés asegurado</label>
+        <textarea id="p-interes" style="min-height:70px;" placeholder="Descripción del interés asegurado según póliza..."></textarea>
+      </div>
+      <div class="fg full"><label>Condiciones especiales aplicables</label>
+        <textarea id="p-condiciones" style="min-height:80px;" placeholder="Cláusulas y condiciones especiales de la póliza..."></textarea>
+      </div>
+      <div class="fg full"><label>Notas internas</label>
+        <textarea id="p-notas" style="min-height:60px;"></textarea>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:flex-start;margin-top:16px;">
+      <button type="button" class="btn" onclick="polSwitchTab(2)">← Coberturas</button>
+    </div>
+  </div>
+
   <div class="modal-footer">
     <button class="btn" onclick="cerrarModal('modal-pol')">Cancelar</button>
-    <button class="btn btn-primary" onclick="guardarPoliza()">Guardar</button>
+    <button class="btn btn-primary" onclick="guardarPoliza()">Guardar póliza</button>
   </div>
 </div></div>
 
@@ -5399,6 +5462,19 @@ function eliminarFilaCobertura(i){
   polCobFilas.splice(i,1);
   if(!polCobFilas.length) polCobFilas = [{concepto:'', moneda:'MXN', monto:'', deducible:'', coaseguro_pct:''}];
   renderPolCobGrid();
+}
+
+function polSwitchTab(idx){
+  for(let i=0;i<4;i++){
+    const pane = g('pol-tab-'+i);
+    const btn  = g('pol-tab-btn-'+i);
+    if(pane) pane.style.display = i===idx ? 'block' : 'none';
+    if(btn){
+      btn.style.borderBottomColor = i===idx ? 'var(--accent-lt)' : 'transparent';
+      btn.style.color = i===idx ? 'var(--accent-lt)' : 'var(--text-sec)';
+      btn.style.fontWeight = i===idx ? '600' : '500';
+    }
+  }
 }
 
 function recalcPolCobTotal(){
