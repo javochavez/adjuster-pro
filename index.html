@@ -321,13 +321,13 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); co
 .brand em { color:var(--accent-lt); font-style:normal; }
 .brand span { font-size:11px; font-weight:400; color:var(--text-sec); margin-left:8px; text-transform:uppercase; letter-spacing:.04em; }
 .topbar-mid { flex:1; display:flex; gap:2px; }
-.nav-btn { background:transparent; border:none; padding:6px 13px; border-radius:var(--r); cursor:pointer; font-size:12px; color:var(--text-sec); font-family:inherit; transition:all .12s; white-space:nowrap; }
+.nav-btn { background:transparent; border:none; padding:5px 10px; border-radius:var(--r); cursor:pointer; font-size:11px; color:var(--text-sec); font-family:inherit; transition:all .12s; white-space:nowrap; }
 .nav-btn:hover { background:var(--surface); color:var(--text); }
 .nav-btn.active { background:var(--accent); color:#fff; font-weight:600; }
 .topbar-right { display:flex; align-items:center; gap:10px; }
 .tc-row { display:flex; align-items:center; gap:5px; font-size:11px; color:var(--text-ter); }
-.tc-row input { width:64px; padding:3px 6px; font-size:11px; border:1px solid var(--border-md); border-radius:6px; background:var(--bg); color:var(--text); font-family:inherit; }
-.user-lbl { font-size:11px; color:var(--text-sec); }
+.tc-row input { width:58px; padding:3px 5px; font-size:11px; border:1px solid var(--border-md); border-radius:6px; background:var(--bg); color:var(--text); font-family:inherit; }
+.user-lbl { font-size:11px; color:var(--text-sec); max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .logout-btn { background:transparent; border:1px solid var(--border-md); padding:4px 11px; border-radius:var(--r); cursor:pointer; font-size:11px; color:var(--text-sec); font-family:inherit; }
 .logout-btn:hover { border-color:var(--border-hi); color:var(--text); }
 
@@ -836,15 +836,15 @@ body.modo-lectura .readonly-hidden { display:none !important; }
       <button class="nav-btn" id="nav-reportes" onclick="switchMain('reportes',this)">Reportes</button>
     </div>
     <div class="topbar-right">
-      <div class="tc-row">USD/MXN <input type="number" id="tc-usd" value="17.50" step="0.01" oninput="recalcDash()"></div>
-      <div class="tc-row">EUR/MXN <input type="number" id="tc-eur" value="19.20" step="0.01" oninput="recalcDash()"></div>
+      <div class="tc-row" style="font-size:10px;">USD <input type="number" id="tc-usd" value="17.50" step="0.01" oninput="recalcDash()" style="width:50px;"></div>
+      <div class="tc-row" style="font-size:10px;">EUR <input type="number" id="tc-eur" value="19.20" step="0.01" oninput="recalcDash()" style="width:50px;"></div>
       <span id="conn-indicator" title="Estado de conexión"><span class="conn-dot"></span><span id="conn-label">En línea</span><span id="conn-badge"></span></span>
       <button class="btn-ia" onclick="abrirModal('modal-ia-config')" style="font-size:10px;padding:3px 9px;margin-right:2px;" title="Configurar API key de OpenAI">✦ IA</button>
       <!-- Menú usuario -->
       <div style="position:relative;" id="user-menu-wrap">
         <button onclick="userMenuToggle()" style="display:flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border-md);border-radius:var(--r);padding:4px 10px;cursor:pointer;font-family:inherit;color:var(--text);font-size:11px;">
           <span style="width:26px;height:26px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:#fff;" id="user-avatar">?</span>
-          <span id="user-lbl" style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+          <span id="user-lbl" style="display:none;"></span>
           <span style="color:var(--text-ter);font-size:10px;">▾</span>
         </button>
         <div id="user-menu-drop" style="display:none;position:absolute;right:0;top:calc(100% + 6px);background:var(--surface);border:1px solid var(--border-md);border-radius:var(--rl);box-shadow:0 8px 24px rgba(0,0,0,.3);min-width:220px;z-index:9999;overflow:hidden;">
