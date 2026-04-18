@@ -2682,9 +2682,9 @@ body.modo-lectura .readonly-hidden { display:none !important; }
 
     <div style="grid-column:1/-1;border-top:1px solid var(--border);padding-top:10px;margin-top:4px;font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.06em;">Importe de la reserva</div>
 
-    <div class="fg"><label>Reserva bruta</label><input type="number" id="res-monto" placeholder="0.00"></div>
-    <div class="fg"><label>Depreciación %</label><input type="number" id="res-dep-pct" value="0" step="0.01" placeholder="0.00"></div>
-    <div class="fg"><label>Monto pérdida estimada</label><input type="number" id="res-perdida" placeholder="0.00" oninput="calcBajoSeguro();calcResNeta()"></div>
+    <div class="fg"><label>Reserva bruta (Reclamación)</label><input type="number" id="res-monto" placeholder="0.00" oninput="calcResNeta()"></div>
+    <div class="fg"><label>Ajuste (monto)</label><input type="number" id="res-dep-pct" value="0" step="0.01" placeholder="0.00" oninput="calcResNeta()"></div>
+    <div class="fg"><label>Subtotal Ajustado</label><input type="number" id="res-perdida" placeholder="0.00" readonly style="background:var(--surface2);color:var(--text-sec);"></div>
 
     <div style="grid-column:1/-1;font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.06em;margin-top:6px;">Deducible</div>
     <div class="fg"><label>Descripción del deducible</label>
@@ -2712,7 +2712,7 @@ body.modo-lectura .readonly-hidden { display:none !important; }
 
     <!-- Reserva Neta calculada -->
     <div style="grid-column:1/-1;background:var(--surface2);border:1px solid var(--border-hi);border-radius:var(--r);padding:10px 14px;display:flex;justify-content:space-between;align-items:center;margin-top:6px;">
-      <span style="font-size:13px;font-weight:600;color:var(--text);">Reserva Neta = Pérdida − Bajo Seguro − Deducible − Coaseguro</span>
+      <span style="font-size:13px;font-weight:600;color:var(--text);">Cantidad Indemnizable Neta = Subtotal Ajustado − Bajo Seguro − Deducible − Coaseguro</span>
       <span id="res-neta-display" style="font-size:16px;font-weight:700;color:var(--accent-lt);">—</span>
     </div>
 
@@ -5886,19 +5886,22 @@ async function guardarTC(){
 
 
 function calcBajoSeguro(){
-  const perdida = parseFloat(document.getElementById('res-perdida')?.value)||0;
+  const bruta   = parseFloat(document.getElementById('res-monto')?.value)||0;
+  const ajuste  = parseFloat(document.getElementById('res-dep-pct')?.value)||0;
+  const subtotal = bruta - ajuste;
   const valReal = parseFloat(document.getElementById('res-valor-real')?.value)||0;
   const sumaAseg= parseFloat(document.getElementById('res-suma-aseg-cob')?.value)||0;
+  const perdidaEl = document.getElementById('res-perdida');
+  if(perdidaEl) perdidaEl.value = subtotal.toFixed(2);
   const field   = document.getElementById('res-bajo-seguro');
   if(!field) return;
   if(valReal > 0 && sumaAseg > 0 && sumaAseg < valReal){
-    const ratio = sumaAseg / valReal;          // proporción cubierta
-    const bajo  = perdida * (1 - ratio);       // lo que no cubre la póliza
-    field.value = Math.max(0, bajo).toFixed(2);
-  calcResNeta();
+    const pctBS = 1 - (sumaAseg / valReal);
+    field.value = Math.max(0, subtotal * pctBS).toFixed(2);
   } else {
     field.value = '0';
   }
+  calcResNeta();
 }
 
 
@@ -6293,16 +6296,21 @@ function seleccionarResCobertura(sl){
 }
 
 function calcResNeta(){
-  const perdida   = parseFloat(v('res-perdida'))||0;
-  const ded       = parseFloat(v('res-deducible'))||0;
-  const coasPct   = parseFloat(v('res-coas-pct'))||0;
+  const bruta     = parseFloat(v('res-monto'))||0;
+  const ajuste    = parseFloat(v('res-dep-pct'))||0;
+  const subtotalAj= bruta - ajuste;
   const bajo      = parseFloat(v('res-bajo-seguro'))||0;
-  const coasMonto = (perdida - ded) * (coasPct / 100);
-  const neta      = perdida - bajo - ded - coasMonto;
+  const perdidaAj = subtotalAj - bajo;
+  const ded       = parseFloat(v('res-deducible'))||0;
+  const subtotal2 = perdidaAj - ded;
+  const coasPct   = parseFloat(v('res-coas-pct'))||0;
+  const coasMonto = subtotal2 * (coasPct / 100);
+  const neta      = subtotal2 - coasMonto;
   const moneda    = v('res-mon')||'MXN';
+  if(g('res-dep-pct') && g('res-perdida')) g('res-perdida').value = subtotalAj.toFixed(2);
   if(g('res-coas-monto-display')) g('res-coas-monto-display').value = coasMonto.toFixed(2);
   const disp = g('res-neta-display');
-  if(disp) disp.textContent = isNaN(neta)||perdida===0 ? '—' : moneda+' '+fmtMXN(neta);
+  if(disp) disp.textContent = isNaN(neta)||bruta===0 ? '—' : moneda+' '+fmtMXN(neta);
 }
 
 async function guardarReserva(){
