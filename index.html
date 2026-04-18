@@ -1040,7 +1040,7 @@ body.modo-lectura .readonly-hidden { display:none !important; }
           <tbody id="ofic-body"></tbody></table></div>
         </div>
         <!-- ── CATÁLOGO DE DOCUMENTOS ── -->
-        <div id="cat-catdoc" style="display:none;display:flex;flex-direction:column;height:calc(100vh - 160px);">
+        <div id="cat-catdoc" style="display:none;flex-direction:column;height:calc(100vh - 160px);">
           <div class="toolbar" style="flex-wrap:wrap;gap:8px;flex-shrink:0;">
             <select id="catdoc-filtro-ramo" onchange="renderCatDoc()"
               style="padding:6px 10px;border:1px solid var(--border-md);border-radius:var(--r);
@@ -8801,7 +8801,7 @@ async function guardarSinAjust(){
 
 function switchCat(id,btn){
   ['aseg','asdo','cont','tc','ajust','ofic','catdoc'].forEach(c=>{
-    const el=g('cat-'+c); if(el) el.style.display=c===id?'block':'none';
+    const el=g('cat-'+c); if(el) el.style.display=c===id?(c==='catdoc'?'flex':'block'):'none';
   });
   document.querySelectorAll('#panel-catalogos .tab-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
