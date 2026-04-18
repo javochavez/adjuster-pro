@@ -11,9 +11,10 @@ import { data, currentSin } from './state.js';
 import * as state from './state.js';
 import { loadRteSin, loadBienesRte } from './rte.js';
 import { offlineSaveSiniestro } from './offline.js';
-import { renderDetalle, renderSiniestros } from './expediente.js';
+import { renderDetalle } from './expediente.js';
+import { renderSiniestros } from './dashboard.js';
 import { loadAll } from './db.js';
-import { buildCoberturaTableHTML } from './expediente.js';
+import { buildCoberturaTableHTML } from './reportes.js';
 
 const INTRO_DEFAULT = `El presente informe preliminar se elabora en seguimiento de la designación de [Compañía], por parte de su apreciable [Funcionario], relativa a la atención de la pérdida sufrida por el Asegurado por [Describir el tipo de daños y bienes afectados], hechos ocurridos el [Fecha del Siniestro] en su domicilio sito en [Dirección donde ocurrieron los daños].
 
