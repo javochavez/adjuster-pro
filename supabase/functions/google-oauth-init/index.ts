@@ -1,7 +1,13 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const GOOGLE_CLIENT_ID     = Deno.env.get("GOOGLE_CLIENT_ID")!;
-const GOOGLE_REDIRECT_URI  = Deno.env.get("GOOGLE_REDIRECT_URI")!;
+const GOOGLE_CLIENT_ID    = Deno.env.get("GOOGLE_CLIENT_ID")!;
+const GOOGLE_REDIRECT_URI = Deno.env.get("GOOGLE_REDIRECT_URI")!;
+
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-user-id",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+};
 
 const SCOPES = [
   "https://www.googleapis.com/auth/drive.file",
@@ -9,11 +15,15 @@ const SCOPES = [
 ].join(" ");
 
 serve(async (req) => {
-  // Obtener el user_id del header que envía la app
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: CORS_HEADERS });
+  }
+
   const userId = req.headers.get("x-user-id");
   if (!userId) {
     return new Response(JSON.stringify({ error: "Missing user_id" }), {
-      status: 400, headers: { "Content-Type": "application/json" }
+      status: 400,
+      headers: { ...CORS_HEADERS, "Content-Type": "application/json" }
     });
   }
 
@@ -33,9 +43,6 @@ serve(async (req) => {
 
   return new Response(JSON.stringify({ url }), {
     status: 200,
-    headers: {
-      "Content-Type": "application/json",
-      "Access-Control-Allow-Origin": "*",
-    }
+    headers: { ...CORS_HEADERS, "Content-Type": "application/json" }
   });
 });
