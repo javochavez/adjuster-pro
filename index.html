@@ -6168,6 +6168,7 @@ function syncPolLimTexto(){
   const rte=g('p-lim-texto-rte'),ta=g('p-lim-texto');
   if(rte&&ta) ta.value=rte.innerHTML;
 }
+function syncPolLim(){ syncPolLimTexto(); }
 function loadPolLimTexto(html){
   const rte=g('p-lim-texto-rte'),ta=g('p-lim-texto');
   if(rte) rte.innerHTML=html||'';
@@ -6199,6 +6200,7 @@ function syncPolGiroAseg(){
   const rte=g('p-giro-aseg-rte'),ta=g('p-giro-aseg');
   if(rte&&ta) ta.value=rte.innerHTML;
 }
+function syncPolGiro(){ syncPolGiroAseg(); }
 function loadPolGiroAseg(html){
   const rte=g('p-giro-aseg-rte'),ta=g('p-giro-aseg');
   if(rte) rte.innerHTML=html||'';
@@ -6261,6 +6263,7 @@ function syncPolDescAseg(){
   const rte=g('p-desc-aseg-rte'), ta=g('p-desc-aseg');
   if(rte&&ta) ta.value=rte.innerHTML;
 }
+function syncPolDesc(){ syncPolDescAseg(); }
 function loadPolDescAseg(html){
   const rte=g('p-desc-aseg-rte'), ta=g('p-desc-aseg');
   if(rte) rte.innerHTML=html||'';
