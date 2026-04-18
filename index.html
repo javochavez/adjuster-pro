@@ -838,15 +838,57 @@ body.modo-lectura .readonly-hidden { display:none !important; }
     <div class="topbar-right">
       <div class="tc-row">USD/MXN <input type="number" id="tc-usd" value="17.50" step="0.01" oninput="recalcDash()"></div>
       <div class="tc-row">EUR/MXN <input type="number" id="tc-eur" value="19.20" step="0.01" oninput="recalcDash()"></div>
-      <span class="user-lbl" id="user-lbl"></span>
       <span id="conn-indicator" title="Estado de conexión"><span class="conn-dot"></span><span id="conn-label">En línea</span><span id="conn-badge"></span></span>
       <button class="btn-ia" onclick="abrirModal('modal-ia-config')" style="font-size:10px;padding:3px 9px;margin-right:2px;" title="Configurar API key de OpenAI">✦ IA</button>
-      <button class="logout-btn" onclick="doLogout()">Salir</button>
+      <!-- Menú usuario -->
+      <div style="position:relative;" id="user-menu-wrap">
+        <button onclick="userMenuToggle()" style="display:flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border-md);border-radius:var(--r);padding:4px 10px;cursor:pointer;font-family:inherit;color:var(--text);font-size:11px;">
+          <span style="width:26px;height:26px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:#fff;" id="user-avatar">?</span>
+          <span id="user-lbl" style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+          <span style="color:var(--text-ter);font-size:10px;">▾</span>
+        </button>
+        <div id="user-menu-drop" style="display:none;position:absolute;right:0;top:calc(100% + 6px);background:var(--surface);border:1px solid var(--border-md);border-radius:var(--rl);box-shadow:0 8px 24px rgba(0,0,0,.3);min-width:220px;z-index:9999;overflow:hidden;">
+          <div style="padding:12px 14px;border-bottom:1px solid var(--border);background:var(--surface2);">
+            <div style="font-size:12px;font-weight:600;color:var(--text);" id="user-menu-email">—</div>
+            <div style="font-size:11px;color:var(--text-sec);margin-top:2px;" id="user-menu-rol">—</div>
+          </div>
+          <div style="padding:4px 0;">
+            <button onclick="userMenuToggle();abrirModal('modal-perfil')" style="width:100%;text-align:left;padding:9px 14px;background:none;border:none;color:var(--text);font-size:12px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:8px;">
+              👤 Mi perfil
+            </button>
+            <button onclick="userMenuToggle();abrirModal('modal-cambiar-pass')" style="width:100%;text-align:left;padding:9px 14px;background:none;border:none;color:var(--text);font-size:12px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:8px;">
+              🔑 Cambiar contraseña
+            </button>
+            <button id="user-menu-admin-btn" onclick="userMenuToggle();switchMain('usuarios',document.getElementById('nav-usuarios'))" style="display:none;width:100%;text-align:left;padding:9px 14px;background:none;border:none;color:var(--text);font-size:12px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:8px;">
+              👥 Gestión de usuarios
+            </button>
+            <div style="border-top:1px solid var(--border);margin:4px 0;"></div>
+            <button onclick="doLogout()" style="width:100%;text-align:left;padding:9px 14px;background:none;border:none;color:#f08080;font-size:12px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:8px;">
+              ⎋ Cerrar sesión
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
   <div class="body-wrap">
     <div class="main">
+
+      <!-- USUARIOS (solo admin) -->
+      <div id="panel-usuarios" class="panel">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+          <div style="font-size:16px;font-weight:700;color:var(--text);">Gestión de Usuarios</div>
+          <button class="btn btn-primary" onclick="abrirModal('modal-nuevo-usuario')">+ Nuevo usuario</button>
+        </div>
+        <div class="tbl-wrap">
+          <table><thead><tr>
+            <th>Email</th><th>Nombre</th><th>Rol</th><th>Estatus</th><th>Creado</th><th>Acciones</th>
+          </tr></thead>
+          <tbody id="usuarios-body"><tr><td colspan="6" class="empty">Cargando usuarios…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
 
       <!-- DASHBOARD -->
       <div id="panel-dashboard" class="panel active">
@@ -2660,6 +2702,90 @@ body.modo-lectura .readonly-hidden { display:none !important; }
   </div>
 </div></div>
 
+<!-- Modal: Nuevo usuario -->
+<div class="overlay" id="modal-nuevo-usuario">
+<div class="modal modal-sm">
+  <div class="modal-title" id="nuevo-usr-title">Nuevo usuario</div>
+  <div style="padding:1.2rem 1.5rem;">
+    <input type="hidden" id="nu-id">
+    <div class="form-grid">
+      <div class="fg full"><label>Correo electrónico</label>
+        <input type="email" id="nu-email" placeholder="correo@empresa.com">
+      </div>
+      <div class="fg full" id="nu-pass-wrap"><label>Contraseña provisional</label>
+        <input type="password" id="nu-pass" placeholder="Mínimo 8 caracteres">
+      </div>
+      <div class="fg full"><label>Nombre</label>
+        <input type="text" id="nu-nombre" placeholder="Nombre completo">
+      </div>
+      <div class="fg full"><label>Rol</label>
+        <select id="nu-rol">
+          <option value="ajustador">Ajustador</option>
+          <option value="consultor">Consultor (solo lectura)</option>
+          <option value="admin">Administrador</option>
+        </select>
+      </div>
+      <div class="fg full"><label>Estatus</label>
+        <select id="nu-aprobado">
+          <option value="true">Aprobado — puede ingresar</option>
+          <option value="false">Pendiente — sin acceso</option>
+        </select>
+      </div>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn" onclick="cerrarModal('modal-nuevo-usuario')">Cancelar</button>
+    <button class="btn btn-primary" onclick="guardarUsuario()">Guardar</button>
+  </div>
+</div></div>
+
+<!-- Modal: Mi Perfil -->
+<div class="overlay" id="modal-perfil">
+<div class="modal modal-sm">
+  <div class="modal-title">Mi perfil</div>
+  <div style="padding:1.2rem 1.5rem;">
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">
+      <div style="width:52px;height:52px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:22px;color:#fff;" id="perfil-avatar">?</div>
+      <div>
+        <div style="font-size:15px;font-weight:700;color:var(--text);" id="perfil-email-lbl">—</div>
+        <div style="font-size:12px;color:var(--text-sec);margin-top:2px;" id="perfil-rol-lbl">—</div>
+      </div>
+    </div>
+    <div class="form-grid">
+      <div class="fg full"><label>Nombre para mostrar</label>
+        <input type="text" id="perfil-nombre" placeholder="Tu nombre completo">
+      </div>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn" onclick="cerrarModal('modal-perfil')">Cancelar</button>
+    <button class="btn btn-primary" onclick="guardarPerfil()">Guardar</button>
+  </div>
+</div></div>
+
+<!-- Modal: Cambiar contraseña -->
+<div class="overlay" id="modal-cambiar-pass">
+<div class="modal modal-sm">
+  <div class="modal-title">Cambiar contraseña</div>
+  <div style="padding:1.2rem 1.5rem;">
+    <div class="form-grid">
+      <div class="fg full"><label>Nueva contraseña</label>
+        <input type="password" id="cp-nueva" placeholder="Mínimo 8 caracteres">
+      </div>
+      <div class="fg full"><label>Confirmar nueva contraseña</label>
+        <input type="password" id="cp-confirma" placeholder="Repite la contraseña">
+      </div>
+      <div class="fg full" id="cp-error" style="display:none;">
+        <span style="font-size:12px;color:#f08080;"></span>
+      </div>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn" onclick="cerrarModal('modal-cambiar-pass')">Cancelar</button>
+    <button class="btn btn-primary" onclick="guardarNuevaPass()">Cambiar contraseña</button>
+  </div>
+</div></div>
+
 <!-- Contacto -->
 <div class="overlay" id="modal-cont">
 <div class="modal modal-sm">
@@ -3475,6 +3601,7 @@ function mostrarApp(email, rol){
   currentUserReadonly = (rol === 'consultor');
   g('login-wrap').style.display = 'none';
   g('app').style.display        = 'flex';
+  userMenuInit(email, rol);
   const lbl = g('user-lbl');
   if(lbl){
     const rolLabel = {admin:'Admin', ajustador:'Ajustador', consultor:'Consultor'}[rol] || '';
@@ -4340,6 +4467,174 @@ function pgTipoChange(){
   } else {
     refDiv.style.display='none';
   }
+}
+
+// ── Menú usuario ─────────────────────────────────────────────────────────
+let _userEmail = '';
+let _userRol   = '';
+
+function userMenuToggle(){
+  const drop = g('user-menu-drop');
+  if(!drop) return;
+  drop.style.display = drop.style.display === 'none' ? 'block' : 'none';
+}
+document.addEventListener('click', e => {
+  const wrap = g('user-menu-wrap');
+  if(wrap && !wrap.contains(e.target)) {
+    const drop = g('user-menu-drop');
+    if(drop) drop.style.display = 'none';
+  }
+});
+
+function userMenuInit(email, rol){
+  _userEmail = email;
+  _userRol   = rol;
+  const initial = (email||'?')[0].toUpperCase();
+  const rolLabel = {admin:'Administrador', ajustador:'Ajustador', consultor:'Consultor'}[rol] || rol;
+  if(g('user-avatar'))     g('user-avatar').textContent    = initial;
+  if(g('user-lbl'))        g('user-lbl').textContent       = email;
+  if(g('user-menu-email')) g('user-menu-email').textContent = email;
+  if(g('user-menu-rol'))   g('user-menu-rol').textContent   = rolLabel;
+  if(g('perfil-avatar'))   g('perfil-avatar').textContent  = initial;
+  if(g('perfil-email-lbl'))g('perfil-email-lbl').textContent = email;
+  if(g('perfil-rol-lbl'))  g('perfil-rol-lbl').textContent   = rolLabel;
+  // Mostrar opción admin solo si es admin
+  const adminBtn = g('user-menu-admin-btn');
+  if(adminBtn) adminBtn.style.display = rol === 'admin' ? 'flex' : 'none';
+  // Agregar nav btn usuarios si es admin
+  if(rol === 'admin'){
+    if(!g('nav-usuarios')){
+      const btn = document.createElement('button');
+      btn.className = 'nav-btn';
+      btn.id = 'nav-usuarios';
+      btn.textContent = '👥 Usuarios';
+      btn.onclick = function(){ switchMain('usuarios', this); cargarUsuarios(); };
+      g('nav-dashboard')?.parentElement?.appendChild(btn);
+    }
+  }
+}
+
+async function guardarPerfil(){
+  const nombre = g('perfil-nombre')?.value?.trim();
+  const { error } = await db.auth.updateUser({ data: { nombre } });
+  if(error){ toast('Error: ' + error.message); return; }
+  toast('✓ Perfil actualizado');
+  cerrarModal('modal-perfil');
+}
+
+async function guardarNuevaPass(){
+  const nueva    = g('cp-nueva')?.value    || '';
+  const confirma = g('cp-confirma')?.value || '';
+  const errEl    = g('cp-error');
+  if(nueva.length < 8){
+    if(errEl){ errEl.style.display='block'; errEl.querySelector('span').textContent='Mínimo 8 caracteres'; }
+    return;
+  }
+  if(nueva !== confirma){
+    if(errEl){ errEl.style.display='block'; errEl.querySelector('span').textContent='Las contraseñas no coinciden'; }
+    return;
+  }
+  if(errEl) errEl.style.display = 'none';
+  const { error } = await db.auth.updateUser({ password: nueva });
+  if(error){ toast('Error: ' + error.message); return; }
+  toast('✓ Contraseña actualizada');
+  cerrarModal('modal-cambiar-pass');
+  if(g('cp-nueva'))    g('cp-nueva').value    = '';
+  if(g('cp-confirma')) g('cp-confirma').value = '';
+}
+
+// ── Gestión de usuarios (solo admin) ─────────────────────────────────────
+async function cargarUsuarios(){
+  const tbody = g('usuarios-body');
+  if(!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="6" class="empty">Cargando…</td></tr>';
+  const { data: perfiles, error } = await db
+    .from('perfiles')
+    .select('*')
+    .order('created_at', { ascending: false });
+  if(error){ tbody.innerHTML = '<tr><td colspan="6" class="empty">Error al cargar usuarios.</td></tr>'; return; }
+  if(!perfiles.length){ tbody.innerHTML = '<tr><td colspan="6" class="empty">Sin usuarios registrados.</td></tr>'; return; }
+  const ROL = { admin:'Admin', ajustador:'Ajustador', consultor:'Consultor' };
+  tbody.innerHTML = perfiles.map(p => `<tr>
+    <td>${p.email||'—'}</td>
+    <td>${p.nombre||'—'}</td>
+    <td><span class="badge">${ROL[p.rol]||p.rol||'—'}</span></td>
+    <td>${p.aprobado
+      ? '<span style="color:#4ade80;font-size:11px;">✓ Aprobado</span>'
+      : '<span style="color:#f08080;font-size:11px;">⏳ Pendiente</span>'}</td>
+    <td style="font-size:11px;color:var(--text-ter);">${p.created_at ? fmtD(p.created_at.slice(0,10)) : '—'}</td>
+    <td>
+      <div class="td-acts">
+        <button class="btn btn-sm" onclick="editarUsuario(${JSON.stringify(p).replace(/"/g,'&quot;')})">Editar</button>
+        ${!p.aprobado
+          ? `<button class="btn btn-sm" style="color:#4ade80;border-color:rgba(74,222,128,.3);" onclick="aprobarUsuario('${p.id}')">✓ Aprobar</button>`
+          : `<button class="btn btn-sm" style="color:#f08080;border-color:rgba(240,128,128,.3);" onclick="desactivarUsuario('${p.id}')">Bloquear</button>`}
+      </div>
+    </td>
+  </tr>`).join('');
+}
+
+function editarUsuario(p){
+  g('nuevo-usr-title').textContent = 'Editar usuario';
+  g('nu-id').value      = p.id || '';
+  g('nu-email').value   = p.email || '';
+  g('nu-nombre').value  = p.nombre || '';
+  g('nu-rol').value     = p.rol || 'ajustador';
+  g('nu-aprobado').value = p.aprobado ? 'true' : 'false';
+  const passWrap = g('nu-pass-wrap');
+  if(passWrap) passWrap.style.display = 'none';
+  abrirModal('modal-nuevo-usuario');
+}
+
+async function aprobarUsuario(id){
+  const { error } = await db.from('perfiles').update({ aprobado: true }).eq('id', id);
+  if(error){ toast('Error: ' + error.message); return; }
+  toast('✓ Usuario aprobado');
+  cargarUsuarios();
+}
+
+async function desactivarUsuario(id){
+  if(!confirm('¿Bloquear este usuario? No podrá iniciar sesión.')) return;
+  const { error } = await db.from('perfiles').update({ aprobado: false }).eq('id', id);
+  if(error){ toast('Error: ' + error.message); return; }
+  toast('Usuario bloqueado');
+  cargarUsuarios();
+}
+
+async function guardarUsuario(){
+  const id      = g('nu-id')?.value;
+  const email   = g('nu-email')?.value?.trim();
+  const nombre  = g('nu-nombre')?.value?.trim();
+  const rol     = g('nu-rol')?.value;
+  const aprobado = g('nu-aprobado')?.value === 'true';
+
+  if(id){
+    // Actualizar perfil existente
+    const { error } = await db.from('perfiles').update({ nombre, rol, aprobado }).eq('id', id);
+    if(error){ toast('Error: ' + error.message); return; }
+    toast('✓ Usuario actualizado');
+  } else {
+    // Crear nuevo usuario via Supabase Auth Admin API — requiere service_role key
+    // Como alternativa segura: usar signUp con confirmación deshabilitada
+    const pass = g('nu-pass')?.value || '';
+    if(!email){ toast('El correo es obligatorio'); return; }
+    if(pass.length < 8){ toast('La contraseña debe tener mínimo 8 caracteres'); return; }
+    const { error: signUpErr } = await db.auth.signUp({
+      email, password: pass,
+      options: { data: { nombre, rol } }
+    });
+    if(signUpErr){ toast('Error: ' + signUpErr.message); return; }
+    // Aprobar inmediatamente si se marcó como aprobado
+    if(aprobado){
+      // El perfil se crea por trigger en Supabase — actualizamos tras un delay
+      setTimeout(async () => {
+        await db.from('perfiles').update({ aprobado: true, rol, nombre }).eq('email', email);
+      }, 2000);
+    }
+    toast('✓ Usuario creado — recibirá email de confirmación');
+  }
+  cerrarModal('modal-nuevo-usuario');
+  cargarUsuarios();
 }
 
 function reservaVigente(sinId){
