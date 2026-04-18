@@ -1101,57 +1101,126 @@ body.modo-lectura .readonly-hidden { display:none !important; }
 
       <!-- REPORTES -->
       <div id="panel-reportes" class="panel">
-        <div style="display:grid;grid-template-columns:300px 1fr;gap:14px;align-items:start;height:calc(100vh - 80px);">
-          <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:1.1rem;overflow-y:auto;max-height:100%;">
-            <div class="section-title">Constructor de reporte</div>
-            <div class="fg" style="margin-bottom:10px;"><label>Expediente</label>
-              <select id="r-caso" onchange="previsualizarReporte()"><option value="">— Selecciona —</option></select></div>
+        <div style="display:grid;grid-template-columns:360px 1fr;gap:0;height:calc(100vh - 52px);overflow:hidden;">
 
-            <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">Tipo de reporte</div>
-            <div style="display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap;">
-              <button id="btn-tipo-formal" class="btn btn-primary" style="flex:1;font-size:11px;white-space:nowrap;" onclick="setTipoReporte('formal',this)">Inf. Preliminar</button>
-              <button id="btn-tipo-actualizacion" class="btn" style="flex:1;font-size:11px;white-space:nowrap;" onclick="setTipoReporte('actualizacion',this)">Inf. Actualización</button>
-              <button id="btn-tipo-interno" class="btn" style="flex:1;font-size:11px;white-space:nowrap;" onclick="setTipoReporte('interno',this)">Interno resumido</button>
-            </div>
+          <!-- ── PANEL IZQUIERDO ── -->
+          <div style="background:var(--surface);border-right:1px solid var(--border-md);display:flex;flex-direction:column;overflow:hidden;">
 
-            <!-- Selector de informe específico — visible para Actualización -->
-            <div id="r-inf-selector-wrap" style="display:none;margin-bottom:8px;">
-              <label style="font-size:11px;color:var(--text-sec);display:block;margin-bottom:4px;">Selecciona el informe de actualización</label>
-              <select id="r-inf-selector" onchange="onRptInfSelectorChange()" style="width:100%;padding:6px 8px;font-size:12px;border:1px solid var(--border-md);border-radius:var(--r);background:var(--bg2);color:var(--text);font-family:inherit;">
-                <option value="">— Último registrado —</option>
-              </select>
-            </div>
-            <div id="r-aviso-gnp" style="display:none;font-size:10px;color:#ffcc80;background:rgba(186,117,23,.15);border:1px solid rgba(186,117,23,.3);border-radius:6px;padding:5px 8px;margin-bottom:10px;">
-              El formato GNP no aplica para esta aseguradora. Se genera reporte formal genérico.
-            </div>
+            <!-- Header constructor -->
+            <div style="padding:14px 16px 10px;border-bottom:1px solid var(--border);flex-shrink:0;">
+              <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px;letter-spacing:.01em;">🗂 Constructor de Reporte</div>
 
-            <div style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">Secciones</div>
-            <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:12px;" id="r-secciones">
-              <label class="r-check"><input type="checkbox" value="identificacion" checked onchange="previsualizarReporte()"> Identificación del siniestro</label>
-              <label class="r-check"><input type="checkbox" value="estimacion" checked onchange="previsualizarReporte()"> Estimación por coberturas</label>
-              <label class="r-check"><input type="checkbox" value="coaseguro" checked onchange="previsualizarReporte()"> Coaseguro</label>
-              <label class="r-check"><input type="checkbox" value="reaseguro" checked onchange="previsualizarReporte()"> Reaseguro</label>
-              <label class="r-check"><input type="checkbox" value="inspeccion" checked onchange="previsualizarReporte()"> Resultado de inspección</label>
-              <label class="r-check"><input type="checkbox" value="desarrollo" checked onchange="previsualizarReporte()"> Desarrollo del siniestro</label>
-              <label class="r-check"><input type="checkbox" value="salvamento" checked onchange="previsualizarReporte()"> Salvamento y recuperación</label>
-              <label class="r-check"><input type="checkbox" value="estrategias" checked onchange="previsualizarReporte()"> Estrategias y observaciones</label>
-              <label class="r-check"><input type="checkbox" value="cronologia" checked onchange="previsualizarReporte()"> Cronología</label>
-              <label class="r-check"><input type="checkbox" value="financiero" checked onchange="previsualizarReporte()"> Resumen financiero</label>
-              <label class="r-check"><input type="checkbox" value="bitacora" onchange="previsualizarReporte()"> Bitácora del ajustador</label>
+              <!-- Buscador de expediente -->
+              <div style="position:relative;margin-bottom:8px;">
+                <input type="text" id="r-exp-search"
+                  placeholder="Buscar por Ref., Asegurado, Aseguradora…"
+                  oninput="rptFiltrarExp(this.value)"
+                  style="width:100%;padding:8px 10px 8px 32px;border:1px solid var(--border-md);border-radius:var(--r);background:var(--bg2);color:var(--text);font-size:12px;font-family:inherit;box-sizing:border-box;">
+                <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-ter);font-size:13px;">🔍</span>
+              </div>
+              <div id="r-exp-results" style="max-height:180px;overflow-y:auto;border:1px solid var(--border-md);border-radius:var(--r);background:var(--bg2);display:none;"></div>
+              <input type="hidden" id="r-caso">
+              <div id="r-exp-sel-display" style="display:none;padding:7px 10px;background:rgba(100,160,255,.08);border:1px solid var(--accent);border-radius:var(--r);font-size:12px;margin-top:4px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <div>
+                    <div style="font-weight:700;color:var(--text);" id="r-exp-sel-ref">—</div>
+                    <div style="font-size:11px;color:var(--text-sec);" id="r-exp-sel-sub">—</div>
+                  </div>
+                  <button type="button" onclick="rptLimpiarExp()" style="background:none;border:none;color:var(--text-ter);cursor:pointer;font-size:16px;padding:0 4px;">✕</button>
+                </div>
+              </div>
             </div>
 
-            <div class="fg" style="margin-bottom:10px;"><label>Logotipo (PNG)</label>
-              <input type="file" id="r-logo" accept="image/png,image/jpeg" onchange="cargarLogo(this)" style="font-size:11px;padding:4px 6px;">
-              <div id="r-logo-preview" style="margin-top:4px;"></div>
-            </div>
-            <div style="display:flex;flex-direction:column;gap:6px;">
-              <button class="btn btn-primary" onclick="imprimirReporte()" style="width:100%;">Imprimir / Guardar PDF</button>
-              <button class="btn" id="btn-word-generico" onclick="descargarWord()" style="width:100%;font-size:12px;">AASA PRELIMINAR (.docx)</button>
-              <button class="btn" id="btn-word-final" onclick="descargarWordFinal()" style="width:100%;font-size:12px;background:rgba(0,32,96,.18);border-color:rgba(0,32,96,.5);color:var(--text);">AASA FINAL (.docx)</button>
-              <button class="btn" id="btn-word-gnp" onclick="descargarWordGNP()" style="width:100%;font-size:12px;display:none;background:rgba(255,204,128,.12);border-color:rgba(255,204,128,.4);color:#ffcc80;">Descargar Informe GNP (.docx)</button>
-              <div style="font-size:10px;color:var(--text-ter);text-align:center;">PDF: selecciona "Guardar como PDF"<br>en el diálogo de impresión</div>
+            <!-- Secciones colapsables -->
+            <div style="flex:1;overflow-y:auto;padding:0;">
+
+              <!-- ① Tipo de reporte -->
+              <div style="border-bottom:1px solid var(--border);">
+                <button type="button" onclick="rptToggleSeccion('s-tipo')" style="width:100%;text-align:left;padding:11px 16px;background:none;border:none;color:var(--text);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;justify-content:space-between;align-items:center;">
+                  <span>① Tipo de reporte</span><span id="s-tipo-arrow" style="color:var(--text-ter);">▾</span>
+                </button>
+                <div id="s-tipo-body" style="padding:0 16px 12px;">
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;">
+                    <button id="btn-tipo-formal" class="btn btn-primary" style="font-size:11px;white-space:nowrap;padding:7px 4px;" onclick="setTipoReporte('formal',this)">📄 Preliminar</button>
+                    <button id="btn-tipo-actualizacion" class="btn" style="font-size:11px;white-space:nowrap;padding:7px 4px;" onclick="setTipoReporte('actualizacion',this)">🔄 Actualización</button>
+                  </div>
+                  <button id="btn-tipo-interno" class="btn" style="width:100%;font-size:11px;padding:7px 4px;margin-bottom:8px;" onclick="setTipoReporte('interno',this)">📋 Interno resumido</button>
+                  <div id="r-inf-selector-wrap" style="display:none;">
+                    <label style="font-size:10px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.06em;">Versión de actualización</label>
+                    <select id="r-inf-selector" onchange="onRptInfSelectorChange()"
+                      style="width:100%;margin-top:4px;padding:6px 8px;border:1px solid var(--border-md);border-radius:var(--r);background:var(--bg2);color:var(--text);font-size:11px;font-family:inherit;">
+                      <option value="">— Último registrado —</option>
+                    </select>
+                  </div>
+                  <div id="r-aviso-gnp" style="display:none;font-size:11px;color:#ffcc80;background:rgba(255,204,128,.07);border-left:3px solid #ffcc80;padding:5px 8px;border-radius:0 4px 4px 0;margin-top:6px;">
+                    Se genera reporte formal genérico.
+                  </div>
+                </div>
+              </div>
+
+              <!-- ② Secciones -->
+              <div style="border-bottom:1px solid var(--border);">
+                <button type="button" onclick="rptToggleSeccion('s-secs')" style="width:100%;text-align:left;padding:11px 16px;background:none;border:none;color:var(--text);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;justify-content:space-between;align-items:center;">
+                  <span>② Secciones del informe</span><span id="s-secs-arrow" style="color:var(--text-ter);">▾</span>
+                </button>
+                <div id="s-secs-body" style="padding:0 16px 12px;">
+                  <div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:8px;">
+                    <button type="button" onclick="rptSelAllSecs(true)" style="font-size:10px;color:var(--accent-lt);background:none;border:none;cursor:pointer;font-family:inherit;">Todos</button>
+                    <button type="button" onclick="rptSelAllSecs(false)" style="font-size:10px;color:var(--text-ter);background:none;border:none;cursor:pointer;font-family:inherit;">Ninguno</button>
+                  </div>
+                  <div id="r-secciones" style="display:grid;grid-template-columns:1fr 1fr;gap:4px 8px;">
+                    <label class="r-check"><input type="checkbox" value="identificacion" checked onchange="previsualizarReporte()"> Identificación</label>
+                    <label class="r-check"><input type="checkbox" value="estimacion" checked onchange="previsualizarReporte()"> Estimación</label>
+                    <label class="r-check"><input type="checkbox" value="coaseguro" checked onchange="previsualizarReporte()"> Coaseguro</label>
+                    <label class="r-check"><input type="checkbox" value="reaseguro" checked onchange="previsualizarReporte()"> Reaseguro</label>
+                    <label class="r-check"><input type="checkbox" value="inspeccion" checked onchange="previsualizarReporte()"> Inspección</label>
+                    <label class="r-check"><input type="checkbox" value="desarrollo" checked onchange="previsualizarReporte()"> Desarrollo</label>
+                    <label class="r-check"><input type="checkbox" value="salvamento" checked onchange="previsualizarReporte()"> Salvamento</label>
+                    <label class="r-check"><input type="checkbox" value="estrategias" checked onchange="previsualizarReporte()"> Estrategias</label>
+                    <label class="r-check"><input type="checkbox" value="cronologia" checked onchange="previsualizarReporte()"> Cronología</label>
+                    <label class="r-check"><input type="checkbox" value="financiero" checked onchange="previsualizarReporte()"> Financiero</label>
+                    <label class="r-check"><input type="checkbox" value="bitacora" onchange="previsualizarReporte()"> Bitácora</label>
+                  </div>
+                </div>
+              </div>
+
+              <!-- ③ Salida -->
+              <div>
+                <button type="button" onclick="rptToggleSeccion('s-salida')" style="width:100%;text-align:left;padding:11px 16px;background:none;border:none;color:var(--text);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;justify-content:space-between;align-items:center;">
+                  <span>③ Logotipo y salida</span><span id="s-salida-arrow" style="color:var(--text-ter);">▾</span>
+                </button>
+                <div id="s-salida-body" style="padding:0 16px 16px;">
+                  <div style="margin-bottom:10px;">
+                    <label style="font-size:11px;color:var(--text-sec);display:block;margin-bottom:4px;">Logotipo (PNG/JPG)</label>
+                    <input type="file" id="r-logo" accept="image/png,image/jpeg" onchange="cargarLogo(this)" style="font-size:11px;padding:4px 6px;width:100%;box-sizing:border-box;">
+                    <div id="r-logo-preview" style="margin-top:6px;"></div>
+                  </div>
+                  <div style="display:flex;flex-direction:column;gap:6px;">
+                    <button class="btn btn-primary" onclick="imprimirReporte()" style="width:100%;font-size:12px;">
+                      🖨 Imprimir / Guardar PDF
+                    </button>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+                      <button class="btn" id="btn-word-generico" onclick="descargarWord()" style="font-size:11px;padding:7px 4px;">
+                        📝 AASA Preliminar
+                      </button>
+                      <button class="btn" id="btn-word-final" onclick="descargarWordFinal()" style="font-size:11px;padding:7px 4px;background:rgba(0,32,96,.18);border-color:rgba(0,32,96,.5);color:var(--text);">
+                        📝 AASA Final
+                      </button>
+                    </div>
+                    <button class="btn" id="btn-word-gnp" onclick="descargarWordGNP()" style="width:100%;font-size:11px;display:none;background:rgba(255,204,128,.12);border-color:rgba(255,204,128,.4);color:#ffcc80;">
+                      📝 Informe GNP (.docx)
+                    </button>
+                    <div style="font-size:10px;color:var(--text-ter);text-align:center;padding-top:2px;">
+                      PDF → selecciona "Guardar como PDF" en el diálogo de impresión
+                    </div>
+                  </div>
+                </div>
+              </div>
+
             </div>
           </div>
+
+          <!-- ── PANEL DERECHO: Vista previa ── -->
           <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:1.1rem;overflow:auto;max-height:100%;">
             <div class="section-title">Vista previa</div>
             <iframe id="r-preview-frame" style="width:100%;min-height:600px;border:none;border-radius:4px;background:#fff;" srcdoc="<div style='padding:20px;font-family:sans-serif;color:#888;font-size:13px;'>Selecciona un expediente para previsualizar.</div>"></iframe>
@@ -6875,6 +6944,82 @@ async function guardarDocumento(){
 
 /* ── REPORTES ── */
 let tipoReporte = 'formal';
+
+// ── Reportes: búsqueda de expediente ─────────────────────────────────────
+function rptFiltrarExp(q){
+  const res = g('r-exp-results');
+  const sel = g('r-caso');
+  if(!res) return;
+  if(!q.trim()){ res.style.display='none'; return; }
+  const qL = q.toLowerCase();
+  const matches = (data.sin||[]).filter(s=>{
+    const pol  = (data.pol||[]).find(p=>p.id===s.id_poliza)||{};
+    const asdo = (data.asdo||[]).find(a=>a.id===pol.id_asegurado)||{};
+    const aseg = (data.aseg||[]).find(a=>a.id===pol.id_aseguradora)||{};
+    return (s.numero_exp||'').toLowerCase().includes(qL)
+        || (asdo.nombre||'').toLowerCase().includes(qL)
+        || (aseg.nombre||'').toLowerCase().includes(qL)
+        || (s.numero_siniestro||'').toLowerCase().includes(qL);
+  }).slice(0,10);
+  if(!matches.length){ res.style.display='none'; return; }
+  res.style.display = 'block';
+  res.innerHTML = matches.map(s=>{
+    const pol  = (data.pol||[]).find(p=>p.id===s.id_poliza)||{};
+    const asdo = (data.asdo||[]).find(a=>a.id===pol.id_asegurado)||{};
+    const aseg = (data.aseg||[]).find(a=>a.id===pol.id_aseguradora)||{};
+    return `<div onclick="rptSelExp(${s.id})"
+      style="padding:8px 10px;cursor:pointer;border-bottom:1px solid var(--border);"
+      onmouseenter="this.style.background='var(--surface2)'"
+      onmouseleave="this.style.background=''">
+      <div style="font-size:12px;font-weight:700;color:var(--text);">${s.numero_exp}</div>
+      <div style="font-size:11px;color:var(--text-sec);">${asdo.nombre||'—'} · ${aseg.nombre||'—'}</div>
+    </div>`;
+  }).join('');
+}
+
+function rptSelExp(sinId){
+  const s    = (data.sin||[]).find(x=>x.id===sinId);
+  if(!s) return;
+  const pol  = (data.pol||[]).find(p=>p.id===s.id_poliza)||{};
+  const asdo = (data.asdo||[]).find(a=>a.id===pol.id_asegurado)||{};
+  const aseg = (data.aseg||[]).find(a=>a.id===pol.id_aseguradora)||{};
+  const casoEl = g('r-caso');
+  if(casoEl) casoEl.value = sinId;
+  const res = g('r-exp-results');
+  if(res) res.style.display = 'none';
+  const srch = g('r-exp-search');
+  if(srch) srch.value = '';
+  const disp = g('r-exp-sel-display');
+  if(disp) disp.style.display = 'block';
+  const ref = g('r-exp-sel-ref');
+  if(ref) ref.textContent = s.numero_exp;
+  const sub = g('r-exp-sel-sub');
+  if(sub) sub.textContent = (asdo.nombre||'—') + ' · ' + (aseg.nombre||'—') + ' · ' + (s.estatus||'');
+  previsualizarReporte();
+}
+
+function rptLimpiarExp(){
+  const casoEl = g('r-caso');
+  if(casoEl) casoEl.value = '';
+  const disp = g('r-exp-sel-display');
+  if(disp) disp.style.display = 'none';
+  const frame = g('r-preview-frame');
+  if(frame) frame.srcdoc = "<div style='padding:20px;font-family:sans-serif;color:#888;font-size:13px;'>Selecciona un expediente para previsualizar.</div>";
+}
+
+function rptToggleSeccion(id){
+  const body  = g(id+'-body');
+  const arrow = g(id+'-arrow');
+  if(!body) return;
+  const open = body.style.display !== 'none';
+  body.style.display  = open ? 'none' : 'block';
+  if(arrow) arrow.textContent = open ? '▸' : '▾';
+}
+
+function rptSelAllSecs(val){
+  document.querySelectorAll('#r-secciones input[type=checkbox]').forEach(c=>{ c.checked=val; });
+  previsualizarReporte();
+}
 
 function setTipoReporte(tipo, btn){
   tipoReporte = tipo;
