@@ -265,3 +265,5 @@ export function loadSinDescAseg(html){
   if(rte) rte.innerHTML=html||'';
   if(ta)  ta.value=html||'';
 }
+
+export const rtePublic = {};

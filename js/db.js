@@ -106,3 +106,5 @@ export async function eliminar(tabla, id){
   await loadAll();
   if(state.currentSin) renderDetalle();
 }
+
+export const dbPublic = {};

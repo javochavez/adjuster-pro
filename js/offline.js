@@ -319,3 +319,5 @@ setTimeout(() => {
   offlineSetState(state._isOnline ? 'online' : 'offline');
   offlineUpdateBadge();
 }, 500);
+
+export const offlinePublic = {};

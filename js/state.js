@@ -32,3 +32,5 @@ export let _syncRunning        = false;
 
 export let solRamoActivo       = 'General';
 export let solCatalogoExtendido = {};
+
+export const state = {};

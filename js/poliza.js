@@ -555,3 +555,5 @@ function cerrarModal(id) {
   const el = g(id);
   if(el) el.classList.remove('open');
 }
+
+export const polizaPublic = {};

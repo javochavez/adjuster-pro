@@ -484,3 +484,5 @@ export function mobIaVisionAplicar(){
   if(etq) etq.value = text.replace(/\n/g,' ').slice(0,150);
   toast('Descripción aplicada');
 }
+
+export const iaPublic = {};

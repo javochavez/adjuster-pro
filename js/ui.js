@@ -48,3 +48,5 @@ export function tcUSD() {
 export function tcEUR() {
   return parseFloat(document.getElementById('tc-eur').value) || 19.2;
 }
+
+export const uiPublic = {};

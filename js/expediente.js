@@ -728,3 +728,5 @@ export function editarSiniestro(id){
     }, 100);
   });
 }
+
+export const expedientePublic = {};
