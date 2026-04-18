@@ -4680,59 +4680,79 @@ async function driveCrearCarpetaExpediente(sin){
     .single();
   if(!perfil?.google_access_token) return null;
 
+  const token = perfil.google_access_token;
+  const driveHeaders = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
+
+  // 1. Buscar o crear carpeta raíz "Ajustes" en la raíz del Drive
+  let ajustesId = perfil.google_drive_root_id || null;
+  if(!ajustesId){
+    const buscarAjustesRes = await fetch(
+      `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent("name='Ajustes' and mimeType='application/vnd.google-apps.folder' and 'root' in parents and trashed=false")}&fields=files(id,name)`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    const buscarAjustesData = await buscarAjustesRes.json();
+    if(buscarAjustesData.files?.length){
+      ajustesId = buscarAjustesData.files[0].id;
+    } else {
+      const crearAjustesRes = await fetch('https://www.googleapis.com/drive/v3/files', {
+        method: 'POST',
+        headers: driveHeaders,
+        body: JSON.stringify({ name: 'Ajustes', mimeType: 'application/vnd.google-apps.folder', parents: ['root'] }),
+      });
+      const ajustesFolder = await crearAjustesRes.json();
+      ajustesId = ajustesFolder.id || null;
+    }
+    // Guardar para futuros usos
+    if(ajustesId){
+      await db.from('perfiles').update({ google_drive_root_id: ajustesId }).eq('id', session.user.id);
+    }
+  }
+  if(!ajustesId) return null;
+
+  // 2. Construir nombre de carpeta del expediente
   const nombreCarpeta = `${sin.numero_exp} — ${(()=>{
     const pol  = (data.pol||[]).find(p=>p.id===sin.id_poliza)||{};
     const asdo = (data.asdo||[]).find(a=>a.id===pol.id_asegurado)||{};
     return asdo.nombre||'Asegurado';
   })()}`;
 
-  // Verificar si ya existe
-  const buscarRes = await fetch(
-    `https://www.googleapis.com/drive/v3/files?q=name='${encodeURIComponent(nombreCarpeta)}' and mimeType='application/vnd.google-apps.folder' and trashed=false&fields=files(id,name,webViewLink)`,
-    { headers: { Authorization: `Bearer ${perfil.google_access_token}` } }
+  // 3. Verificar si ya existe dentro de "Ajustes"
+  const buscarExpRes = await fetch(
+    `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(`name='${nombreCarpeta}' and mimeType='application/vnd.google-apps.folder' and '${ajustesId}' in parents and trashed=false`)}&fields=files(id,name,webViewLink)`,
+    { headers: { Authorization: `Bearer ${token}` } }
   );
-  const buscarData = await buscarRes.json();
-  if(buscarData.files?.length){
-    return buscarData.files[0];
+  const buscarExpData = await buscarExpRes.json();
+  if(buscarExpData.files?.length){
+    return buscarExpData.files[0];
   }
 
-  // Crear carpeta principal del expediente
+  // 4. Crear carpeta del expediente dentro de "Ajustes"
   const crearRes = await fetch('https://www.googleapis.com/drive/v3/files', {
     method: 'POST',
-    headers: {
-      Authorization: `Bearer ${perfil.google_access_token}`,
-      'Content-Type': 'application/json',
-    },
+    headers: driveHeaders,
     body: JSON.stringify({
       name: nombreCarpeta,
       mimeType: 'application/vnd.google-apps.folder',
-      ...(perfil.google_drive_root_id ? { parents: [perfil.google_drive_root_id] } : {}),
+      parents: [ajustesId],
     }),
   });
   const carpeta = await crearRes.json();
   if(!carpeta.id) return null;
 
-  // Crear subcarpetas
+  // 5. Crear subcarpetas dentro del expediente
   const subcarpetas = ['Documentación General', 'Fotos', 'Informes'];
   for(const nombre of subcarpetas){
     await fetch('https://www.googleapis.com/drive/v3/files', {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${perfil.google_access_token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        name: nombre,
-        mimeType: 'application/vnd.google-apps.folder',
-        parents: [carpeta.id],
-      }),
+      headers: driveHeaders,
+      body: JSON.stringify({ name: nombre, mimeType: 'application/vnd.google-apps.folder', parents: [carpeta.id] }),
     });
   }
 
-  // Obtener webViewLink
+  // 6. Obtener webViewLink
   const linkRes = await fetch(
     `https://www.googleapis.com/drive/v3/files/${carpeta.id}?fields=id,name,webViewLink`,
-    { headers: { Authorization: `Bearer ${perfil.google_access_token}` } }
+    { headers: { Authorization: `Bearer ${token}` } }
   );
   return await linkRes.json();
 }
