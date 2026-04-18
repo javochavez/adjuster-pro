@@ -1040,8 +1040,8 @@ body.modo-lectura .readonly-hidden { display:none !important; }
           <tbody id="ofic-body"></tbody></table></div>
         </div>
         <!-- ── CATÁLOGO DE DOCUMENTOS ── -->
-        <div id="cat-catdoc" style="display:none;">
-          <div class="toolbar" style="flex-wrap:wrap;gap:8px;">
+        <div id="cat-catdoc" style="display:none;display:flex;flex-direction:column;height:calc(100vh - 160px);">
+          <div class="toolbar" style="flex-wrap:wrap;gap:8px;flex-shrink:0;">
             <select id="catdoc-filtro-ramo" onchange="renderCatDoc()"
               style="padding:6px 10px;border:1px solid var(--border-md);border-radius:var(--r);
                      background:var(--bg2);color:var(--text);font-size:12px;font-family:inherit;">
@@ -1053,7 +1053,7 @@ body.modo-lectura .readonly-hidden { display:none !important; }
                      border-radius:var(--r);background:var(--bg2);color:var(--text);font-size:12px;font-family:inherit;">
             <button class="btn btn-primary btn-sm" onclick="abrirModal('modal-catdoc')">+ Nuevo ítem</button>
           </div>
-          <div id="catdoc-body"></div>
+          <div id="catdoc-body" style="overflow-y:auto;flex:1;padding-bottom:20px;"></div>
         </div>
       </div>
 
@@ -11481,7 +11481,8 @@ function renderCatDoc(){
                               border-bottom:1px solid var(--border);font-size:12px;">
           <span style="flex:1;color:var(--text);">${it.descripcion}</span>
           ${isBase
-            ? `<span style="font-size:9px;color:var(--text-ter);white-space:nowrap;padding-top:2px;">base</span>`
+            ? `<button class="btn btn-sm" style="padding:2px 7px;font-size:10px;white-space:nowrap;color:var(--accent-lt);border-color:var(--accent);"
+                 onclick="catDocPromover(${JSON.stringify(it.ramo)},${JSON.stringify(it.categoria)},${JSON.stringify(it.descripcion)})">↑ Promover</button>`
             : `<div style="display:flex;gap:4px;flex-shrink:0;">
                  <button class="btn btn-sm" style="padding:2px 7px;font-size:10px;"
                    onclick="editarCatDoc(${it.id})">✏</button>
@@ -11508,6 +11509,18 @@ function renderCatDoc(){
 
 // ── Abrir modal nuevo ítem ────────────────────────────────────────────────
 // (abrirModal ya lo abre, solo necesitamos limpiar)
+async function catDocPromover(ramo, categoria, descripcion){
+  const existe = (data.sol_catalogo||[]).find(r=>r.ramo===ramo && r.descripcion===descripcion);
+  if(existe){ toast('Este ítem ya existe en el catálogo personalizado'); return; }
+  const {error} = await db.from('catalogo_documentos').insert({
+    ramo, categoria, descripcion, orden: 0
+  });
+  if(error){ toast('Error: '+error.message); return; }
+  toast('✓ Ítem promovido — ahora puedes editarlo desde el catálogo');
+  await loadAll();
+  renderCatDoc();
+}
+
 function catDocPrepararNuevo(){
   g('catdoc-modal-title').textContent = 'Nuevo ítem de catálogo';
   g('catdoc-id').value = '';
