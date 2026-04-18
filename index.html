@@ -4645,7 +4645,7 @@ function renderReservaGrid(allRows){
   // Actions
   html += `<tr><td style="padding:6px 12px;font-size:11px;color:var(--text-ter);">Acciones</td>`;
   calc.forEach(item=>{
-    html += `<td style="padding:6px 12px;text-align:center;"><button class="btn btn-sm btn-danger" onclick="eliminar('reservas',${item.r.id})">Eliminar</button></td>`;
+    html += `<td style="padding:6px 12px;text-align:center;display:flex;gap:6px;justify-content:center;"><button class="btn btn-sm" onclick="editarReserva(${item.r.id})">Editar</button><button class="btn btn-sm btn-danger" onclick="eliminar('reservas',${item.r.id})">Eliminar</button></td>`;
   });
   if(showTotal) html += `<td></td>`;
   html += `</tr></tbody></table></div>`;
@@ -6320,50 +6320,76 @@ function calcResNeta(){
 
 async function guardarReserva(){
   if(!currentSin) return;
-  const coasPct=parseFloat(v('res-coas-pct'))||0;
-  const perdida=parseFloat(v('res-perdida'))||0;
-  const ded=parseFloat(v('res-deducible'))||0;
-  const bajoSeguro=parseFloat(v('res-bajo-seguro'))||0;
-  const subtotal=perdida-ded;
-  const coasMonto=subtotal*(coasPct/100);
+  const resId   = parseInt(v('res-id'))||0;
+  const bruta   = parseFloat(v('res-monto'))||0;
+  const ajuste  = parseFloat(v('res-dep-pct'))||0;
+  const subtotalAj = bruta - ajuste;
+  const bajo    = parseFloat(v('res-bajo-seguro'))||0;
+  const perdidaAj = subtotalAj - bajo;
+  const ded     = parseFloat(v('res-deducible'))||0;
+  const subtotal2 = perdidaAj - ded;
+  const coasPct = parseFloat(v('res-coas-pct'))||0;
+  const coasMonto = subtotal2 * (coasPct / 100);
+  const bajoSeguro = bajo;
 
-  // Base payload — columns that always exist
   const payload={
     id_siniestro:currentSin.id, concepto:v('res-concepto'),
-    monto:parseFloat(v('res-monto'))||0,
-    depreciacion_pct:parseFloat(v('res-dep-pct'))||0,
-    monto_perdida_estimada:perdida,
+    monto:bruta,
+    depreciacion_pct:ajuste,
+    monto_perdida_estimada:subtotalAj,
     deducible:ded, deducible_pct:parseFloat(v('res-ded-pct'))||0,
     coaseguro_pct:coasPct, monto_coaseguro:coasMonto,
     moneda:v('res-mon'), tipo_cambio_mxn:parseFloat(v('res-tc'))||1,
     fecha:v('res-fecha')||new Date().toISOString().slice(0,10),
-    bases_determinacion:v('res-bases')||null, notas:v('res-notas'),
-    deducible_descripcion:v('res-ded-desc')||null
-  };
-
-  // Try with v9b columns first, fall back to base if they don't exist
-  const {error:e1}=await db.from('reservas').insert({
-    ...payload,
+    bases_determinacion:v('res-bases')||null, notas:v('res-notas')||null,
+    deducible_descripcion:v('res-ded-desc')||null,
     monto_bajo_seguro:bajoSeguro,
     valor_real_bien:parseFloat(v('res-valor-real'))||0,
     suma_aseg_cobertura:parseFloat(v('res-suma-aseg-cob'))||0,
-  });
+  };
 
   if(!navigator.onLine){
-    await offlineSaveReserva({...payload, monto_bajo_seguro:bajoSeguro, valor_real_bien:parseFloat(v('res-valor-real'))||0, suma_aseg_cobertura:parseFloat(v('res-suma-aseg-cob'))||0});
+    await offlineSaveReserva(payload);
     cerrarModal('modal-res'); renderAll(); renderDetalle();
     toast('Reserva guardada sin conexión ● — se sincronizará al recuperar red');
     return;
   }
-  if(e1){
-    // Columns may not exist yet (migration v9b pending) — save without them
-    const {error:e2}=await db.from('reservas').insert(payload);
-    if(e2){ toast('Error al guardar: '+e2.message); return; }
-    toast('Cobertura registrada. (Ejecuta migracion_v9b.sql para activar Bajo Seguro)');
+
+  let error;
+  if(resId){
+    ({error} = await db.from('reservas').update(payload).eq('id', resId));
+    if(!error) toast('Cobertura actualizada.');
   } else {
-    toast('Cobertura registrada.');
+    ({error} = await db.from('reservas').insert(payload));
+    if(!error) toast('Cobertura registrada.');
   }
+  if(error){ toast('Error al guardar: '+error.message); return; }
   cerrarModal('modal-res'); await loadAll(); renderDetalle();
+}
+
+function editarReserva(id){
+  const r = data.res.find(x=>x.id===id); if(!r) return;
+  g('res-id').value = r.id;
+  g('res-concepto').value   = r.concepto||'';
+  g('res-mon').value        = r.moneda||'MXN';
+  g('res-tc').value         = r.tipo_cambio_mxn||1;
+  g('res-monto').value      = r.monto||0;
+  g('res-dep-pct').value    = r.depreciacion_pct||0;
+  g('res-perdida').value    = r.monto_perdida_estimada||0;
+  g('res-deducible').value  = r.deducible||0;
+  g('res-ded-pct').value    = r.deducible_pct||0;
+  g('res-ded-desc').value   = r.deducible_descripcion||'';
+  g('res-coas-pct').value   = r.coaseguro_pct||0;
+  g('res-bajo-seguro').value = r.monto_bajo_seguro||0;
+  g('res-valor-real').value  = r.valor_real_bien||0;
+  g('res-suma-aseg-cob').value = r.suma_aseg_cobertura||0;
+  g('res-fecha').value      = r.fecha||'';
+  g('res-bases').value      = r.bases_determinacion||'';
+  if(g('res-notas')) g('res-notas').value = r.notas||'';
+  const lbl = g('res-coas-pct-label');
+  if(lbl) lbl.textContent = r.coaseguro_pct>0 ? '('+r.coaseguro_pct+'% — de la póliza)' : '(No aplica en póliza)';
+  calcResNeta();
+  g('modal-res').classList.add('open');
 }
 
 async function guardarSublimite(){
