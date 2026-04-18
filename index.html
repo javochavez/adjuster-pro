@@ -11971,7 +11971,7 @@ function renderCatDoc(){
           <span style="flex:1;color:var(--text);">${it.descripcion}</span>
           ${isBase
             ? `<button class="btn btn-sm" style="padding:2px 7px;font-size:10px;white-space:nowrap;color:var(--accent-lt);border-color:var(--accent);"
-                 onclick="catDocPromover(${JSON.stringify(it.ramo)},${JSON.stringify(it.categoria)},${JSON.stringify(it.descripcion)})">↑ Promover</button>`
+                 onclick="catDocPromover(this))" data-ramo="${(it.ramo||'').replace(/"/g,'&quot;')}" data-cat="${(it.categoria||'').replace(/"/g,'&quot;')}" data-desc="${(it.descripcion||'').replace(/"/g,'&quot;')}">↑ Promover</button>`
             : `<div style="display:flex;gap:4px;flex-shrink:0;">
                  <button class="btn btn-sm" style="padding:2px 7px;font-size:10px;"
                    onclick="editarCatDoc(${it.id})">✏</button>
@@ -11998,7 +11998,10 @@ function renderCatDoc(){
 
 // ── Abrir modal nuevo ítem ────────────────────────────────────────────────
 // (abrirModal ya lo abre, solo necesitamos limpiar)
-async function catDocPromover(ramo, categoria, descripcion){
+async function catDocPromover(btn){
+  const ramo        = btn.dataset.ramo;
+  const categoria   = btn.dataset.cat;
+  const descripcion = btn.dataset.desc;
   const existe = (data.sol_catalogo||[]).find(r=>r.ramo===ramo && r.descripcion===descripcion);
   if(existe){ toast('Este ítem ya existe en el catálogo personalizado'); return; }
   const {error} = await db.from('catalogo_documentos').insert({
