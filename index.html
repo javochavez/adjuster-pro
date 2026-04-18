@@ -4650,6 +4650,26 @@ async function verificarDriveConectado(){
   }
 }
 
+async function driveAbrirOCrearCarpeta(sinId){
+  const sin = (data.sin||[]).find(s=>s.id===sinId);
+  if(!sin){ toast('Expediente no encontrado'); return; }
+  const btn = g('btn-drive-'+sinId);
+  if(btn){ btn.disabled=true; btn.textContent='⏳ Drive…'; }
+  try {
+    const carpeta = await driveCrearCarpetaExpediente(sin);
+    if(carpeta?.webViewLink){
+      window.open(carpeta.webViewLink, '_blank');
+      toast('✓ Carpeta de Drive abierta');
+    } else {
+      toast('No se pudo crear la carpeta en Drive — verifica tu conexión');
+    }
+  } catch(e){
+    toast('Error Drive: ' + e.message);
+  } finally {
+    if(btn){ btn.disabled=false; btn.textContent='📁 Drive'; }
+  }
+}
+
 async function driveCrearCarpetaExpediente(sin){
   const { data: { session } } = await db.auth.getSession();
   if(!session) return null;
@@ -4956,8 +4976,12 @@ function renderDetalle(){
         </select>
       </div>
     </div>
-    <div style="display:flex;gap:8px;">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
       <button class="btn btn-sm" onclick="editarSiniestro(${s.id})">Editar expediente</button>
+      <button class="btn btn-sm" id="btn-drive-${s.id}" onclick="driveAbrirOCrearCarpeta(${s.id})"
+        style="background:rgba(66,133,244,.15);border-color:rgba(66,133,244,.4);color:#4285f4;">
+        📁 Drive
+      </button>
     </div>
   </div>
   <div class="fin-grid">
