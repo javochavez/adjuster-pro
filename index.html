@@ -4645,7 +4645,7 @@ function renderReservaGrid(allRows){
   // Actions
   html += `<tr><td style="padding:6px 12px;font-size:11px;color:var(--text-ter);">Acciones</td>`;
   calc.forEach(item=>{
-    html += `<td style="padding:6px 12px;text-align:center;display:flex;gap:6px;justify-content:center;"><button class="btn btn-sm" onclick="editarReserva(${item.r.id})">Editar</button><button class="btn btn-sm btn-danger" onclick="eliminar('reservas',${item.r.id})">Eliminar</button></td>`;
+    html += `<td style="padding:6px 12px;display:flex;gap:6px;align-items:center;"><span style="font-size:11px;color:var(--text-sec);flex:1;">${normConcepto(item.r.concepto)}</span><button class="btn btn-sm" onclick="editarReserva(${item.r.id})">Editar</button><button class="btn btn-sm btn-danger" onclick="eliminar('reservas',${item.r.id})">Eliminar</button></td>`;
   });
   if(showTotal) html += `<td></td>`;
   html += `</tr></tbody></table></div>`;
