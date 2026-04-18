@@ -4566,15 +4566,21 @@ document.addEventListener('click', e => {
 function userMenuInit(email, rol){
   _userEmail = email;
   _userRol   = rol;
-  const initial = (email||'?')[0].toUpperCase();
-  const rolLabel = {admin:'Administrador', ajustador:'Ajustador', consultor:'Consultor'}[rol] || rol;
+  const initial = (email && email.length > 0) ? email[0].toUpperCase() : (rol ? rol[0].toUpperCase() : 'A');
+  const setAvatar = () => {
+    if(g('user-avatar'))     g('user-avatar').textContent    = initial;
+    if(g('user-lbl'))        g('user-lbl').textContent       = email;
+    if(g('user-menu-email')) g('user-menu-email').textContent = email;
+    if(g('user-menu-rol'))   g('user-menu-rol').textContent   = {admin:'Administrador', ajustador:'Ajustador', consultor:'Consultor'}[rol] || rol;
+    if(g('perfil-avatar'))   g('perfil-avatar').textContent  = initial;
+    if(g('perfil-email-lbl'))g('perfil-email-lbl').textContent = email;
+    if(g('perfil-rol-lbl'))  g('perfil-rol-lbl').textContent   = {admin:'Administrador', ajustador:'Ajustador', consultor:'Consultor'}[rol] || rol;
+    const adminBtn = g('user-menu-admin-btn');
+    if(adminBtn) adminBtn.style.display = rol === 'admin' ? 'flex' : 'none';
+  };
+  if(document.readyState === 'complete') setAvatar();
+  else document.addEventListener('DOMContentLoaded', setAvatar);
   if(g('user-avatar'))     g('user-avatar').textContent    = initial;
-  if(g('user-lbl'))        g('user-lbl').textContent       = email;
-  if(g('user-menu-email')) g('user-menu-email').textContent = email;
-  if(g('user-menu-rol'))   g('user-menu-rol').textContent   = rolLabel;
-  if(g('perfil-avatar'))   g('perfil-avatar').textContent  = initial;
-  if(g('perfil-email-lbl'))g('perfil-email-lbl').textContent = email;
-  if(g('perfil-rol-lbl'))  g('perfil-rol-lbl').textContent   = rolLabel;
   // Mostrar opción admin solo si es admin
   const adminBtn = g('user-menu-admin-btn');
   if(adminBtn) adminBtn.style.display = rol === 'admin' ? 'flex' : 'none';
