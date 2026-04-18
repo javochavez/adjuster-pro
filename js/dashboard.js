@@ -559,3 +559,5 @@ export function renderAll(){
   renderContactos(); renderTC(); renderAjustadores();
   poblarSelectores();
 }
+
+export const dashboardPublic = {};
