@@ -2444,7 +2444,18 @@ body.modo-lectura .readonly-hidden { display:none !important; }
           <textarea id="s-observaciones" style="display:none;"></textarea>
         </div>
         <div style="font-size:10px;color:var(--text-sec);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">Notas internas</div>
-        <textarea id="s-notas" style="min-height:50px;width:100%;padding:7px 9px;font-size:12px;border:1px solid var(--border-md);border-radius:var(--r);background:var(--bg2);color:var(--text);font-family:inherit;resize:vertical;box-sizing:border-box;"></textarea>
+        <div class="rte-wrap">
+          <div class="rte-toolbar">
+            <button type="button" onclick="rteCmdSinNotas('bold')"><strong>N</strong></button>
+            <button type="button" onclick="rteCmdSinNotas('italic')"><em>K</em></button>
+            <button type="button" onclick="rteCmdSinNotas('underline')"><u>S</u></button>
+            <span class="rte-sep"></span>
+            <button type="button" onclick="rteCmdSinNotas('removeFormat')">✕</button>
+          </div>
+          <div id="s-notas-rte" class="rte-editor" contenteditable="true"
+            oninput="syncSinNotas()" style="min-height:50px;"></div>
+          <textarea id="s-notas" style="display:none;"></textarea>
+        </div>
       </div>
     </div>
 
@@ -5602,7 +5613,7 @@ function abrirModal(id){
     g('s-id').value='';
     resetBuscadorSinModal();
     ['s-exp','s-numsin','s-subramo','s-causa','s-riesgo',
-     's-clave-ajust','s-dest-nombre','s-dest-cargo','s-giro','s-notas',
+     's-clave-ajust','s-dest-nombre','s-dest-cargo','s-giro',
      's-tramite-gnp','s-ot','s-fsin','s-hora-ocurr','s-finsp','s-finf',
      's-hora-asig','s-f1cont','s-h1cont','s-f1vis','s-h1vis',
      's-insp-persona','s-insp-cargo','s-insp-tel','s-insp-dom',
@@ -5635,7 +5646,7 @@ function abrirModal(id){
     // Reset all RTE fields
     ['desc-riesgo','riesgos-cubiertos','localizacion','narracion','naturaleza-alcance','introduccion','inspeccion-narrativa','desc','estrategias','observaciones','actividades','considerandos','salv-det'].forEach(s=>loadRteSin(s,''));
     loadRteSin('reclamacion', 'Por el momento el Asegurado no ha presentado su formal reclamación a la compañía de Seguros, sin embargo, estamos en proceso de recepción de documentos, mismos que están siendo analizados.');
-    loadSinLimTexto(''); loadSinGiroAseg(''); loadSinDescAseg('');
+    loadSinLimTexto(''); loadSinGiroAseg(''); loadSinDescAseg(''); loadSinNotas('');
     delete g('s-inspeccion-narrativa-rte')?.dataset.editado;
     loadRteSin('introduccion', 'El presente informe preliminar se elabora en seguimiento de la designaci\u00f3n de [Compa\u00f1\u00eda], por parte de su apreciable [Funcionario], relativa a la atenci\u00f3n de la p\u00e9rdida sufrida por el Asegurado por [Describir el tipo de da\u00f1os y bienes afectados], hechos ocurridos el [Fecha del Siniestro] en su domicilio sito en [Direcci\u00f3n donde ocurrieron los da\u00f1os].\n\nSiguiendo las instrucciones de asignaci\u00f3n, de inmediato procedimos a contactar a [Persona de Contacto], quien nos [Detallar acuerdo para la inspecci\u00f3n, fecha, hora, etc.].\n\nComo acordado, el [Fecha de inspecci\u00f3n] a las [Hora], nos presentamos en [Sitio de la inspecci\u00f3n], lugar en el que fuimos atendidos por [Persona que atendi\u00f3] quien nos mostr\u00f3 los da\u00f1os sufridos.\n\nCon base en lo anterior y la informaci\u00f3n inicialmente recabada, presentamos a ustedes el presente Informe Preliminar.');
     g('s-aseg-direct').value='';
@@ -5772,6 +5783,7 @@ function renderEstimacionSinGrid(){
 }
 
 async function guardarSiniestro(){
+  syncSinGiroAseg(); syncSinDescAseg(); syncSinLimTexto(); syncSinNotas();
   const id=v('s-id');
   const d2={
     numero_exp:v('s-exp'), numero_siniestro:v('s-numsin')||null,
@@ -5906,7 +5918,7 @@ function editarSiniestro(id){
   mostrarDescAsegSin(s.id_poliza);  // loads giro + desc from poliza
   loadRteSin('introduccion', s.introduccion||'');
   loadRteSin('inspeccion-narrativa', s.inspeccion_narrativa||'');
-  {let _e=g('s-notas');if(_e)_e.value=s.notas||'';}
+  loadSinNotas(s.notas||'');
   loadRteSin('estrategias',   s.estrategias||s.estrategias_observaciones||'');
   loadRteSin('observaciones', s.observaciones||'');
   loadRteSin('actividades',   s.actividades||'');
@@ -6269,6 +6281,22 @@ function loadSinDescAseg(html){
   if(rte) rte.innerHTML=html||'';
   if(ta)  ta.value=html||'';
 }
+// ── NOTAS INTERNAS — modal-sin ───────────────────────────────────────
+function rteCmdSinNotas(cmd){
+  document.execCommand(cmd,false,null);
+  const rte=g('s-notas-rte'); if(rte) rte.focus();
+  syncSinNotas();
+}
+function syncSinNotas(){
+  const rte=g('s-notas-rte'),ta=g('s-notas');
+  if(rte&&ta) ta.value=rte.innerHTML;
+}
+function loadSinNotas(html){
+  const rte=g('s-notas-rte'),ta=g('s-notas');
+  if(rte) rte.innerHTML=html||'';
+  if(ta)  ta.value=html||'';
+}
+
 function mostrarDescAsegSin(polId){
   if(!polId) return;
   const pol=data.pol.find(p=>p.id===parseInt(polId));
@@ -6276,6 +6304,7 @@ function mostrarDescAsegSin(polId){
 }
 
 async function guardarPoliza(){
+  syncPolGiroAseg(); syncPolDescAseg(); syncPolLimTexto(); syncPolCond(); syncPolNotas();
   const id=v('p-id');
   const ramoSel=v('p-ramo');
   const ramo=ramoSel==='__otro__'?(v('p-ramo-otro').trim()||'otro'):ramoSel;
