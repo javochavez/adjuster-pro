@@ -4216,7 +4216,7 @@ function calcTodoPendientes(){
   const diasAviso = parseInt(g('todo-dias-aviso')?.value ?? '3') || 3;
   const hoy = new Date(); hoy.setHours(0,0,0,0);
   const limite = new Date(hoy); limite.setDate(limite.getDate() + diasAviso);
-  return data.todos.filter(t=>{
+  return (data.todos||[]).filter(t=>{
     if(t.completado) return false;
     if(!t.fecha_limite) return false;
     const fl = new Date(t.fecha_limite + ' 00:00:00'); fl.setHours(0,0,0,0);
@@ -4244,7 +4244,7 @@ function renderTodoGrid(todos, wrap){
         const vencido = dias!==null && dias<0;
         const urgente = dias!==null && dias<=3;
         const prio = TODO_PRIO[t.prioridad]||TODO_PRIO.media;
-        const ajust = t.id_ajustador ? (data.ajust.find(a=>a.id===t.id_ajustador)||{}).nombre||'' : '';
+        const ajust = t.id_ajustador ? ((data.ajust||[]).find(a=>a.id===t.id_ajustador)||{}).nombre||'' : '';
         const bgRow = vencido?'rgba(220,60,60,.07)':urgente?'rgba(186,117,23,.07)':'var(--surface2)';
         const borderClr = vencido?'rgba(220,60,60,.3)':urgente?'rgba(186,117,23,.3)':'var(--border)';
         const diasTxt = dias===null?'Sin fecha':dias===0?'Hoy':dias<0?`Vencido ${Math.abs(dias)}d`:`En ${dias}d`;
@@ -4397,11 +4397,11 @@ function renderTodosAlertas(){
 }
 
 function renderDash(){
-  const activos = data.sin.filter(s=>s.estatus!=='cerrado');
-  const totRes  = data.sin.reduce((a,s)=>{ const rv=reservaVigente(s.id); return a+rv; },0);
-  const totPag  = data.pag.reduce((a,p)=>a+toMXN(p.monto,p.moneda,p.tipo_cambio_mxn),0);
-  const totHon  = data.hon.reduce((a,h)=>a+toMXN(h.monto,h.moneda,h.tipo_cambio_mxn),0);
-  const totViat = data.viat.reduce((a,v)=>a+toMXN(v.monto,v.moneda,v.tipo_cambio_mxn),0);
+  const activos = (data.sin||[]).filter(s=>s.estatus!=='cerrado');
+  const totRes  = (data.sin||[]).reduce((a,s)=>{ const rv=reservaVigente(s.id); return a+rv; },0);
+  const totPag  = (data.pag||[]).reduce((a,p)=>a+toMXN(p.monto,p.moneda,p.tipo_cambio_mxn),0);
+  const totHon  = (data.hon||[]).reduce((a,h)=>a+toMXN(h.monto,h.moneda,h.tipo_cambio_mxn),0);
+  const totViat = (data.viat||[]).reduce((a,v)=>a+toMXN(v.monto,v.moneda,v.tipo_cambio_mxn),0);
 
   // Contar inactivos ≥15 días
   const inactivos15 = activos.filter(s=>{ const um=ultimoMovimiento(s.id); return diasInactivo(um?.fecha)>=15; });
@@ -4416,7 +4416,7 @@ function renderDash(){
   const todosVenc = todosPend.filter(t=>{ const fl=new Date(t.fecha_limite+' 00:00:00'); const h=new Date(); h.setHours(0,0,0,0); return fl<h; }).length;
 
   g('dash-metrics').innerHTML=`
-    <div class="mc"><div class="mc-lbl">Expedientes activos</div><div class="mc-val">${activos.length}<span style="font-size:13px;font-weight:400;color:var(--text-sec)"> / ${data.sin.length}</span></div></div>
+    <div class="mc"><div class="mc-lbl">Expedientes activos</div><div class="mc-val">${activos.length}<span style="font-size:13px;font-weight:400;color:var(--text-sec)"> / ${(data.sin||[]).length}</span></div></div>
     <div class="mc"><div class="mc-lbl">Reserva vigente total</div><div class="mc-val" style="font-size:15px;">${fmtMXN(totRes)}</div><div class="mc-sub">MXN equivalente</div></div>
     <div class="mc"><div class="mc-lbl">Pagos acumulados</div><div class="mc-val" style="font-size:15px;">${fmtMXN(totPag)}</div><div class="mc-sub">MXN equivalente</div></div>
     <div class="mc" style="cursor:pointer;" onclick="switchMain('alertas',document.getElementById('nav-alertas'))">
@@ -4490,11 +4490,11 @@ function renderDash(){
   }
 
   g('dash-body').innerHTML = activos.slice(0,20).map(s=>{
-    const pol=data.pol.find(p=>p.id===s.id_poliza)||{};
-    const asdo=data.asdo.find(a=>a.id===pol.id_asegurado)||{};
-    const aseg=data.aseg.find(a=>a.id===pol.id_aseguradora)||{};
+    const pol=(data.pol||[]).find(p=>p.id===s.id_poliza)||{};
+    const asdo=(data.asdo||[]).find(a=>a.id===pol.id_asegurado)||{};
+    const aseg=(data.aseg||[]).find(a=>a.id===pol.id_aseguradora)||{};
     const rv=reservaVigente(s.id);
-    const pags=data.pag.filter(p=>p.id_siniestro===s.id).reduce((a,p)=>a+toMXN(p.monto,p.moneda,p.tipo_cambio_mxn),0);
+    const pags=(data.pag||[]).filter(p=>p.id_siniestro===s.id).reduce((a,p)=>a+toMXN(p.monto,p.moneda,p.tipo_cambio_mxn),0);
     const saldo=rv-pags;
     const um=ultimoMovimiento(s.id);
     const dias=diasInactivo(um?.fecha);
