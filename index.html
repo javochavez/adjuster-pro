@@ -4590,15 +4590,20 @@ let _userRol   = '';
 function userMenuToggle(){
   const drop = g('user-menu-drop');
   if(!drop) return;
-  drop.style.display = drop.style.display === 'none' ? 'block' : 'none';
-}
-document.addEventListener('click', e => {
-  const wrap = g('user-menu-wrap');
-  if(wrap && !wrap.contains(e.target)) {
-    const drop = g('user-menu-drop');
-    if(drop) drop.style.display = 'none';
+  const visible = drop.style.display !== 'none';
+  drop.style.display = visible ? 'none' : 'block';
+  if(!visible){
+    setTimeout(()=>{
+      const handler = (e)=>{
+        if(!g('user-menu-wrap')?.contains(e.target)){
+          drop.style.display = 'none';
+          document.removeEventListener('mousedown', handler);
+        }
+      };
+      document.addEventListener('mousedown', handler);
+    }, 10);
   }
-});
+}
 
 function userMenuInit(email, rol){
   _userEmail = email;
@@ -4693,15 +4698,23 @@ async function driveAbrirOCrearCarpeta(sinId){
   const btn = g('btn-drive-'+sinId);
   if(btn){ btn.disabled=true; btn.textContent='⏳ Drive…'; }
   try {
-    const carpeta = await driveCrearCarpetaExpediente(sin);
-    if(carpeta?.webViewLink){
-      window.open(carpeta.webViewLink, '_blank');
+    if(sin.google_drive_root_id){
+      window.open('https://drive.google.com/drive/folders/'+sin.google_drive_root_id, '_blank');
       toast('✓ Carpeta de Drive abierta');
     } else {
-      toast('No se pudo crear la carpeta en Drive — verifica tu conexión');
+      const carpeta = await driveCrearCarpetaExpediente(sin);
+      if(carpeta?.id){
+        await db.from('siniestros').update({google_drive_root_id: carpeta.id}).eq('id', sinId);
+        sin.google_drive_root_id = carpeta.id;
+        const url = carpeta.webViewLink || 'https://drive.google.com/drive/folders/'+carpeta.id;
+        window.open(url, '_blank');
+        toast('✓ Carpeta creada y abierta en Drive');
+      } else {
+        toast('No se pudo crear la carpeta — verifica conexión con Google Drive');
+      }
     }
   } catch(e){
-    toast('Error Drive: ' + e.message);
+    toast('Error Drive: '+e.message);
   } finally {
     if(btn){ btn.disabled=false; btn.textContent='📁 Drive'; }
   }
