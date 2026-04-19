@@ -859,7 +859,7 @@ body.modo-lectura .readonly-hidden { display:none !important; }
             <button onclick="userMenuToggle();abrirModal('modal-cambiar-pass')" style="width:100%;text-align:left;padding:9px 14px;background:none;border:none;color:var(--text);font-size:12px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:8px;">
               🔑 Cambiar contraseña
             </button>
-            <button id="user-menu-admin-btn" onclick="userMenuToggle();switchMain('usuarios',document.getElementById('nav-usuarios'))" style="display:none;width:100%;text-align:left;padding:9px 14px;background:none;border:none;color:var(--text);font-size:12px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:8px;">
+            <button id="user-menu-admin-btn" onclick="userMenuToggle();switchMain('usuarios',document.getElementById('nav-usuarios'))" style="display:none;width:100%;text-align:left;padding:9px 14px;background:none;border:none;color:var(--text);font-size:12px;cursor:pointer;font-family:inherit;align-items:center;gap:8px;">
               👥 Gestión de usuarios
             </button>
             <div style="border-top:1px solid var(--border);margin:4px 0;"></div>
@@ -4613,14 +4613,14 @@ function userMenuInit(email, rol){
     if(g('perfil-email-lbl'))g('perfil-email-lbl').textContent = email;
     if(g('perfil-rol-lbl'))  g('perfil-rol-lbl').textContent   = {admin:'Administrador', ajustador:'Ajustador', consultor:'Consultor'}[rol] || rol;
     const adminBtn = g('user-menu-admin-btn');
-    if(adminBtn) adminBtn.style.display = rol === 'admin' ? 'flex' : 'none';
+    if(adminBtn){ adminBtn.style.display = rol === 'admin' ? 'flex' : 'none'; if(rol==='admin') adminBtn.style.alignItems='center'; }
   };
   if(document.readyState === 'complete') setAvatar();
   else document.addEventListener('DOMContentLoaded', setAvatar);
   if(g('user-avatar'))     g('user-avatar').textContent    = initial;
   // Mostrar opción admin solo si es admin
   const adminBtn = g('user-menu-admin-btn');
-  if(adminBtn) adminBtn.style.display = rol === 'admin' ? 'flex' : 'none';
+  if(adminBtn){ adminBtn.style.display = rol === 'admin' ? 'flex' : 'none'; if(rol==='admin') adminBtn.style.alignItems='center'; }
   // Agregar nav btn usuarios si es admin
   if(rol === 'admin'){
     if(!g('nav-usuarios')){
