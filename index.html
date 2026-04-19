@@ -5694,8 +5694,6 @@ function abrirModal(id){
     g('p-suma').value=''; g('p-mon').value='MXN'; g('p-tc').value='1';
     g('p-ramo').value='incendio';
     g('ramo-otro-wrap').style.display='none';
-    loadPolLimTexto(''); loadPolGiroAseg(''); loadPolDescAseg('');
-    loadPolCond(''); loadPolNotas('');
     polCobFilas=[{concepto:'',moneda:'MXN',monto:''}]; renderPolCobGrid();
   }
   if(id==='modal-tc')  g('tc-fecha').value=today;
@@ -5750,6 +5748,12 @@ function abrirModal(id){
     }
   }
   g(id).classList.add('open');
+  if(id==='modal-pol'){
+    requestAnimationFrame(()=>{
+      loadPolLimTexto(''); loadPolGiroAseg(''); loadPolDescAseg('');
+      loadPolCond(''); loadPolNotas('');
+    });
+  }
   // Reset scroll position after render
   setTimeout(()=>{
     const _sc = document.querySelector('#'+id+' .modal-scroll');
@@ -6366,16 +6370,18 @@ function editarPoliza(id){
   g('p-dom-legal').value=p.domicilio_legal||'';
   g('p-ubic-riesgo').value=p.ubicacion_riesgo||'';
   g('p-interes').value=p.interes_asegurado||'';
-  loadPolLimTexto(p.limite_max_texto||'');
-  loadPolGiroAseg(p.giro_asegurado||'');
-  loadPolDescAseg(p.descripcion_asegurado||'');
-  loadPolCond(p.condiciones_especiales||'');
-  loadPolNotas(p.notas||'');
   const ramoOpt=g('p-ramo').querySelector(`option[value="${p.ramo}"]`);
   if(ramoOpt){ g('p-ramo').value=p.ramo; g('ramo-otro-wrap').style.display='none'; }
   else{ g('p-ramo').value='__otro__'; g('p-ramo-otro').value=p.ramo||''; g('ramo-otro-wrap').style.display='block'; }
   cargarPolCobGrid(p.id);
   g('modal-pol').classList.add('open');
+  requestAnimationFrame(()=>{
+    loadPolLimTexto(p.limite_max_texto||'');
+    loadPolGiroAseg(p.giro_asegurado||'');
+    loadPolDescAseg(p.descripcion_asegurado||'');
+    loadPolCond(p.condiciones_especiales||'');
+    loadPolNotas(p.notas||'');
+  });
 }
 
 async function guardarAseguradora(){
