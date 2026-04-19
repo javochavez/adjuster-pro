@@ -6338,6 +6338,7 @@ async function guardarPoliza(){
     condiciones_especiales:v('p-condiciones')||null,
     notas:v('p-notas')
   };
+  console.log('GUARDAR POL d2:', JSON.stringify({giro_asegurado: d2.giro_asegurado, descripcion_asegurado: d2.descripcion_asegurado, limite_max_texto: d2.limite_max_texto}));
   if(id){
     await db.from('polizas').update(d2).eq('id',id);
     await guardarPolCobGrid(parseInt(id));
