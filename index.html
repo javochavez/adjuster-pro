@@ -10937,6 +10937,7 @@ if('serviceWorker' in navigator){
 }
 
 // ── Registro del Service Worker ───────────────────────────────────────────
+/*
 async function offlineRegisterSW(){
   if(!('serviceWorker' in navigator)) return;
   try {
@@ -10951,9 +10952,10 @@ async function offlineRegisterSW(){
     });
   } catch(e){ console.warn('SW registration failed:', e); }
 }
+*/
 
 // ── Inicialización ────────────────────────────────────────────────────────
-offlineRegisterSW();
+// offlineRegisterSW();
 // Estado inicial
 setTimeout(()=>{
   offlineSetState(_isOnline ? 'online' : 'offline');
