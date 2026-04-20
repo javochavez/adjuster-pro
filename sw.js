@@ -3,7 +3,7 @@
 // Offline-first: cache de shell + intercepción de red con fallback a IDB
 // ═══════════════════════════════════════════════════════════════════════════
 
-const SW_VERSION   = 'aasa-v1.0';
+const SW_VERSION   = 'aasa-20260420';
 const SHELL_CACHE  = SW_VERSION + '-shell';
 const SUPA_HOST    = 'lxtieqaldwcntxaqklww.supabase.co';
 
@@ -51,19 +51,16 @@ self.addEventListener('fetch', e => {
     return;
   }
 
-  // App shell — cache-first
+  // App shell — network-first, caché solo como fallback offline
   if (e.request.method === 'GET') {
     e.respondWith(
-      caches.match(e.request).then(cached => {
-        if (cached) return cached;
-        return fetch(e.request).then(resp => {
-          if (resp && resp.status === 200 && resp.type !== 'opaque') {
-            const clone = resp.clone();
-            caches.open(SHELL_CACHE).then(c => c.put(e.request, clone));
-          }
+      fetch(e.request)
+        .then(resp => {
+          const clone = resp.clone();
+          caches.open(SHELL_CACHE).then(c => c.put(e.request, clone));
           return resp;
-        }).catch(() => caches.match('/index.html'));
-      })
+        })
+        .catch(() => caches.match(e.request).then(r => r || caches.match('/index.html')))
     );
     return;
   }
