@@ -14,6 +14,9 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.46.2/dist/umd/supabase.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+  window.__db = supabase.createClient('https://lxtieqaldwcntxaqklww.supabase.co', 'sb_publishable_nj0KDujN_1_nX33n3VceBA_f_NWCuos');
+</script>
 <script type="module" src="js/app.js"></script>
 <style><style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -3392,7 +3395,6 @@ const FINAL_MODEL_B64='UEsDBBQAAAAIAFUbd1wDivyuvwEAAJcJAAATAAAAW0NvbnRlbnRfVHlwZ
 
 const SUPA_URL = 'https://lxtieqaldwcntxaqklww.supabase.co';
 const SUPA_KEY = 'sb_publishable_nj0KDujN_1_nX33n3VceBA_f_NWCuos';
-if (!window.__db) window.__db = supabase.createClient(SUPA_URL, SUPA_KEY);
 const db = window.__db;
 
 // ── INSERTAR IMÁGENES EN RTE ─────────────────────────────────────────

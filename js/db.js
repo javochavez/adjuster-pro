@@ -1,4 +1,3 @@
-import { SUPA_URL, SUPA_KEY } from './config.js';
 import { data } from './state.js';
 import { g, toast } from './ui.js';
 import * as state from './state.js';
@@ -10,8 +9,7 @@ import {
   renderTC, renderAjustadores,
 } from './render.js';
 
-export const db = window.__db || supabase.createClient(SUPA_URL, SUPA_KEY);
-if (!window.__db) window.__db = db;
+export const db = window.__db;
 
 export async function loadAll(){
   if(!navigator.onLine){
