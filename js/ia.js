@@ -2,6 +2,7 @@ import { IA_MODEL, IA_VISION_PROMPT } from './config.js';
 import { g, v, toast } from './ui.js';
 import { data, currentSin } from './state.js';
 import * as state from './state.js';
+import { setIaCurrentText, setIaCurrentSuffix, setIaCurrentPrompt, setIaPendingApply } from './state.js';
 import { loadRteSin, syncRteSin } from './rte.js';
 import { abrirModal, cerrarModal } from './modal.js';
 import { editarSiniestro } from './detalle.js';
@@ -136,7 +137,7 @@ export function iaAbrirPanel(titulo, suffix){
   const appendBtn = g('ia-btn-aplicar-append');
   if(appendBtn) appendBtn.disabled = true;
   g('ia-result-panel').classList.add('open');
-  state._iaCurrentText = '';
+  setIaCurrentText('');
   const existente = suffix ? iaLeerCampoActual(suffix) : '';
   const lbl  = g('ia-panel-existing-lbl');
   const hint = g('ia-panel-hint');
@@ -177,7 +178,7 @@ export function iaEscribirEnCampo(suffix, texto, append){
     }
     el.dispatchEvent(new Event('input'));
     g('ia-result-panel').classList.remove('open');
-    state._iaCurrentSuffix = null; state._iaCurrentText = '';
+    setIaCurrentSuffix(null); setIaCurrentText('');
     toast(append ? 'Sugerencia agregada al final del campo' : 'Sugerencia aplicada — campo sustituido');
     el.scrollIntoView({behavior:'smooth', block:'center'});
     return;
@@ -193,12 +194,12 @@ export function iaEscribirEnCampo(suffix, texto, append){
     }
     syncRteSin(suffix);
     g('ia-result-panel').classList.remove('open');
-    state._iaCurrentSuffix = null; state._iaCurrentText = '';
+    setIaCurrentSuffix(null); setIaCurrentText('');
     toast(append ? 'Sugerencia agregada al final del campo' : 'Sugerencia aplicada — campo sustituido');
   } else {
     const sinId = currentSin?.id || parseInt(g('s-id')?.value);
     if(!sinId){ toast('Abre el expediente primero'); return; }
-    state._iaPendingApply = true;
+    setIaPendingApply(true);
     editarSiniestro(sinId);
     g('modal-sin').classList.add('open');
     setTimeout(()=>{
@@ -215,7 +216,7 @@ export function iaEscribirEnCampo(suffix, texto, append){
         rte2.scrollIntoView({behavior:'smooth', block:'center'});
       }
       g('ia-result-panel').classList.remove('open');
-      state._iaCurrentSuffix = null; state._iaCurrentText = ''; state._iaPendingApply = false;
+      setIaCurrentSuffix(null); setIaCurrentText(''); setIaPendingApply(false);
       toast(append ? 'Texto agregado — guarda el expediente' : 'Texto aplicado — guarda el expediente');
     }, 450);
   }
@@ -230,8 +231,8 @@ export function iaRegenerarActual(){
 }
 
 export function iaLlamarPanel(prompt, titulo, suffix){
-  state._iaCurrentSuffix = suffix;
-  state._iaCurrentPrompt = prompt;
+  setIaCurrentSuffix(suffix);
+  setIaCurrentPrompt(prompt);
   iaAbrirPanel(titulo, suffix);
   const editor = g('ia-panel-editor');
   iaCall(

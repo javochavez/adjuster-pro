@@ -1,6 +1,7 @@
 import { EST, MON_CLS, HON_EST, CONCEPTO_LABEL, INF_TIPOS } from './config.js';
 import { data, currentSin } from './state.js';
 import * as state from './state.js';
+import { setCurrentSin } from './state.js';
 import { g, v, toast, fmtD, fmtMXN, toMXN } from './ui.js';
 import { db, loadAll, renderAll } from './db.js';
 import { loadRteSin, syncRteSin, loadBienesRte, loadSinLimTexto, loadSinGiroAseg, loadSinDescAseg } from './rte.js';
@@ -14,7 +15,7 @@ import { previsualizarReporte, buildCoberturaTableHTML } from './reportes.js';
 import { resetBuscadorSinModal, seleccionarAseguradoSin, seleccionarPolizaSin } from './modal.js';
 
 export function verSiniestro(id){
-  state.currentSin = data.sin.find(s=>s.id===id);
+  setCurrentSin(data.sin.find(s=>s.id===id));
   if(!state.currentSin) return;
   g('sin-list-view').style.display='none';
   const dv=g('sin-detail-view'); dv.style.display='block';
@@ -480,7 +481,7 @@ export async function cambiarEstatus(nuevoEstatus){
 export function volverLista(){
   g('sin-detail-view').style.display='none';
   g('sin-list-view').style.display='block';
-  state.currentSin = null;
+  setCurrentSin(null);
 }
 
 export function switchTab2(id,btn){
@@ -600,7 +601,7 @@ export async function guardarSiniestroOffline(id, d2){
   await offlineSaveSiniestro(id, d2);
   cerrarModal('modal-sin');
   renderAll();
-  if(state.currentSin){ state.currentSin = data.sin.find(s=>s.id===state.currentSin.id)||state.currentSin; renderDetalle(); }
+  if(state.currentSin){ setCurrentSin(data.sin.find(s=>s.id===state.currentSin.id)||state.currentSin); renderDetalle(); }
   toast('Guardado sin conexión ● — se sincronizará al recuperar red');
 }
 

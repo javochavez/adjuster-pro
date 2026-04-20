@@ -9,6 +9,7 @@ import { g, v, toast } from './ui.js';
 import { db } from './db.js';
 import { data, currentSin } from './state.js';
 import * as state from './state.js';
+import { setCurrentSin } from './state.js';
 import { loadRteSin, loadBienesRte } from './rte.js';
 import { offlineSaveSiniestro } from './offline.js';
 import { renderDetalle } from './expediente.js';
@@ -496,7 +497,7 @@ async function guardarSiniestroOffline(id, d2) {
   cerrarModal('modal-sin');
   renderSiniestros();
   if(state.currentSin){
-    state.currentSin = data.sin.find(s => s.id === state.currentSin.id) || state.currentSin;
+    setCurrentSin(data.sin.find(s => s.id === state.currentSin.id) || state.currentSin);
     renderDetalle();
   }
   toast('Guardado sin conexión ● — se sincronizará al recuperar red');
@@ -504,7 +505,7 @@ async function guardarSiniestroOffline(id, d2) {
 
 export function editarSiniestro(id) {
   const s = data.sin.find(x => x.id === id); if(!s) return;
-  state.currentSin = s;
+  setCurrentSin(s);
   g('sin-modal-title').textContent = 'Editar expediente';
   if(g('s-id')) g('s-id').value = s.id;
   [

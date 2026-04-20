@@ -34,3 +34,12 @@ export let solRamoActivo       = 'General';
 export let solCatalogoExtendido = {};
 
 export const state = {};
+
+export function setIdb(val)             { _idb = val; }
+export function setIsOnline(val)        { _isOnline = val; }
+export function setSyncRunning(val)     { _syncRunning = val; }
+export function setCurrentSin(val)      { currentSin = val; }
+export function setIaCurrentText(val)   { _iaCurrentText = val; }
+export function setIaCurrentSuffix(val) { _iaCurrentSuffix = val; }
+export function setIaCurrentPrompt(val) { _iaCurrentPrompt = val; }
+export function setIaPendingApply(val)  { _iaPendingApply = val; }

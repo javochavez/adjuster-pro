@@ -1,6 +1,7 @@
 import { IDB_NAME, IDB_VERSION, IDB_STORES } from './config.js';
 import { data } from './state.js';
 import * as state from './state.js';
+import { setIdb, setIsOnline, setSyncRunning } from './state.js';
 import { g, toast } from './ui.js';
 import { db, loadAll, renderAll } from './db.js';
 
@@ -20,7 +21,7 @@ export function idbOpen(){
         }
       });
     };
-    req.onsuccess = e => { state._idb = e.target.result; res(state._idb); };
+    req.onsuccess = e => { setIdb(e.target.result); res(state._idb); };
     req.onerror   = e => rej(e.target.error);
   });
 }
@@ -198,7 +199,7 @@ export async function offlineSync(){
   const queue = await queueGetAll();
   if(!queue.length){ offlineUpdateBadge(); return; }
 
-  state._syncRunning = true;
+  setSyncRunning(true);
   offlineSetState('syncing');
   let ok = 0, fail = 0;
 
@@ -219,7 +220,7 @@ export async function offlineSync(){
     }
   }
 
-  state._syncRunning = false;
+  setSyncRunning(false);
   offlineSetState('online');
   offlineUpdateBadge();
 
@@ -290,7 +291,7 @@ export async function offlineRegisterSW(){
 // ── Listeners de red y SW ─────────────────────────────────────────────────
 
 window.addEventListener('online', async () => {
-  state._isOnline = true;
+  setIsOnline(true);
   offlineSetState('online');
   toast('Conexión restaurada — sincronizando…');
   await offlineSync();
@@ -301,7 +302,7 @@ window.addEventListener('online', async () => {
 });
 
 window.addEventListener('offline', () => {
-  state._isOnline = false;
+  setIsOnline(false);
   offlineSetState('offline');
   toast('Sin conexión — los cambios se guardarán localmente');
 });
