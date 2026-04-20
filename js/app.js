@@ -19,11 +19,11 @@
 // ══════════════════════════════════════════════════════════════════════════
 // IMPORTS
 // ══════════════════════════════════════════════════════════════════════════
-import { SUPA_URL, SUPA_KEY }            from './config.js';
+
 import { state }                          from './state.js';
 import { uiPublic }                       from './ui.js';
 import { authPublic }                     from './auth.js';
-import { dbPublic }                       from './db.js';
+import { db, dbPublic }                   from './db.js';
 import { rtePublic }                      from './rte.js';
 import { iaPublic }                       from './ia.js';
 import { offlinePublic }                  from './offline.js';
@@ -39,7 +39,6 @@ import { mobilePublic, mobHookMostrarApp } from './mobile.js';
 // ══════════════════════════════════════════════════════════════════════════
 // SUPABASE
 // ══════════════════════════════════════════════════════════════════════════
-const db = window.supabase.createClient(SUPA_URL, SUPA_KEY);
 window.__db = db;
 
 // ══════════════════════════════════════════════════════════════════════════

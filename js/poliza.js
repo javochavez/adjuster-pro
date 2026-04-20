@@ -279,11 +279,13 @@ export async function guardarPoliza() {
   };
 
   if(id){
-    await db.from('polizas').update(d2).eq('id', id);
+    const { error } = await db.from('polizas').update(d2).eq('id', id);
+    if(error){ toast('Error al guardar: '+error.message); console.error(error); return; }
     await guardarPolCobGrid(parseInt(id));
     toast('Póliza actualizada.');
   } else {
-    const { data: ins } = await db.from('polizas').insert(d2).select('id').single();
+    const { data: ins, error } = await db.from('polizas').insert(d2).select('id').single();
+    if(error){ toast('Error al guardar: '+error.message); console.error(error); return; }
     if(ins?.id) await guardarPolCobGrid(ins.id);
     toast('Póliza creada.');
   }

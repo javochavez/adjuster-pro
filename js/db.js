@@ -10,7 +10,8 @@ import {
   renderTC, renderAjustadores,
 } from './render.js';
 
-export const db = supabase.createClient(SUPA_URL, SUPA_KEY);
+export const db = window.__db || supabase.createClient(SUPA_URL, SUPA_KEY);
+if (!window.__db) window.__db = db;
 
 export async function loadAll(){
   if(!navigator.onLine){

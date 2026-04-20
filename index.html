@@ -3392,7 +3392,8 @@ const FINAL_MODEL_B64='UEsDBBQAAAAIAFUbd1wDivyuvwEAAJcJAAATAAAAW0NvbnRlbnRfVHlwZ
 
 const SUPA_URL = 'https://lxtieqaldwcntxaqklww.supabase.co';
 const SUPA_KEY = 'sb_publishable_nj0KDujN_1_nX33n3VceBA_f_NWCuos';
-const db = supabase.createClient(SUPA_URL, SUPA_KEY);
+if (!window.__db) window.__db = supabase.createClient(SUPA_URL, SUPA_KEY);
+const db = window.__db;
 
 // ── INSERTAR IMÁGENES EN RTE ─────────────────────────────────────────
 let rteImgSuffix = '';       // which RTE field triggered the picker
@@ -6353,11 +6354,13 @@ async function guardarPoliza(){
   };
   console.log('GUARDAR POL d2:', JSON.stringify({giro_asegurado: d2.giro_asegurado, descripcion_asegurado: d2.descripcion_asegurado, limite_max_texto: d2.limite_max_texto}));
   if(id){
-    await db.from('polizas').update(d2).eq('id',id);
+    const {error} = await db.from('polizas').update(d2).eq('id',id);
+    if(error){ toast('Error al guardar: '+error.message); console.error(error); return; }
     await guardarPolCobGrid(parseInt(id));
     toast('Póliza actualizada.');
   } else {
-    const {data:ins} = await db.from('polizas').insert(d2).select('id').single();
+    const {data:ins, error} = await db.from('polizas').insert(d2).select('id').single();
+    if(error){ toast('Error al guardar: '+error.message); console.error(error); return; }
     if(ins?.id) await guardarPolCobGrid(ins.id);
     toast('Póliza creada.');
   }
