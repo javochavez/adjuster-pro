@@ -233,6 +233,8 @@ window.mostrarApp = function mostrarApp(email, rol) {
   if (currentUserReadonly) document.body.classList.add('modo-lectura');
   else                     document.body.classList.remove('modo-lectura');
 
+  if (typeof window.userMenuInit === 'function') window.userMenuInit(email, rol);
+
   window.loadAll();
 };
 
