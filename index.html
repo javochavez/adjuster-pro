@@ -9598,9 +9598,8 @@ function switchMain(tab,btn){
   if(tab==='alertas') renderAlertas();
 }
 
-/* ── INIT ── */
-document.addEventListener('DOMContentLoaded', async () => {
-  // Detectar retorno de OAuth Google Drive
+/* ── INIT — detección retorno OAuth Drive (auth lo maneja js/app.js) ── */
+document.addEventListener('DOMContentLoaded', () => {
   const urlParams = new URLSearchParams(window.location.search);
   if(urlParams.get('drive_connected')==='1'){
     history.replaceState({}, '', window.location.pathname);
@@ -9609,23 +9608,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   if(urlParams.get('drive_error')){
     history.replaceState({}, '', window.location.pathname);
     setTimeout(()=>toast('Error al conectar Drive: ' + urlParams.get('drive_error')), 800);
-  }
-  try {
-    const { data: { session } } = await db.auth.getSession();
-    if (session) {
-      const { data: perfil } = await db
-        .from('perfiles')
-        .select('aprobado, rol')
-        .eq('id', session.user.id)
-        .single();
-      if (perfil?.aprobado === true) {
-        mostrarApp(session.user.email, perfil.rol || '');
-      } else {
-        authMostrar('pending');
-      }
-    }
-  } catch(e) {
-    console.error('Auth init error:', e);
   }
 });
 
@@ -10054,16 +10036,6 @@ async function mobGuardarNota(){
   mobTab('nota');
 }
 
-// ── INIT HOOK ─────────────────────────────────────────────────
-// Hook into mostrarApp to init mobile after data loads
-const _origMostrarApp = typeof mostrarApp === 'function' ? mostrarApp : null;
-// Will be called after loadAll in mostrarApp
-const _origLoadAll = loadAll;
-loadAll = async function(...args){
-  const result = await _origLoadAll.apply(this, args);
-  if(mobIsMobile() && data.sin) mobInit();
-  return result;
-};
 
 
 // ════════════════════════════════════════════════════════════
