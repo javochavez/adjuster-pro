@@ -57,8 +57,8 @@ window.__appData = data;
 // ══════════════════════════════════════════════════════════════════════════
 // ESTADO DE USUARIO
 // ══════════════════════════════════════════════════════════════════════════
-let currentUserRole     = '';
-let currentUserReadonly = false;
+let currentUserRole     = window.currentUserRole     = '';
+let currentUserReadonly = window.currentUserReadonly = false;
 
 // currentSin — getter/setter que sincroniza con window.__currentSin
 let _currentSin = null;
@@ -220,6 +220,8 @@ window.renderAll = renderAll;
 window.mostrarApp = function mostrarApp(email, rol) {
   currentUserRole     = rol || '';
   currentUserReadonly = (rol === 'consultor');
+  window.currentUserRole     = currentUserRole;
+  window.currentUserReadonly = currentUserReadonly;
 
   window.g('login-wrap').style.display = 'none';
   window.g('app').style.display        = 'flex';
@@ -238,6 +240,8 @@ window.doLogout = async function doLogout() {
   await db.auth.signOut();
   currentUserRole     = '';
   currentUserReadonly = false;
+  window.currentUserRole     = currentUserRole;
+  window.currentUserReadonly = currentUserReadonly;
   document.body.classList.remove('modo-lectura');
   window.g('app').style.display        = 'none';
   window.g('login-wrap').style.display = 'flex';

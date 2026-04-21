@@ -3571,8 +3571,8 @@ function syncBienesRte(){ syncRteSin('bienes'); }
 function loadBienesRte(html){ loadRteSin('bienes', html); }
 
 // Rol del usuario autenticado: 'admin' | 'ajustador' | 'consultor' | ''
-let currentUserRole    = '';
-let currentUserReadonly = false;
+var currentUserRole    = '';
+var currentUserReadonly = false;
 
 function esReadonly(){ return currentUserReadonly; }
 
