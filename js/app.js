@@ -44,7 +44,7 @@ window.__db = db;
 // ══════════════════════════════════════════════════════════════════════════
 // DATA STORE — objeto global compartido por todos los módulos
 // ══════════════════════════════════════════════════════════════════════════
-const data = {
+const data = window.data = {
   sin: [], pol: [], aseg: [], asdo: [], cont: [],
   res: [], pag: [], hon: [], viat: [], act: [],
   doc: [], tc: [], bit: [], inf: [], sublim: [],
@@ -322,9 +322,8 @@ pub(mobilePublic);
 if (graficosPublic.iaVisionFileToB64) window.iaVisionFileToB64 = graficosPublic.iaVisionFileToB64;
 if (graficosPublic.iaVisionAnalizar)  window.iaVisionAnalizar  = graficosPublic.iaVisionAnalizar;
 
-// ── Exponer data y db para módulos que aún los referencian globalmente ────
-window.data = data;
-window.db   = db;
+// ── Exponer db para módulos que aún lo referencian globalmente ────
+window.db = db;
 
 // ══════════════════════════════════════════════════════════════════════════
 // switchMain / switchTab / switchTab2 / switchCat
