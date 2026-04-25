@@ -5046,17 +5046,13 @@ function renderDetalle(){
         </select>
       </div>
     </div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+    <div style="display:flex;gap:8px;">
       <button class="btn btn-sm" onclick="editarSiniestro(${s.id})">Editar expediente</button>
-      <button class="btn btn-sm" id="btn-drive-${s.id}" onclick="driveAbrirOCrearCarpeta(${s.id})"
-        style="background:rgba(66,133,244,.15);border-color:rgba(66,133,244,.4);color:#4285f4;">
-        📁 Drive
-      </button>
-      <div class="btn-group" style="position:relative;display:inline-block;" id="cedula-btn-group">
-        <button class="btn btn-sm" onclick="var m=document.getElementById('cedula-menu');m.style.display=m.style.display==='block'?'none':'block'" style="gap:4px;">
-          📊 Cédula de Ajuste ▾
+      <div style="position:relative;display:inline-block;" id="cedula-btn-group">
+        <button class="btn btn-sm" onclick="(function(){var m=document.getElementById('cedula-menu');m.style.display=m.style.display==='block'?'none':'block';})()">
+          📊 Cédula ▾
         </button>
-        <div id="cedula-menu" style="display:none;position:absolute;top:100%;left:0;z-index:200;background:var(--surface2);border:1px solid var(--border-hi);border-radius:var(--r);box-shadow:0 4px 12px rgba(0,0,0,.3);min-width:150px;overflow:hidden;">
+        <div id="cedula-menu" style="display:none;position:absolute;top:100%;right:0;z-index:200;background:var(--surface2);border:1px solid var(--border-hi);border-radius:var(--r);box-shadow:0 4px 12px rgba(0,0,0,.3);min-width:160px;overflow:hidden;">
           <div onclick="generarCedulaPublic('excel');document.getElementById('cedula-menu').style.display='none'" style="padding:8px 14px;cursor:pointer;font-size:12px;" onmouseover="this.style.background='var(--surface3)'" onmouseout="this.style.background=''">📥 Excel</div>
           <div onclick="generarCedulaPublic('pdf');document.getElementById('cedula-menu').style.display='none'" style="padding:8px 14px;cursor:pointer;font-size:12px;" onmouseover="this.style.background='var(--surface3)'" onmouseout="this.style.background=''">🖨 PDF / Imprimir</div>
         </div>
@@ -5228,13 +5224,6 @@ function renderDetalle(){
   if(todoWrap) renderTodoGrid(data.todos.filter(t=>t.id_siniestro===s.id), todoWrap);
   renderGrafGallery(s.id);
 }
-
-document.addEventListener('click', function(e) {
-  if (!document.getElementById('cedula-btn-group')?.contains(e.target)) {
-    const m = document.getElementById('cedula-menu');
-    if (m) m.style.display = 'none';
-  }
-});
 
 function renderSubTable(rows,type,cols){
   if(!rows.length) return `<tr><td colspan="${cols.length+1}" class="empty">Sin registros.</td></tr>`;
@@ -12444,6 +12433,12 @@ function sinAcord(hd) {
     if (id === 'modal-sin') { requestAnimationFrame(() => sinTab('t1')); }
   };
 })();
+
+document.addEventListener('click', function(e){
+  var g = document.getElementById('cedula-btn-group');
+  var m = document.getElementById('cedula-menu');
+  if(g && m && !g.contains(e.target)) m.style.display='none';
+});
 
 </script>
 </body>
