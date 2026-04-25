@@ -8,14 +8,15 @@
 
 export function generarCedula(formato) {
   // formato: 'excel' | 'pdf'
-  if (!window.currentSin) { window.toast('Abre un expediente primero.'); return; }
-  const s   = window.currentSin;
-  const pol = (window.data.pol  || []).find(p => p.id === s.id_poliza) || {};
-  const asdo= (window.data.asdo || []).find(a => a.id === pol.id_asegurado) || {};
+  const s = (typeof window._appCurrentSin === 'function') ? window._appCurrentSin() : window.currentSin;
+  if (!s) { window.toast('Abre un expediente primero.'); return; }
+  const _d  = window._appData || window.data || {};
+  const pol = (_d.pol  || []).find(p => p.id === s.id_poliza) || {};
+  const asdo= (_d.asdo || []).find(a => a.id === pol.id_asegurado) || {};
 
   // Reservas vigentes (más reciente por concepto)
   const vigMap = {};
-  (window.data.res || [])
+  (_d.res || [])
     .filter(r => r.id_siniestro === s.id)
     .forEach(r => { if (!vigMap[r.concepto] || r.id > vigMap[r.concepto].id) vigMap[r.concepto] = r; });
   const reservas = Object.values(vigMap);
