@@ -81,68 +81,75 @@ function _exportExcel(hdr, calc, fM) {
   const wb = XLSX.utils.book_new();
   const rows = [];
 
-  // Título
+  // ── Título ──────────────────────────────────────────────────────────
   rows.push(['CÉDULA DE AJUSTE — ALMARAZ AJUSTADORES (AASA)']);
   rows.push([]);
 
-  // Encabezado
-  rows.push(['Asegurado',          hdr.asegurado]);
-  rows.push(['No. Siniestro',      hdr.siniestro]);
-  rows.push(['Referencia AASA',    hdr.refAASA]);
-  rows.push(['Póliza',             hdr.poliza]);
-  rows.push(['Fecha del siniestro',hdr.fechaSin]);
-  rows.push(['Tipo de daños',      hdr.tipoDanios]);
-  rows.push(['Lugar del evento',   hdr.lugar]);
+  // ── Encabezado del expediente ────────────────────────────────────────
+  rows.push(['Asegurado',           hdr.asegurado]);
+  rows.push(['No. Siniestro',       hdr.siniestro]);
+  rows.push(['Referencia AASA',     hdr.refAASA]);
+  rows.push(['Póliza',              hdr.poliza]);
+  rows.push(['Fecha del siniestro', hdr.fechaSin]);
+  rows.push(['Tipo de daños',       hdr.tipoDanios]);
+  rows.push(['Lugar del evento',    hdr.lugar]);
   rows.push([]);
 
-  // Cabecera de tabla
-  rows.push([
-    'Cobertura', 'Moneda',
-    'Reserva Bruta', 'Ajuste', 'Subtotal Ajustado',
-    'Bajo Seguro', 'Pérdida Ajustada',
-    'Deducible', 'Coaseguro %', 'Coaseguro Monto',
-    'Cantidad Indemnizable Neta',
-    'Bases de reserva'
-  ]);
+  // ── Tabla: filas = conceptos, columnas = coberturas ──────────────────
+  const showTotal = calc.length > 1;
+
+  // Fila de encabezados de columna
+  const hdrs = ['Concepto', ...calc.map(c => c.concepto)];
+  if (showTotal) hdrs.push('TOTAL');
+  rows.push(hdrs);
+
+  // Moneda
+  rows.push(['Moneda', ...calc.map(c => c.moneda), ...(showTotal ? [''] : [])]);
+
+  // Función auxiliar para fila de concepto
+  const fila = (label, key, totVal) => {
+    const r = [label, ...calc.map(c => c[key])];
+    if (showTotal) r.push(totVal);
+    return r;
+  };
 
   let totBruta=0, totAjuste=0, totSubAj=0, totBajo=0, totPerdAj=0,
       totDed=0, totCoas=0, totNeta=0;
-
   calc.forEach(c => {
-    rows.push([
-      c.concepto, c.moneda,
-      c.bruta, c.ajuste, c.subtotalAj,
-      c.bajo, c.perdidaAj,
-      c.ded, c.coasPct, c.coas,
-      c.neta, c.bases
-    ]);
-    totBruta+=c.bruta; totAjuste+=c.ajuste; totSubAj+=c.subtotalAj;
-    totBajo+=c.bajo; totPerdAj+=c.perdidaAj; totDed+=c.ded;
-    totCoas+=c.coas; totNeta+=c.neta;
+    totBruta  += c.bruta;   totAjuste += c.ajuste;
+    totSubAj  += c.subtotalAj; totBajo += c.bajo;
+    totPerdAj += c.perdidaAj;  totDed  += c.ded;
+    totCoas   += c.coas;    totNeta   += c.neta;
   });
 
-  // Totales (solo si hay más de una cobertura)
-  if (calc.length > 1) {
-    rows.push([
-      'TOTAL', '',
-      totBruta, totAjuste, totSubAj,
-      totBajo, totPerdAj,
-      totDed, '', totCoas,
-      totNeta, ''
-    ]);
-  }
+  rows.push(fila('Reserva Bruta',          'bruta',       totBruta));
+  rows.push(fila('Ajuste',                 'ajuste',      totAjuste));
+  rows.push(fila('Subtotal Ajustado',      'subtotalAj',  totSubAj));
+  rows.push(fila('Bajo Seguro',            'bajo',        totBajo));
+  rows.push(fila('Pérdida Ajustada',       'perdidaAj',   totPerdAj));
+  rows.push(fila('Deducible',              'ded',         totDed));
 
+  // Coaseguro % — no suma
+  rows.push(['Coaseguro %', ...calc.map(c => c.coasPct ? c.coasPct.toFixed(2)+'%' : 'N/A'),
+             ...(showTotal ? [''] : [])]);
+
+  rows.push(fila('Coaseguro Monto',        'coas',        totCoas));
+  rows.push(fila('Cantidad Indemnizable Neta', 'neta',    totNeta));
+  rows.push([]);
+
+  // Bases de reserva por cobertura
+  rows.push(['Bases de reserva', ...calc.map(c => c.bases), ...(showTotal ? [''] : [])]);
+
+  // ── Hoja ─────────────────────────────────────────────────────────────
   const ws = XLSX.utils.aoa_to_sheet(rows);
 
-  // Ancho de columnas
-  ws['!cols'] = [
-    {wch:28},{wch:7},{wch:16},{wch:14},{wch:18},
-    {wch:14},{wch:18},{wch:14},{wch:11},{wch:16},
-    {wch:22},{wch:40}
-  ];
+  // Ancho de columnas: etiqueta ancha + una por cobertura + total
+  const colWidths = [{ wch: 28 }, ...calc.map(() => ({ wch: 20 }))];
+  if (showTotal) colWidths.push({ wch: 20 });
+  ws['!cols'] = colWidths;
 
   XLSX.utils.book_append_sheet(wb, ws, 'Cédula');
-  const fname = `Cedula_${hdr.refAASA}_${hdr.siniestro}.xlsx`.replace(/[\\/:*?"<>|]/g,'_');
+  const fname = `Cedula_${hdr.refAASA}_${hdr.siniestro}.xlsx`.replace(/[\\/:*?"<>|]/g, '_');
   XLSX.writeFile(wb, fname);
 }
 
