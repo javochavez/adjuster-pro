@@ -10,13 +10,8 @@ export function generarCedula(formato) {
   // formato: 'excel' | 'pdf'
   const s = (typeof window._appCurrentSin === 'function') ? window._appCurrentSin() : window.currentSin;
   if (!s) { window.toast('Abre un expediente primero.'); return; }
-  const _d  = window._appData || window.data || {};
-  console.log('[Cedula] s.id:', s.id);
-  console.log('[Cedula] _d.res count:', (_d.res||[]).length);
-  console.log('[Cedula] _d.res filtradas:', (_d.res||[]).filter(r => r.id_siniestro === s.id).length);
-  console.log('[Cedula] s keys:', Object.keys(s));
-  console.log('[Cedula] pol keys:', Object.keys(((_d.pol||[]).find(p=>p.id===s.id_poliza)||{})));
-  console.log('[Cedula] asdo sample:', JSON.stringify((_d.asdo||[])[0]));
+  const _d = (typeof window._appData === 'function') ? window._appData()
+           : (window._appData || window.data || {});
   const pol = (_d.pol  || []).find(p => p.id === s.id_poliza) || {};
   const asdo= (_d.asdo || []).find(a => a.id === pol.id_asegurado) || {};
 
@@ -40,7 +35,7 @@ export function generarCedula(formato) {
 
   // Encabezado del expediente
   const header = {
-    asegurado   : asdo.nombre        || s.asegurado_nombre || '—',
+    asegurado   : asdo.nombre || s.referencia_ajustadora || s.asegurado_nombre || '—',
     siniestro   : s.numero_siniestro || s.referencia_aseg  || '—',
     refAASA     : s.referencia_aasa  || s.id               || '—',
     poliza      : pol.numero         || '—',
