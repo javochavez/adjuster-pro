@@ -5050,6 +5050,7 @@ function renderDetalle(){
     </div>
     <div style="display:flex;gap:8px;">
       <button class="btn btn-sm" onclick="editarSiniestro(${s.id})">Editar expediente</button>
+      <button class="btn btn-sm" id="btn-drive-exp" onclick="abrirDriveExpediente(${s.id})" title="Abrir carpeta en Google Drive">📁 Drive</button>
       <div style="position:relative;display:inline-block;" id="cedula-btn-group">
         <button class="btn btn-sm" onclick="(function(){var m=document.getElementById('cedula-menu');m.style.display=m.style.display==='block'?'none':'block';})()">
           📊 Cédula ▾
