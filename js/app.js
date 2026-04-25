@@ -35,6 +35,7 @@ import { informesPublic }                 from './informes.js';
 import { solicitudesPublic }              from './solicitudes.js';
 import { graficosPublic }                 from './graficos.js';
 import { mobilePublic, mobHookMostrarApp } from './mobile.js';
+import { generarCedula, generarCedulaPublic } from './cedula.js';
 
 // ══════════════════════════════════════════════════════════════════════════
 // SUPABASE
@@ -322,6 +323,10 @@ pub(graficosPublic);
 
 // mobile.js
 pub(mobilePublic);
+
+// cedula.js
+window.generarCedula       = generarCedula;
+window.generarCedulaPublic = generarCedulaPublic;
 
 // ── Exponer helpers de IA visión para mobile.js ───────────────────────────
 // mobile.js los consume via window.iaVisionFileToB64 / window.iaVisionAnalizar
