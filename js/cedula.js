@@ -11,6 +11,12 @@ export function generarCedula(formato) {
   const s = (typeof window._appCurrentSin === 'function') ? window._appCurrentSin() : window.currentSin;
   if (!s) { window.toast('Abre un expediente primero.'); return; }
   const _d  = window._appData || window.data || {};
+  console.log('[Cedula] s.id:', s.id);
+  console.log('[Cedula] _d.res count:', (_d.res||[]).length);
+  console.log('[Cedula] _d.res filtradas:', (_d.res||[]).filter(r => r.id_siniestro === s.id).length);
+  console.log('[Cedula] s keys:', Object.keys(s));
+  console.log('[Cedula] pol keys:', Object.keys(((_d.pol||[]).find(p=>p.id===s.id_poliza)||{})));
+  console.log('[Cedula] asdo sample:', JSON.stringify((_d.asdo||[])[0]));
   const pol = (_d.pol  || []).find(p => p.id === s.id_poliza) || {};
   const asdo= (_d.asdo || []).find(a => a.id === pol.id_asegurado) || {};
 
