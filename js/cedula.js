@@ -240,7 +240,7 @@ function _exportExcel(hdr, calc, fM) {
   ws['!ref'] = XLS.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: row, c: totalCols - 1 } });
 
   // ── Anchos de columna ─────────────────────────────────────────────
-  ws['!cols'] = [{ wch: 30 }, ...calc.map(() => ({ wch: 22 })), ...(showTotal ? [{ wch: 22 }] : [])];
+  ws['!cols'] = [{ wch: 28 }, { wch: 18 }, ...calc.map(() => ({ wch: 22 })), ...(showTotal ? [{ wch: 22 }] : [])];
 
   // ── Alturas de fila ───────────────────────────────────────────────
   ws['!rows'] = [{ hpt: 30 }, { hpt: 20 }, { hpt: 16 }];  // filas de título
@@ -258,13 +258,15 @@ function _exportExcel(hdr, calc, fM) {
 
   // ── Logo: intentar insertar desde LOGO_AASA_B64 ──────────────────
   try {
-    const logoB64 = window.LOGO_AASA_B64 || '';
-    if (logoB64 && wb.Workbook === undefined) wb.Workbook = { Sheets: [{}] };
-    if (logoB64 && typeof wb.addImage === 'function') {
-      // xlsx-js-style no soporta imágenes nativas; omitir silenciosamente
-    }
-    // Colocar nombre en celda A1 como fallback de logo
-    ws[ref(0, 0)] = cell('AASA', { bold: true, color: WHITE, bg: NAVY, sz: 14, align: 'center' });
+    ws[ref(0, 0)] = cell('ALMARAZ AJUSTADORES', {
+      bold: true, color: WHITE, bg: NAVY, sz: 13, align: 'center'
+    });
+    ws[ref(1, 0)] = cell('S.A. DE C.V.', {
+      bold: false, color: 'BDD7EE', bg: NAVY, sz: 11, align: 'center'
+    });
+    ws[ref(2, 0)] = cell('AJUSTADORES DE SEGUROS', {
+      bold: false, color: 'BDD7EE', bg: NAVY, sz: 9, align: 'center'
+    });
     ws['!merges'].push({ s: { r: 0, c: 0 }, e: { r: 2, c: 1 } });
   } catch(e) { /* silencioso */ }
 
