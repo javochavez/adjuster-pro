@@ -70,15 +70,10 @@ export function generarCedula(formato) {
 
 // ── Excel ────────────────────────────────────────────────────────────
 function _exportExcel(hdr, calc, fM) {
-  const XLS = typeof XLSXStyle !== 'undefined' ? XLSXStyle : (typeof XLSX !== 'undefined' ? XLSX : null);
-  if (!XLS) {
-    window.toast('Cargando librería Excel…');
-    const s = document.createElement('script');
-    s.src = 'https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx-js-style.min.js';
-    s.onload = () => { setTimeout(() => _exportExcel(hdr, calc, fM), 100); };
-    document.head.appendChild(s);
-    return;
-  }
+  const XLS = typeof XLSXStyle !== 'undefined' ? XLSXStyle
+            : typeof XLSX      !== 'undefined' ? XLSX
+            : null;
+  if (!XLS) { window.toast('Librería Excel no disponible.'); return; }
 
   const wb = XLS.utils.book_new();
 
