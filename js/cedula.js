@@ -70,7 +70,9 @@ export function generarCedula(formato) {
 
 // ── Excel ────────────────────────────────────────────────────────────
 function _exportExcel(hdr, calc, fM) {
-  const XLS = typeof XLSXStyle !== 'undefined' ? XLSXStyle : null;
+  const XLS = typeof XLSXStyle !== 'undefined' ? XLSXStyle
+            : typeof XLSX      !== 'undefined' ? XLSX
+            : null;
   if (!XLS) { window.toast('Librería Excel no disponible.'); return; }
 
   const wb = XLS.utils.book_new();
