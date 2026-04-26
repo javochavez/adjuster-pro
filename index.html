@@ -5707,7 +5707,10 @@ function abrirModal(id){
   }
   if(id==='modal-cont'){
     ['co-nombre','co-cargo','co-tel','co-email'].forEach(f=>g(f).value='');
-    g('co-tipo').value='general'; g('co-aseg').value=''; g('co-asdo').value='';
+    g('co-tipo').value='general';
+    const _asegInf = (currentSin && (data.pol.find(p=>p.id===currentSin.id_poliza)||{})).id_aseguradora||'';
+    g('co-aseg').value = _asegInf;
+    g('co-asdo').value='';
   }
   if(id==='modal-pol'){
     g('pol-modal-title').textContent='Nueva póliza';
