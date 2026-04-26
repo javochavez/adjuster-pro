@@ -5754,11 +5754,11 @@ function abrirModal(id){
     if(g('inf-act-section')) g('inf-act-section').style.display='none';
     // Pre-load current expediente values
     if(currentSin){
-      // Populate funcionarios selector filtered by aseguradora
-      poblarFuncionariosInf();
       if(g('inf-contacto-sel')) g('inf-contacto-sel').value='';
       if(g('inf-dest'))  g('inf-dest').value='';
       if(g('inf-jefe'))  g('inf-jefe').value='';
+      // Populate funcionarios selector filtered by aseguradora
+      poblarFuncionariosInf();
       if(g('inf-desarrollo'))       g('inf-desarrollo').value       = currentSin.descripcion||'';  // narración de hechos
       if(g('inf-estrategias'))      g('inf-estrategias').value      = currentSin.estrategias_observaciones||'';
       if(g('inf-situacion-actual')) g('inf-situacion-actual').value = currentSin.situacion_actual||'';
@@ -5769,6 +5769,10 @@ function abrirModal(id){
         if(g('inf-dest'))   g('inf-dest').value   = lastInf.destinatario||'';
         if(g('inf-jefe'))   g('inf-jefe').value   = lastInf.jefe_depto||'';
         if(g('inf-oficina'))g('inf-oficina').value = lastInf.oficina_cia||'';
+      }
+      if(g('inf-contacto-sel') && lastInf && lastInf.id_contacto_dest) {
+        g('inf-contacto-sel').value = lastInf.id_contacto_dest;
+        seleccionarContactoInf(lastInf.id_contacto_dest);
       }
     }
   }
