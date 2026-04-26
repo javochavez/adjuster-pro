@@ -6644,11 +6644,6 @@ function poblarFuncionariosInf(){
   if(!sel || !currentSin) return;
   const pol    = data.pol.find(p=>p.id===currentSin.id_poliza)||{};
   const asegId = pol.id_aseguradora||0;
-  console.log('[Inf] currentSin.id_poliza:', currentSin.id_poliza);
-  console.log('[Inf] pol:', JSON.stringify(pol));
-  console.log('[Inf] asegId:', asegId);
-  console.log('[Inf] data.cont.length:', (data.cont||[]).length);
-  console.log('[Inf] contactos que pasan filtro:', (data.cont||[]).filter(c=>!asegId||c.id_aseguradora===asegId).length);
   const conts  = data.cont.filter(c=>!asegId || c.id_aseguradora===asegId)
                            .sort((a,b)=>{
                               if(a.tipo==='funcionario_cia'&&b.tipo!=='funcionario_cia') return -1;
