@@ -6672,6 +6672,7 @@ async function guardarContacto(){
   const d2={nombre:v('co-nombre'),cargo:v('co-cargo'),tipo:v('co-tipo')||'general',telefono:v('co-tel'),correo:v('co-email'),id_aseguradora:parseInt(v('co-aseg'))||null,id_asegurado:parseInt(v('co-asdo'))||null};
   await db.from('contactos').insert(d2); toast('Contacto creado.');
   cerrarModal('modal-cont'); await loadAll();
+  if(document.getElementById('modal-inf')?.classList.contains('active')) poblarFuncionariosInf();
 }
 
 async function guardarTC(){
