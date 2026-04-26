@@ -5759,6 +5759,12 @@ function abrirModal(id){
       if(g('inf-jefe'))  g('inf-jefe').value='';
       // Populate funcionarios selector filtered by aseguradora
       poblarFuncionariosInf();
+      // Auto-select si hay exactamente un contacto disponible
+      const _sel = g('inf-contacto-sel');
+      if(_sel && _sel.options.length === 2) {
+        _sel.value = _sel.options[1].value;
+        seleccionarContactoInf(_sel.options[1].value);
+      }
       if(g('inf-desarrollo'))       g('inf-desarrollo').value       = currentSin.descripcion||'';  // narración de hechos
       if(g('inf-estrategias'))      g('inf-estrategias').value      = currentSin.estrategias_observaciones||'';
       if(g('inf-situacion-actual')) g('inf-situacion-actual').value = currentSin.situacion_actual||'';
