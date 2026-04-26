@@ -70,88 +70,212 @@ export function generarCedula(formato) {
 
 // ── Excel ────────────────────────────────────────────────────────────
 function _exportExcel(hdr, calc, fM) {
-  if (typeof XLSX === 'undefined') {
+  const XLS = typeof XLSXStyle !== 'undefined' ? XLSXStyle : (typeof XLSX !== 'undefined' ? XLSX : null);
+  if (!XLS) {
     window.toast('Cargando librería Excel…');
     const s = document.createElement('script');
-    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
-    s.onload = () => _exportExcel(hdr, calc, fM);
+    s.src = 'https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx-js-style.min.js';
+    s.onload = () => { setTimeout(() => _exportExcel(hdr, calc, fM), 100); };
     document.head.appendChild(s);
     return;
   }
 
-  const wb = XLSX.utils.book_new();
-  const rows = [];
+  const wb = XLS.utils.book_new();
 
-  // ── Título ──────────────────────────────────────────────────────────
-  rows.push(['CÉDULA DE AJUSTE — ALMARAZ AJUSTADORES (AASA)']);
-  rows.push([]);
+  // ── Helpers de estilo ──────────────────────────────────────────────
+  const NAVY  = '1F3864';
+  const BLUE  = '2563A8';
+  const GREEN = '1A5C2F';
+  const LGRAY = 'F2F5FB';
+  const LYELL = 'FFF8E1';
+  const LGREE = 'E8F5E9';
+  const WHITE = 'FFFFFF';
+  const NUM_FMT = '#,##0.00';
+  const PCT_FMT = '0.00"%"';
 
-  // ── Encabezado del expediente ────────────────────────────────────────
-  rows.push(['Asegurado',           hdr.asegurado]);
-  rows.push(['No. Siniestro',       hdr.siniestro]);
-  rows.push(['Referencia AASA',     hdr.refAASA]);
-  rows.push(['Póliza',              hdr.poliza]);
-  rows.push(['Fecha del siniestro', hdr.fechaSin]);
-  rows.push(['Tipo de daños',       hdr.tipoDanios]);
-  rows.push(['Lugar del evento',    hdr.lugar]);
-  rows.push([]);
-
-  // ── Tabla: filas = conceptos, columnas = coberturas ──────────────────
-  const showTotal = calc.length > 1;
-
-  // Fila de encabezados de columna
-  const hdrs = ['Concepto', ...calc.map(c => c.concepto)];
-  if (showTotal) hdrs.push('TOTAL');
-  rows.push(hdrs);
-
-  // Moneda
-  rows.push(['Moneda', ...calc.map(c => c.moneda), ...(showTotal ? [''] : [])]);
-
-  // Función auxiliar para fila de concepto
-  const fila = (label, key, totVal) => {
-    const r = [label, ...calc.map(c => c[key])];
-    if (showTotal) r.push(totVal);
-    return r;
+  const border = {
+    top:    { style: 'thin', color: { rgb: 'B0C4DE' } },
+    bottom: { style: 'thin', color: { rgb: 'B0C4DE' } },
+    left:   { style: 'thin', color: { rgb: 'B0C4DE' } },
+    right:  { style: 'thin', color: { rgb: 'B0C4DE' } }
+  };
+  const borderStrong = {
+    top:    { style: 'medium', color: { rgb: NAVY } },
+    bottom: { style: 'medium', color: { rgb: NAVY } },
+    left:   { style: 'medium', color: { rgb: NAVY } },
+    right:  { style: 'medium', color: { rgb: NAVY } }
   };
 
-  let totBruta=0, totAjuste=0, totSubAj=0, totBajo=0, totPerdAj=0,
-      totDed=0, totCoas=0, totNeta=0;
-  calc.forEach(c => {
-    totBruta  += c.bruta;   totAjuste += c.ajuste;
-    totSubAj  += c.subtotalAj; totBajo += c.bajo;
-    totPerdAj += c.perdidaAj;  totDed  += c.ded;
-    totCoas   += c.coas;    totNeta   += c.neta;
+  const cell = (v, opts = {}) => {
+    const t = typeof v === 'number' ? 'n' : 's';
+    const c = { v, t, s: {} };
+    if (opts.bold)    c.s.font       = { bold: true, ...(opts.color ? { color: { rgb: opts.color } } : {}), sz: opts.sz || 11 };
+    if (opts.color && !opts.bold) c.s.font = { color: { rgb: opts.color }, sz: opts.sz || 11 };
+    if (opts.bg)      c.s.fill       = { fgColor: { rgb: opts.bg }, patternType: 'solid' };
+    if (opts.border)  c.s.border     = opts.border === 'strong' ? borderStrong : border;
+    if (opts.numFmt)  c.z            = opts.numFmt;
+    if (opts.align)   c.s.alignment  = { horizontal: opts.align, vertical: 'center', wrapText: !!opts.wrap };
+    else              c.s.alignment  = { vertical: 'center', wrapText: !!opts.wrap };
+    return c;
+  };
+
+  const hdrCell = (v, bg = NAVY, color = WHITE, align = 'center') =>
+    cell(v, { bold: true, bg, color, border: 'strong', align });
+
+  const numCell = (v, bg, highlight) =>
+    cell(v == null || v === 0 ? 0 : v, {
+      numFmt: NUM_FMT, bg: bg || WHITE, border: 'thin',
+      align: 'right', ...(highlight ? { bold: true, color: highlight } : {})
+    });
+
+  const labelCell = (v, bg) =>
+    cell(v, { bold: false, bg: bg || LGRAY, border: 'thin', align: 'left' });
+
+  const boldLabelCell = (v) =>
+    cell(v, { bold: true, bg: NAVY, color: WHITE, border: 'strong', align: 'left' });
+
+  // ── Construcción de la hoja ────────────────────────────────────────
+  const ws = {};
+  const ref = (r, c) => XLS.utils.encode_cell({ r, c });
+  let row = 0;
+
+  const showTotal = calc.length > 1;
+  const totalCols = 1 + calc.length + (showTotal ? 1 : 0);  // label + coberturas + total
+
+  // ── Fila 0: Logo placeholder + Título ─────────────────────────────
+  // Logo va en A1:B3 (merge), título en C1
+  ws[ref(row, 0)] = cell('', { bg: WHITE });
+  ws[ref(row, 2)] = cell('CÉDULA DE AJUSTE', {
+    bold: true, color: NAVY, sz: 16, align: 'center', bg: WHITE
+  });
+  ws[ref(row+1, 2)] = cell('ALMARAZ AJUSTADORES, S.A. DE C.V. (AASA)', {
+    bold: false, color: '555555', sz: 11, align: 'center', bg: WHITE
+  });
+  ws[ref(row+2, 2)] = cell('Generada: ' + new Date().toLocaleDateString('es-MX',{day:'2-digit',month:'long',year:'numeric'}), {
+    color: '888888', sz: 10, align: 'center', bg: WHITE
+  });
+  row += 4;
+
+  // ── Encabezado del expediente ──────────────────────────────────────
+  const expRows = [
+    ['Asegurado',            hdr.asegurado],
+    ['No. Siniestro',        hdr.siniestro],
+    ['Referencia AASA',      hdr.refAASA],
+    ['Póliza',               hdr.poliza],
+    ['Fecha del siniestro',  hdr.fechaSin],
+    ['Tipo de daños',        hdr.tipoDanios],
+    ['Lugar del evento',     hdr.lugar],
+  ];
+  expRows.forEach(([lbl, val]) => {
+    ws[ref(row, 0)] = cell(lbl, { bold: true, bg: LGRAY, border: 'thin', align: 'right', color: '333333' });
+    ws[ref(row, 1)] = cell(String(val || '—'), { bg: WHITE, border: 'thin', align: 'left' });
+    // Merge val a través de columnas restantes
+    row++;
+  });
+  row++;  // fila vacía
+
+  // ── Cabecera de tabla ──────────────────────────────────────────────
+  ws[ref(row, 0)] = hdrCell('Concepto');
+  calc.forEach((c, i) => { ws[ref(row, i + 1)] = hdrCell(c.concepto, NAVY); });
+  if (showTotal) ws[ref(row, calc.length + 1)] = hdrCell('TOTAL', GREEN);
+  row++;
+
+  // Moneda
+  ws[ref(row, 0)] = labelCell('Moneda');
+  calc.forEach((c, i) => { ws[ref(row, i+1)] = cell(c.moneda||'MXN', { bg: LGRAY, border: 'thin', align: 'center' }); });
+  if (showTotal) ws[ref(row, calc.length+1)] = cell('', { bg: LGRAY, border: 'thin' });
+  row++;
+
+  // Filas de importes
+  let totBruta=0,totAjuste=0,totSubAj=0,totBajo=0,totPerdAj=0,totDed=0,totCoas=0,totNeta=0;
+  calc.forEach(c=>{
+    totBruta+=c.bruta; totAjuste+=c.ajuste; totSubAj+=c.subtotalAj;
+    totBajo+=c.bajo; totPerdAj+=c.perdidaAj; totDed+=c.ded;
+    totCoas+=c.coas; totNeta+=c.neta;
   });
 
-  rows.push(fila('Reserva Bruta',          'bruta',       totBruta));
-  rows.push(fila('Ajuste',                 'ajuste',      totAjuste));
-  rows.push(fila('Subtotal Ajustado',      'subtotalAj',  totSubAj));
-  rows.push(fila('Bajo Seguro',            'bajo',        totBajo));
-  rows.push(fila('Pérdida Ajustada',       'perdidaAj',   totPerdAj));
-  rows.push(fila('Deducible',              'ded',         totDed));
+  const dataRows = [
+    { lbl: 'Reserva Bruta',              key: 'bruta',      tot: totBruta,   bg: null },
+    { lbl: 'Ajuste',                     key: 'ajuste',     tot: totAjuste,  bg: null },
+    { lbl: 'Subtotal Ajustado',          key: 'subtotalAj', tot: totSubAj,   bg: LGRAY, bold: true },
+    { lbl: 'Bajo Seguro',                key: 'bajo',       tot: totBajo,    bg: LYELL },
+    { lbl: 'Pérdida Ajustada',           key: 'perdidaAj',  tot: totPerdAj,  bg: LYELL, bold: true },
+    { lbl: 'Deducible',                  key: 'ded',        tot: totDed,     bg: null },
+  ];
 
-  // Coaseguro % — no suma
-  rows.push(['Coaseguro %', ...calc.map(c => c.coasPct ? c.coasPct.toFixed(2)+'%' : 'N/A'),
-             ...(showTotal ? [''] : [])]);
+  dataRows.forEach(({ lbl, key, tot, bg, bold }) => {
+    ws[ref(row, 0)] = bold ? boldLabelCell(lbl) : labelCell(lbl);
+    calc.forEach((c, i) => { ws[ref(row, i+1)] = numCell(c[key], bg); });
+    if (showTotal) ws[ref(row, calc.length+1)] = numCell(tot, bg, bold ? NAVY : null);
+    row++;
+  });
 
-  rows.push(fila('Coaseguro Monto',        'coas',        totCoas));
-  rows.push(fila('Cantidad Indemnizable Neta', 'neta',    totNeta));
-  rows.push([]);
+  // Coaseguro %
+  ws[ref(row, 0)] = labelCell('Coaseguro %');
+  calc.forEach((c, i) => {
+    ws[ref(row, i+1)] = cell(c.coasPct ? c.coasPct : 0, {
+      numFmt: PCT_FMT, bg: WHITE, border: 'thin', align: 'right'
+    });
+  });
+  if (showTotal) ws[ref(row, calc.length+1)] = cell('', { bg: WHITE, border: 'thin' });
+  row++;
 
-  // Bases de reserva por cobertura
-  rows.push(['Bases de reserva', ...calc.map(c => c.bases), ...(showTotal ? [''] : [])]);
+  // Coaseguro Monto
+  ws[ref(row, 0)] = labelCell('Coaseguro Monto');
+  calc.forEach((c, i) => { ws[ref(row, i+1)] = numCell(c.coas, null); });
+  if (showTotal) ws[ref(row, calc.length+1)] = numCell(totCoas, null);
+  row++;
 
-  // ── Hoja ─────────────────────────────────────────────────────────────
-  const ws = XLSX.utils.aoa_to_sheet(rows);
+  // Cantidad Indemnizable Neta — destacada
+  ws[ref(row, 0)] = boldLabelCell('Cantidad Indemnizable Neta');
+  calc.forEach((c, i) => { ws[ref(row, i+1)] = numCell(c.neta, LGREE, GREEN); });
+  if (showTotal) ws[ref(row, calc.length+1)] = numCell(totNeta, LGREE, GREEN);
+  row++;
+  row++;
 
-  // Ancho de columnas: etiqueta ancha + una por cobertura + total
-  const colWidths = [{ wch: 28 }, ...calc.map(() => ({ wch: 20 }))];
-  if (showTotal) colWidths.push({ wch: 20 });
-  ws['!cols'] = colWidths;
+  // Bases de reserva
+  ws[ref(row, 0)] = cell('Bases de reserva', { bold: true, bg: LGRAY, border: 'thin', align: 'left', color: NAVY });
+  calc.forEach((c, i) => {
+    ws[ref(row, i+1)] = cell(c.bases || '', { bg: WHITE, border: 'thin', align: 'left', wrap: true });
+  });
+  if (showTotal) ws[ref(row, calc.length+1)] = cell('', { bg: WHITE, border: 'thin' });
+  row++;
 
-  XLSX.utils.book_append_sheet(wb, ws, 'Cédula');
+  // ── Rango de la hoja ──────────────────────────────────────────────
+  ws['!ref'] = XLS.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: row, c: totalCols - 1 } });
+
+  // ── Anchos de columna ─────────────────────────────────────────────
+  ws['!cols'] = [{ wch: 30 }, ...calc.map(() => ({ wch: 22 })), ...(showTotal ? [{ wch: 22 }] : [])];
+
+  // ── Alturas de fila ───────────────────────────────────────────────
+  ws['!rows'] = [{ hpt: 30 }, { hpt: 20 }, { hpt: 16 }];  // filas de título
+
+  // ── Merges: título ocupa columnas 2..totalCols-1 ──────────────────
+  ws['!merges'] = [
+    { s: { r: 0, c: 2 }, e: { r: 0, c: totalCols - 1 } },
+    { s: { r: 1, c: 2 }, e: { r: 1, c: totalCols - 1 } },
+    { s: { r: 2, c: 2 }, e: { r: 2, c: totalCols - 1 } },
+  ];
+  // Merge valor del expediente a través de columnas restantes
+  for (let i = 0; i < expRows.length; i++) {
+    ws['!merges'].push({ s: { r: 4 + i, c: 1 }, e: { r: 4 + i, c: totalCols - 1 } });
+  }
+
+  // ── Logo: intentar insertar desde LOGO_AASA_B64 ──────────────────
+  try {
+    const logoB64 = window.LOGO_AASA_B64 || '';
+    if (logoB64 && wb.Workbook === undefined) wb.Workbook = { Sheets: [{}] };
+    if (logoB64 && typeof wb.addImage === 'function') {
+      // xlsx-js-style no soporta imágenes nativas; omitir silenciosamente
+    }
+    // Colocar nombre en celda A1 como fallback de logo
+    ws[ref(0, 0)] = cell('AASA', { bold: true, color: WHITE, bg: NAVY, sz: 14, align: 'center' });
+    ws['!merges'].push({ s: { r: 0, c: 0 }, e: { r: 2, c: 1 } });
+  } catch(e) { /* silencioso */ }
+
+  XLS.utils.book_append_sheet(wb, ws, 'Cédula');
   const fname = `Cedula_${hdr.refAASA}_${hdr.siniestro}.xlsx`.replace(/[\\/:*?"<>|]/g, '_');
-  XLSX.writeFile(wb, fname);
+  XLS.writeFile(wb, fname);
 }
 
 // ── PDF (ventana de impresión) ────────────────────────────────────────
