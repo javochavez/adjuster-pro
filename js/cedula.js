@@ -258,16 +258,23 @@ function _exportExcel(hdr, calc, fM) {
 
   // ── Logo: intentar insertar desde LOGO_AASA_B64 ──────────────────
   try {
-    ws[ref(0, 0)] = cell('ALMARAZ AJUSTADORES', {
-      bold: true, color: WHITE, bg: NAVY, sz: 13, align: 'center'
-    });
-    ws[ref(1, 0)] = cell('S.A. DE C.V.', {
-      bold: false, color: 'BDD7EE', bg: NAVY, sz: 11, align: 'center'
-    });
-    ws[ref(2, 0)] = cell('AJUSTADORES DE SEGUROS', {
-      bold: false, color: 'BDD7EE', bg: NAVY, sz: 9, align: 'center'
-    });
+    ws[ref(0, 0)] = {
+      v: 'ALMARAZ AJUSTADORES\nS.A. DE C.V.\nAJUSTADORES DE SEGUROS',
+      t: 's',
+      s: {
+        font:      { bold: true, color: { rgb: 'FFFFFF' }, sz: 11 },
+        fill:      { fgColor: { rgb: '1F3864' }, patternType: 'solid' },
+        border:    {
+          top:    { style: 'medium', color: { rgb: '1F3864' } },
+          bottom: { style: 'medium', color: { rgb: '1F3864' } },
+          left:   { style: 'medium', color: { rgb: '1F3864' } },
+          right:  { style: 'medium', color: { rgb: '1F3864' } }
+        },
+        alignment: { horizontal: 'center', vertical: 'center', wrapText: true }
+      }
+    };
     ws['!merges'].push({ s: { r: 0, c: 0 }, e: { r: 2, c: 1 } });
+    ws['!rows'] = [{ hpt: 18 }, { hpt: 18 }, { hpt: 18 }];
   } catch(e) { /* silencioso */ }
 
   XLS.utils.book_append_sheet(wb, ws, 'Cédula');
